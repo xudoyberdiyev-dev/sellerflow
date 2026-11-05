@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sellerflow
+      POSTGRES_USER: ${DB_USER:-sellerflow}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env faylida berilishi shart}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sellerflow} -d sellerflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/sellerflow
+      DB_USER: ${DB_USER:-sellerflow}
+      DB_PASSWORD: ${DB_PASSWORD}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN .env faylida berilishi shart}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      SUPPORT_LABEL: ${SUPPORT_LABEL:-}
+      SUPPORT_URL: ${SUPPORT_URL:-}
+    ports:
+      # Admin API faqat serverning o'zidan (localhost) ochiq; tashqariga chiqarish uchun HTTPS reverse proxy qo'ying
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  pgdata:

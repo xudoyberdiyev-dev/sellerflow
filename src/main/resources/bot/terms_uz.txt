@@ -1,0 +1,8 @@
+⚠️ QORALAMA v0.1 — yurist tekshiruvidan o‘tmagan. Yopiq beta uchun.
+
+1. SellerFlow — sotuvchilar uchun foyda va narxni hisoblash vositasi. Natijalar siz kiritgan qiymatlarga asoslanadi va taxminiy hisoblanadi; ular soliq, buxgalteriya yoki moliyaviy maslahat emas.
+2. Biz Telegram ID’ingiz, ixtiyoriy biznes nomi va ismingiz, tanlagan savdo kanalingiz, kiritgan mahsulot va hisoblash ma’lumotlaringizni xizmatni ko‘rsatish uchun saqlaymiz. Telefon, pasport yoki karta ma’lumotlari so‘ralmaydi.
+3. Tijoriy ma’lumotlaringiz (tannarx, foyda va h.k.) boshqa foydalanuvchilarga ko‘rsatilmaydi. Platforma administratori ularni sizning alohida roziligingizsiz ko‘rmaydi.
+4. Ma’lumotlaringiz uchinchi shaxslarga sotilmaydi. Qonunchilikda nazarda tutilgan hollar bundan mustasno.
+5. Akkauntni o‘chirishni Sozlamalar orqali so‘rashingiz mumkin: so‘rovdan keyin 30 kunlik kutish davri amal qiladi.
+6. Yopiq beta davrida xizmat bepul; to‘lov olinmaydi. Shartlar o‘zgarsa, sizdan qayta rozilik so‘raladi.

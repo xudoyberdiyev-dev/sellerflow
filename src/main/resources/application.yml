@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: sellerflow
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sellerflow}
+    username: ${DB_USER:sellerflow}
+    password: ${DB_PASSWORD:sellerflow}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  jackson:
+    time-zone: UTC
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+sellerflow:
+  telegram:
+    # Tokenni hech qachon repo yoki chatga yozmang — faqat muhit o'zgaruvchisi orqali.
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    api-base-url: ${TELEGRAM_API_BASE_URL:https://api.telegram.org}
+    polling-enabled: ${TELEGRAM_POLLING_ENABLED:true}
+    polling-timeout-seconds: 30
+  admin:
+    # Bo'sh bo'lsa admin API butunlay yopiq bo'ladi
+    api-key: ${ADMIN_API_KEY:}
+  terms:
+    version: ${TERMS_VERSION:2026-11-05-v0.1}
+  draft:
+    ttl-hours: 24
+  support:
+    # Ixtiyoriy boshlang'ich qiymat; admin API orqali o'zgartiriladi
+    default-label: ${SUPPORT_LABEL:}
+    default-url: ${SUPPORT_URL:}
+
+logging:
+  level:
+    root: INFO
+    uz.sellerflow: INFO
