@@ -18,7 +18,10 @@ Sotuvchilar uchun Telegram bot. U bir dona mahsulotdan **haqiqatda qancha foyda 
 | ⭐ Tariflar | Joriy tarif va imkoniyatlar faqat server konfiguratsiyasidan olinadi. Soxta narx ham, «sotib olish» tugmasi ham yo‘q. |
 | ❓ `/help` | 12 ta FAQ, Wizard qadamiga mos kontekstli savol, jarayonga xavfsiz qaytish. Support kontakti faqat admin sozlagan bo‘lsa ko‘rinadi. |
 | Xavfsizlik | Tenant izolyatsiyasi (begona ID → «topilmadi»), eski tugmalardan himoya (revision + qadam), takroriy `update_id` va Save idempotent, faqat private chat, qoralama oxirgi kiritishdan 24 soat saqlanadi, audit jurnali (tijoriy qiymatlarsiz). |
-| Admin API | `X-Admin-Key` bilan: statistika, sotuvchilar ro‘yxati (faqat metadata), suspend/reactivate, support kontakti, audit. Web Superadmin — keyingi bosqich (PRD-07). |
+| 🛡 Web Superadmin (`/admin/`) | Kirish: parol va majburiy 2FA (Google Authenticator). Rollar: SUPERADMIN va SUPPORT. Bo‘limlar: boshqaruv paneli (faqat agregat sonlar), tizim holati, sotuvchilar (faqat metadata), bloklash va tiklash, kirish so‘rovlari, support kontakti, audit jurnali, administratorlar. |
+| 🔐 Rozilik asosidagi kirish | Admin so‘rov yuboradi → sotuvchi botda aniq tasdiqlaydi → admin 30–60 daqiqa davomida faqat ko‘ra oladi. Ruxsat boshqa adminga o‘tkazilmaydi, har bir ko‘rish auditga yoziladi. Sotuvchi yoki admin ruxsatni istalgan payt bekor qila oladi, muddati tugagach avtomatik yopiladi. |
+| Akkaunt siyosati | Shartlar versiyasi o‘zgarsa, qayta rozilik so‘raladi. O‘chirish so‘rovidan 30 kun o‘tgach akkaunt avtomatik yopiladi (CLOSED). Tijoriy ma’lumotni o‘chirish `DELETION_PURGE_DATA` bayrog‘i bilan boshqariladi va yurist qaroriga qadar o‘chiq turadi. |
+| Ishonchlilik | Kunlik avtomatik backup (`./backups`, 14 kun saqlanadi), tiklash va tiklash sinovi skriptlari, spam himoyasi (10 soniyada 20 ta so‘rov), GitHub CI. |
 
 ## Ishga tushirish (server, Docker)
 
@@ -40,28 +43,29 @@ So‘ng Telegramda botingizga `/start` yozing.
 - Bitta token bilan bir vaqtda faqat **bitta** nusxa ishlashi kerak.
 - Holatni tekshirish: `curl localhost:8080/actuator/health`.
 
-### Admin API misollari
+### Superadmin panel
 
-```bash
-K=$(grep ADMIN_API_KEY .env | cut -d= -f2)
-curl -H "X-Admin-Key: $K" localhost:8080/admin/api/v1/stats
-curl -H "X-Admin-Key: $K" "localhost:8080/admin/api/v1/sellers?page=0&size=50"
-curl -X PUT -H "X-Admin-Key: $K" -H "Content-Type: application/json" \
-     -d '{"enabled":true,"label":"Qo‘llab-quvvatlash","url":"@your_support"}' localhost:8080/admin/api/v1/support
-curl -X POST -H "X-Admin-Key: $K" -H "X-Admin-Id: azizbek" -H "Content-Type: application/json" \
-     -d '{"reason":"spam"}' localhost:8080/admin/api/v1/sellers/<telegram_user_id>/suspend
-curl -H "X-Admin-Key: $K" localhost:8080/admin/api/v1/audit
-```
+1. `.env` faylida `ADMIN_BOOTSTRAP_EMAIL` va `ADMIN_BOOTSTRAP_PASSWORD` ni to‘ldiring (parol kamida 12 belgi). Birinchi SUPERADMIN shu ma’lumotlar bilan yaratiladi.
+2. Panel faqat serverning o‘zida ochiq (`127.0.0.1:8080`). Kompyuteringizdan kirish uchun SSH tunnel oching:
+   ```bash
+   ssh -L 8080:127.0.0.1:8080 user@SERVER_IP
+   ```
+   So‘ng brauzerda oching: **http://localhost:8080/admin/**
+3. Birinchi kirishda QR kod chiqadi. Uni Google Authenticator yoki Authy ilovasida skanerlang.
+4. Boshqa adminlarni panelning «Administratorlar» bo‘limidan qo‘shasiz.
 
-Port 8080 faqat `127.0.0.1` da ochiq. Admin API’ni tashqariga chiqarish kerak bo‘lsa, oldiga HTTPS reverse proxy (masalan, Caddy yoki nginx) qo‘ying.
+Doimiy domen va HTTPS orqali kirish kerak bo‘lsa, [`docs/OPERATIONS.md`](docs/OPERATIONS.md) ga qarang.
 
 ### Backup
 
+`backup` servisi har 24 soatda bazani `./backups/` papkasiga saqlaydi. Tiklash va oylik tiklash sinovi:
+
 ```bash
-docker compose exec db pg_dump -U sellerflow sellerflow | gzip > backup_$(date +%F).sql.gz
+./scripts/restore.sh backups/sellerflow_YYYYMMDDTHHMMSSZ.dump   # tiklash (joriy bazani almashtiradi!)
+./scripts/restore-drill.sh                                        # sinov: ishlab turgan bazaga tegmaydi
 ```
 
-Production’dan oldin avtomatik backup va **tiklash sinovi** (restore drill) majburiy (Master PRD 19.7).
+Backuplarni boshqa joyga ham nusxalab turing, masalan boshqa server yoki bulutga — [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
 
 ## Lokal ishlab chiqish
 
@@ -75,6 +79,12 @@ mvn spring-boot:run
 
 `TELEGRAM_BOT_TOKEN` berilmasa, ilova ishga tushadi, lekin bot o‘chiq bo‘ladi (admin API va health ishlaydi).
 
+### Superadmin UI (lokal)
+
+```bash
+cd admin-ui && npm install && npm run dev     # http://localhost:5173/admin/ (API -> :8080 proxy)
+```
+
 ### Testlar
 
 ```bash
@@ -84,7 +94,13 @@ mvn test
 - Testlar **haqiqiy PostgreSQL** bilan ishlaydi. Docker kerak emas: embedded PostgreSQL avtomatik ishga tushadi.
 - Root foydalanuvchi ostida (CI) embedded PostgreSQL ishlamaydi. U holda tayyor bazani bering:
   `SELLERFLOW_TEST_DB_URL=jdbc:postgresql://127.0.0.1:5432/sellerflow_test mvn test`.
-- Qamrov: Calculation Engine regression matrix (Master PRD 20.2 va Addendum misollari), bot E2E ssenariylari (onboarding, foyda, narx, katalog, tarix, sozlamalar, eski tugmalar, TTL, tenant izolyatsiyasi, guruh chat), admin API, Telegram JSON formati.
+- Qamrov:
+  - Calculation Engine regression matrix (Master PRD 20.2 va Addendum misollari);
+  - bot E2E ssenariylari: onboarding, foyda, narx, katalog, tarix, sozlamalar, eski tugmalar, TTL, tenant izolyatsiyasi, guruh chat;
+  - admin API: 2FA, rollar, bloklash, rozilik asosidagi kirish;
+  - qayta rozilik, o‘chirish davri, spam himoyasi;
+  - Telegram JSON formati va TOTP (RFC 6238 test vektori).
+- GitHub'ga har push qilinganda testlar avtomatik ishga tushadi (`.github/workflows/ci.yml`).
 
 ## Tuzilma
 
@@ -99,7 +115,10 @@ src/main/java/uz/sellerflow/
   audit/         audit jurnali
   telegram/      Bot API klienti, long polling
   bot/           dispatcher, wizardlar va bo'limlar, matnlar (Texts.java)
-  admin/         minimal admin API
+  admin/         Superadmin API: auth (parol + TOTP), rollar, sotuvchilar, statistika
+  access/        rozilik asosidagi vaqtinchalik READ-ONLY kirish
+admin-ui/        Web Superadmin (React + TypeScript + Vite + Tailwind)
+scripts/         backup / restore / restore drill
 src/main/resources/db/migration/   Flyway sxemasi
 ```
 
@@ -107,9 +126,8 @@ Bot matnlari bitta joyda: `bot/Texts.java` (uz-Latn). Xizmat shartlari qoralamas
 
 ## Ishga tushirishdan oldin ochiq qolgan ishlar
 
-[`docs/DECISIONS.md`](docs/DECISIONS.md) → «Ochiq qolganlar» bo‘limiga qarang. Eng muhimlari:
+To‘liq ro‘yxat: [`docs/DECISIONS.md`](docs/DECISIONS.md) → «Ochiq qolganlar». Eng muhimlari:
 
-- yuridik tekshiruv (O‘RQ-547 / O‘RQ-1125, xizmat shartlari);
-- Web Superadmin (PRD-07);
-- backup va monitoring;
-- 30 kunlik o‘chirish davridan keyingi ma’lumotlarni qayta ishlash.
+- **Yuridik tekshiruv:** xizmat shartlari, maxfiylik siyosati, O‘RQ-547 / O‘RQ-1125, retention siyosati.
+- **Jonli sinov:** haqiqiy Telegram bot bilan, serverda.
+- **Billing (V1.1):** pullik tariflar — PRD-06.

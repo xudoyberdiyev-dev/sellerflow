@@ -18,8 +18,22 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 | CR-DRAFT-02 | Mahsulot yaratish/tahrirlash formasi ham shu qoidaga bo'ysunadi (24 soat). | Qabul qilindi ("default") |
 | CR-LOCALE-01 | Interfeys tili: o'zbekcha, lotin yozuvi. Foydalanuvchi matni Unicode (kirill ham saqlanadi). Matnlar `Texts.java` da bir joyda. | Qabul qilindi ("default") |
 | CR-CHAT-01 | Biznes oqimlari faqat private chatda. Guruhda faqat "shaxsiy chatda yozing" yo'riqnomasi. | Qabul qilindi ("default") |
-| CR-ADMIN-01 | Superadmin tijoriy ma'lumotlarga kira olmaydi: admin API'da tannarx, foyda yoki tarix qaytarilmaydi. Rozilik asosidagi 30–60 daqiqalik READ-ONLY kirish — PRD-07 da. | V1.0 da kirish umuman yo'q |
+| CR-ADMIN-01 | Kirish muddatini tizim belgilaydi: admin so'rovida 30, 45 yoki 60 daqiqa tanlanadi (standart 30), sotuvchi aniq muddat va sababni ko'rib tasdiqlaydi. Ruxsat faqat o'qish uchun, boshqa adminga o'tkazilmaydi, har bir ko'rish auditga yoziladi. Sotuvchi yoki admin istalgan payt bekor qiladi. Akkaunt cheklansa, ruxsat darhol tugaydi. Javobsiz so'rov 24 soatda eskiradi. | Qabul qilindi ("default") — tunda amalga oshirildi |
 | UX-DEC-37/38/39 | Sozlamalar: yagona markaz; maydonlar alohida saqlanadi; kanal o'zgarishi tasdiq bilan; o'chirish so'rovi ikki bosqichli. | Qabul qilindi ("default" — DRAFT A variantlari) |
+
+## 2026-11-05/06 tun — V1 ni yakunlash qarorlari (loyiha egasi "o'zing hal qil" topshirig'i asosida)
+
+| ID | Qaror |
+|---|---|
+| ADM-AUTH | Admin identifikatsiyasi sotuvchi Telegram ID'sidan alohida: email, parol (BCrypt, kamida 12 belgi) va **majburiy TOTP 2FA**. Sessiya 8 soat; token DB'da faqat SHA-256 xeshi sifatida saqlanadi. 5 ta xato urinishdan keyin 15 daqiqa blok. |
+| ADM-ROLES | `SUPERADMIN` — hamma amallar. `SUPPORT` — statistika, tizim holati, sotuvchilar ro'yxati, o'z kirish so'rovlari. Bloklash/tiklash, support kontakti, audit va adminlarni boshqarish — faqat SUPERADMIN. |
+| ADM-BOOTSTRAP | Birinchi SUPERADMIN `.env` (ADMIN_BOOTSTRAP_EMAIL/PASSWORD) orqali, faqat bazada birorta ham admin bo'lmaganda yaratiladi. |
+| ADM-UI | Panel `/admin/` manzilida, Spring Boot orqali beriladi. Server porti faqat 127.0.0.1 da ochiq; tashqaridan kirish SSH tunnel yoki HTTPS reverse proxy orqali. UI: React + TypeScript + Vite + Tailwind. shadcn/ui CLI ishlatilmadi — uning registriga tarmoq ruxsati yo'q edi, shuning uchun shu uslubdagi komponentlar qo'lda yozildi. |
+| RECONSENT | Shartlar versiyasi (`TERMS_VERSION`) o'zgarsa, faol foydalanuvchi keyingi murojaatida yangi shartlarni ko'radi. Aniq roziliksiz biznes amallari yopiq, faqat /help va akkauntni o'chirish so'rovi ochiq. Callback'da aynan ko'rsatilgan versiya tekshiriladi. |
+| DELETION-JOB | Har kuni 03:15 (Toshkent): o'chirish so'rovidan 30 kun o'tgan akkauntlar CLOSED holatiga o'tadi. Qoralama, biznes nomi va ism tozalanadi, faol kirish ruxsatlari bekor qilinadi. Mahsulot va tarix `DELETION_PURGE_DATA=true` bo'lgandagina o'chiriladi (yurist qaroriga qadar false). Rozilik va audit yozuvlari dalil sifatida saqlanadi. Kutish davrida tiklash — admin panel → «Qayta faollashtirish». |
+| RATE-LIMIT | Bitta foydalanuvchi uchun 10 soniyada 20 ta update. Undan oshsa, bir marta ogohlantirish beriladi va qolganlari tashlanadi. |
+| BACKUP | Kunlik `pg_dump -Fc`, 14 kun saqlanadi; restore va restore-drill skriptlari. Backupni server tashqarisiga nusxalash — operator vazifasi. |
+| CI | GitHub Actions: UI build + PostgreSQL 16 bilan barcha testlar. |
 
 ## Texnik qarorlar (kod darajasida)
 
@@ -36,11 +50,11 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 
 ## Ochiq qolganlar (ishga tushirishdan oldin)
 
-1. **Yuridik tekshiruv:** xizmat shartlari (`terms_uz.txt` — QORALAMA v0.1), maxfiylik siyosati, O'RQ-547 / O'RQ-1125, hosting joylashuvi.
-2. **30 kunlik o'chirish davridan keyin:** ma'lumotlarni qayta ishlash va o'chirish jarayoni (CLOSED holatiga o'tkazish) avtomatlashtirilmagan. Retention siyosati kerak.
-3. **Web Superadmin (PRD-07):** UI, RBAC, rozilik asosidagi vaqtinchalik kirish.
-4. **PRD-06 Billing:** pullik tariflar (V1.1).
-5. **Asl PRD-01 / 02.01 / 02.02 matnlari:** kodni ular bilan qator-ma-qator solishtirish (traceability).
-6. **Legacy `UX-COST` (Xarajat profillari)** reyestri bilan solishtirish.
-7. **Monitoring:** alertlar, avtomatik backup, restore drill.
-8. **Rate limiting:** bitta foydalanuvchi uchun spam himoyasi yo'q.
+1. **Jonli sinov:** haqiqiy Telegram bot bilan, serverda. Avtomatik testlar va soxta Telegram server bilan sinov o'tgan, lekin haqiqiy Bot API bilan sinalmagan.
+2. **Yuridik tekshiruv:** xizmat shartlari (`terms_uz.txt` — QORALAMA v0.1), maxfiylik siyosati, O'RQ-547 / O'RQ-1125, hosting joylashuvi, retention siyosati (`DELETION_PURGE_DATA`).
+3. **PRD-06 Billing (V1.1):** pullik tariflar, to'lov provayderi (Click/Payme), obuna.
+4. **Asl PRD-01 / 02.01 / 02.02 matnlari:** kodni ular bilan qator-ma-qator solishtirish (traceability).
+5. **Legacy `UX-COST` (Xarajat profillari)** reyestri bilan solishtirish.
+6. **TOTP sirlari** DB'da ochiq holda saqlanadi (baza himoyasiga tayanadi). Keyingi bosqichda ularni alohida kalit bilan shifrlash tavsiya etiladi.
+7. **Tashqi monitoring/alerting:** uptime-monitor va backupni server tashqarisiga nusxalash (`docs/OPERATIONS.md`).
+8. **Admin ko'rish oynasi:** rozilik asosidagi kirishda oxirgi 10 ta mahsulot va 10 ta hisoblash ko'rsatiladi. Kerak bo'lsa, sahifalash qo'shiladi.

@@ -5,3 +5,7 @@ target/
 *.iml
 .vscode/
 .DS_Store
+admin-ui/node_modules/
+admin-ui/dist/
+src/main/resources/static/admin/
+backups/

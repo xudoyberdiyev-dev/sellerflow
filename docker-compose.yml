@@ -25,12 +25,32 @@ services:
       DB_USER: ${DB_USER:-sellerflow}
       DB_PASSWORD: ${DB_PASSWORD}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN .env faylida berilishi shart}
-      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
       SUPPORT_LABEL: ${SUPPORT_LABEL:-}
       SUPPORT_URL: ${SUPPORT_URL:-}
+      DELETION_PURGE_DATA: ${DELETION_PURGE_DATA:-false}
     ports:
-      # Admin API faqat serverning o'zidan (localhost) ochiq; tashqariga chiqarish uchun HTTPS reverse proxy qo'ying
+      # Admin panel va API faqat serverning o'zidan ochiq. Tashqaridan kirish: SSH tunnel yoki HTTPS reverse proxy (docs/OPERATIONS.md)
       - "127.0.0.1:8080:8080"
+
+  # Kunlik avtomatik backup: ./backups papkasiga, oxirgi 14 kun saqlanadi
+  backup:
+    image: postgres:16
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: ${DB_USER:-sellerflow}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: sellerflow
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup-loop.sh:/backup-loop.sh:ro
+    entrypoint: ["bash", "/backup-loop.sh"]
 
 volumes:
   pgdata:

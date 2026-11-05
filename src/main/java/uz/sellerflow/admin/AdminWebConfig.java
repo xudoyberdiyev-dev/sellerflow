@@ -1,0 +1,44 @@
+package uz.sellerflow.admin;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.io.IOException;
+
+/** Superadmin SPA: /admin/ -> static/admin/index.html (Docker build vaqtida admin-ui/dist dan ko'chiriladi). */
+@Configuration
+public class AdminWebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addRedirectViewController("/admin", "/admin/");
+        registry.addViewController("/admin/").setViewName("forward:/admin/index.html");
+    }
+
+    /** Admin sahifalari uchun xavfsizlik sarlavhalari. */
+    @Component
+    public static class AdminSecurityHeaders extends OncePerRequestFilter {
+        @Override
+        protected boolean shouldNotFilter(HttpServletRequest request) {
+            return !request.getRequestURI().startsWith("/admin");
+        }
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+                throws ServletException, IOException {
+            res.setHeader("X-Frame-Options", "DENY");
+            res.setHeader("X-Content-Type-Options", "nosniff");
+            res.setHeader("Referrer-Policy", "no-referrer");
+            res.setHeader("Content-Security-Policy",
+                    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'");
+            chain.doFilter(req, res);
+        }
+    }
+}

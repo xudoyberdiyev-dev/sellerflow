@@ -1,13 +1,22 @@
-# --- build ---
+# --- 1. Superadmin UI ---
+FROM node:22-alpine AS ui
+WORKDIR /ui
+COPY admin-ui/package.json admin-ui/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY admin-ui/ ./
+RUN npm run build
+
+# --- 2. Backend ---
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
 RUN mvn -q -B dependency:go-offline
 COPY src ./src
-# Testlar alohida bosqichda ishga tushiriladi (README: "Testlar"); image yig'ishda o'tkazib yuboriladi
+COPY --from=ui /ui/dist ./src/main/resources/static/admin
+# Testlar CI'da ishga tushiriladi (.github/workflows/ci.yml); image yig'ishda o'tkazib yuboriladi
 RUN mvn -q -B -DskipTests package
 
-# --- run ---
+# --- 3. Run ---
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN useradd --system --uid 10001 sellerflow
