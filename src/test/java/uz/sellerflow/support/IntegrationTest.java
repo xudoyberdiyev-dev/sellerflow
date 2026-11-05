@@ -19,7 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "sellerflow.telegram.bot-token=",
-        "sellerflow.admin.api-key=test-admin-key"
+        "sellerflow.admin.bootstrap-email=owner@sellerflow.test",
+        "sellerflow.admin.bootstrap-password=correct-horse-battery-staple",
+        "sellerflow.rate-limit.max-updates=1000"
 })
 @Import(IntegrationTest.Config.class)
 public abstract class IntegrationTest {

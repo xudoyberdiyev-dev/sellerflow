@@ -38,12 +38,20 @@ sellerflow:
     polling-enabled: ${TELEGRAM_POLLING_ENABLED:true}
     polling-timeout-seconds: 30
   admin:
-    # Bo'sh bo'lsa admin API butunlay yopiq bo'ladi
-    api-key: ${ADMIN_API_KEY:}
+    # Faqat birorta ham admin bo'lmaganda birinchi SUPERADMIN yaratiladi (parol >= 12 belgi)
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    bootstrap-password: ${ADMIN_BOOTSTRAP_PASSWORD:}
   terms:
     version: ${TERMS_VERSION:2026-11-05-v0.1}
   draft:
     ttl-hours: 24
+  deletion:
+    grace-days: 30
+    # Yuridik retention siyosati tasdiqlanguncha tijoriy ma'lumot o'chirilmaydi (faqat CLOSED + shaxsiy maydonlar tozalanadi)
+    purge-data: ${DELETION_PURGE_DATA:false}
+  rate-limit:
+    max-updates: 20
+    window-seconds: 10
   support:
     # Ixtiyoriy boshlang'ich qiymat; admin API orqali o'zgartiriladi
     default-label: ${SUPPORT_LABEL:}

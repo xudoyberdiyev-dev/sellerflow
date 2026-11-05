@@ -46,7 +46,7 @@ class HttpTelegramGatewayTest {
         server.start();
         SellerFlowProperties props = new SellerFlowProperties(
                 new SellerFlowProperties.Telegram("TEST", "http://127.0.0.1:" + server.getAddress().getPort(), true, 1),
-                null, null, null, null);
+                null, null, null, null, null, null);
         gateway = new HttpTelegramGateway(props, mapper);
     }
 

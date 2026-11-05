@@ -25,12 +25,15 @@ public class TelegramPoller {
     private final HttpTelegramGateway gateway;
     private final BotDispatcher dispatcher;
     private final SellerFlowProperties props;
+    private final BotStatus status;
     private volatile boolean running = true;
 
-    public TelegramPoller(HttpTelegramGateway gateway, BotDispatcher dispatcher, SellerFlowProperties props) {
+    public TelegramPoller(HttpTelegramGateway gateway, BotDispatcher dispatcher, SellerFlowProperties props,
+                          BotStatus status) {
         this.gateway = gateway;
         this.dispatcher = dispatcher;
         this.props = props;
+        this.status = status;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -45,6 +48,7 @@ public class TelegramPoller {
         Thread t = new Thread(this::loop, "telegram-poller");
         t.setDaemon(true);
         t.start();
+        status.started();
         log.info("Telegram long polling started");
     }
 
@@ -54,16 +58,20 @@ public class TelegramPoller {
         while (running) {
             try {
                 List<Tg.Update> updates = gateway.getUpdates(offset, props.telegram().pollingTimeoutSeconds());
+                status.pollOk();
                 for (Tg.Update u : updates) {
                     try {
                         dispatcher.handle(u);
+                        status.processed();
                     } catch (RuntimeException e) {
+                        status.error("update handling: " + e.getClass().getSimpleName());
                         log.error("Update {} handling failed", u.updateId(), e);
                     }
                     offset = Math.max(offset, u.updateId() + 1);
                 }
                 backoffMs = 1000;
             } catch (RuntimeException e) {
+                status.error("polling: " + e.getClass().getSimpleName());
                 log.warn("Polling error: {}; retry in {} ms", e.getClass().getSimpleName(), backoffMs);
                 sleep(backoffMs);
                 backoffMs = Math.min(backoffMs * 2, 30_000);

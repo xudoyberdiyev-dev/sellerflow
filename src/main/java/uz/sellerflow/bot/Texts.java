@@ -55,6 +55,14 @@ public final class Texts {
     public static final String ACCOUNT_DELETION_REQUESTED =
             "🗑 Akkauntni o‘chirish so‘rovingiz qabul qilingan. 30 kunlik kutish davri amal qilmoqda.\nSo‘rovni bekor qilish yoki savollar uchun /help orqali qo‘llab-quvvatlashga murojaat qiling.";
     public static final String ACCOUNT_CLOSED = "Bu akkaunt yopilgan.";
+    public static final String RATE_LIMITED = "⏳ Juda ko‘p so‘rov yuborildi. Iltimos, bir necha soniya kuting.";
+    public static final String RECONSENT =
+            "📄 <b>Xizmat shartlari yangilandi</b> (versiya: %s)\n\n%s\n\nDavom etish uchun yangi shartlarga <b>aniq rozilik</b> bering. "
+                    + "Ma’lumotlaringiz saqlangan holatda qoladi.";
+    public static final String RECONSENT_DONE = "✅ Rozilik qabul qilindi. Davom etishingiz mumkin.";
+    public static final String RECONSENT_DECLINED =
+            "Yangi shartlarga rozilik berilmaguncha biznes amallari mavjud emas. Ma’lumotlaringiz o‘chirilmaydi. "
+                    + "Xohlasangiz, akkauntni o‘chirishni so‘rashingiz mumkin.";
     public static final String FEATURE_LIMITED =
             "🔒 Bu imkoniyat joriy tarifingizda mavjud emas yoki limit tugagan.";
 

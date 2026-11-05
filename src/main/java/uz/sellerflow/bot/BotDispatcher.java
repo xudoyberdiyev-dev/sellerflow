@@ -33,10 +33,13 @@ public class BotDispatcher {
     private final HistoryHandler history;
     private final SettingsHandler settings;
     private final InfoHandler info;
+    private final AccessHandler access;
+    private final RateLimiter rateLimiter;
 
     public BotDispatcher(TelegramGateway tg, AccountService accounts, FlowStore flows, JdbcTemplate jdbc,
                          OnboardingHandler onboarding, CalcHandler calc, ProductHandler products,
-                         HistoryHandler history, SettingsHandler settings, InfoHandler info) {
+                         HistoryHandler history, SettingsHandler settings, InfoHandler info,
+                         AccessHandler access, RateLimiter rateLimiter) {
         this.tg = tg;
         this.accounts = accounts;
         this.flows = flows;
@@ -47,6 +50,8 @@ public class BotDispatcher {
         this.history = history;
         this.settings = settings;
         this.info = info;
+        this.access = access;
+        this.rateLimiter = rateLimiter;
         calc.bind(this);
         products.bind(this);
         history.bind(this);
@@ -75,6 +80,7 @@ public class BotDispatcher {
             if (m.text() != null && m.text().startsWith("/")) tg.sendMessage(chatId, Texts.GROUP_CHAT, null);
             return;
         }
+        if (!allowed(chatId, m.from().id())) return;
         String text = m.text() == null ? "" : m.text().strip();
         Ctx ctx = context(chatId, m.from().id(), null);
         process(ctx, () -> onText(ctx, text));
@@ -86,9 +92,20 @@ public class BotDispatcher {
             return;
         }
         String data = q.data() == null ? "" : q.data();
+        if (!allowed(q.message().chat().id(), q.from().id())) {
+            tg.answerCallback(q.id(), null);
+            return;
+        }
         Ctx ctx = context(q.message().chat().id(), q.from().id(), q.message().messageId());
         tg.answerCallback(q.id(), null);
         process(ctx, () -> onCallback(ctx, data.split(":")));
+    }
+
+    /** Spam himoyasi: limitdan oshsa update tashlanadi, oyna boshida bir marta ogohlantiriladi. */
+    private boolean allowed(long chatId, long telegramUserId) {
+        RateLimiter.Verdict v = rateLimiter.check(telegramUserId);
+        if (v == RateLimiter.Verdict.WARN) tg.sendMessage(chatId, Texts.RATE_LIMITED, null);
+        return v == RateLimiter.Verdict.OK;
     }
 
     private Ctx context(long chatId, long telegramUserId, Long sourceMessageId) {
@@ -152,6 +169,11 @@ public class BotDispatcher {
         }
         if (status != AccountStatus.ACTIVE) {
             restricted(ctx, status, "/help".equals(cmd));
+            return;
+        }
+        if (!accounts.hasCurrentConsent(ctx.userId())) {
+            if ("/help".equals(cmd)) info.showHelp(ctx, false);
+            else showReconsent(ctx);
             return;
         }
 
@@ -260,7 +282,17 @@ public class BotDispatcher {
         }
         if (status != AccountStatus.ACTIVE) {
             if ("f".equals(prefix)) info.onCallback(ctx, p);
+            else if ("g".equals(prefix) && p.length > 2 && "r".equals(p[2]) && ctx.business() != null) access.onCallback(ctx, p);
             else restricted(ctx, status, false);
+            return;
+        }
+        if ("rc".equals(prefix)) {
+            onReconsent(ctx, p);
+            return;
+        }
+        boolean deletionPath = "s".equals(prefix) && p.length > 1 && p[1].startsWith("del");
+        if (!accounts.hasCurrentConsent(ctx.userId()) && !"f".equals(prefix) && !"g".equals(prefix) && !deletionPath) {
+            showReconsent(ctx);
             return;
         }
 
@@ -273,8 +305,37 @@ public class BotDispatcher {
             case "f", "t" -> info.onCallback(ctx, p);
             case "sw" -> onSwitch(ctx, p);
             case "rs" -> onResume(ctx, p);
+            case "g" -> access.onCallback(ctx, p);
             case "o" -> ctx.sendMenu(Texts.MAIN_MENU);
             default -> ctx.send(Texts.STALE);
+        }
+    }
+
+    // =================================================================== re-consent
+
+    /** Xizmat shartlari versiyasi o'zgargan: biznes amallari yangi aniq roziliksiz bajarilmaydi (PRD-01 5.4). */
+    private void showReconsent(Ctx ctx) {
+        String v = accounts.currentTermsVersion();
+        ctx.send(String.format(Texts.RECONSENT, Ctx.esc(v), Ctx.esc(onboarding.termsText())), Kb.create()
+                .row(Kb.cb(Texts.BTN_AGREE, "rc:a:" + v), Kb.cb(Texts.BTN_DECLINE, "rc:d")));
+    }
+
+    private void onReconsent(Ctx ctx, String[] p) {
+        ctx.clearSourceButtons();
+        if (p.length > 2 && "a".equals(p[1])) {
+            // Faqat foydalanuvchiga ko'rsatilgan aynan shu versiya qabul qilinadi
+            if (!accounts.currentTermsVersion().equals(p[2])) {
+                showReconsent(ctx);
+                return;
+            }
+            accounts.recordConsent(ctx.userId());
+            ctx.sendMenu(Texts.RECONSENT_DONE);
+        } else if (p.length > 1 && "d".equals(p[1])) {
+            ctx.send(Texts.RECONSENT_DECLINED, Kb.create()
+                    .row(Kb.cb(Texts.BTN_TERMS_AGAIN, "rc:show"))
+                    .row(Kb.cb(Texts.BTN_S_DELETE, "s:del1")));
+        } else {
+            showReconsent(ctx);
         }
     }
 
