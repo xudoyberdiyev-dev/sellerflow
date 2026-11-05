@@ -2,3 +2,7 @@ target/
 .env
 .git/
 *.log
+admin-ui/node_modules/
+admin-ui/dist/
+backups/
+src/main/resources/static/admin/
