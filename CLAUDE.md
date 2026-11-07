@@ -4,7 +4,7 @@ Javoblarni o'zbek tilida (lotin) yozing.
 
 ## Loyiha
 - Backend + Telegram bot: Java 21, Spring Boot 3.5, PostgreSQL 16, Flyway, Maven (`src/`).
-- Superadmin UI: React + TypeScript + Vite + Tailwind (`admin-ui/`), production'da `/admin/` da Spring orqali beriladi.
+- Superadmin UI: React + TypeScript + Vite + dizayn tizimi (`admin-ui/src/styles`, `design/superadmin/`) (`admin-ui/`), production'da `/admin/` da Spring orqali beriladi.
 - Hujjatlar: `README.md`, `docs/DECISIONS.md` (qarorlar), `docs/OPERATIONS.md` (ekspluatatsiya).
 
 ## Ishga tushirish (lokal, Docker bilan)

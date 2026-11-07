@@ -18,6 +18,8 @@ export interface DataTableProps<R> {
   density?: Density; onDensityChange?: (d: Density) => void; rowActions?: (row: R) => MenuItem[]; onRowClick?: (row: R) => void
   loading?: boolean; error?: ReactNode; onRetry?: () => void; emptyTitle?: ReactNode; emptyDescription?: ReactNode
   toolbar?: ReactNode; bulkActions?: (keys: unknown[]) => ReactNode; caption?: string
+  /** D-6: server sahifalash uchun — berilsa ichki sahifalash o'rniga shu pastki qism ko'rsatiladi (null — hech narsa). */
+  footer?: ReactNode
 }
 
 const cell = (r: object, k: string) => (r as Record<string, unknown>)[k]
@@ -26,12 +28,12 @@ const cell = (r: object, k: string) => (r as Record<string, unknown>)[k]
 export function DataTable<R extends object>({
   columns = [], rows = [], rowKey = 'id' as keyof R & string, selectable = true, pageSize = 10, maxHeight = 520,
   density: densityProp, onDensityChange, rowActions, onRowClick, loading, error, onRetry, emptyTitle = 'Ma’lumot yo‘q', emptyDescription,
-  toolbar, bulkActions, caption,
+  toolbar, bulkActions, caption, footer,
 }: DataTableProps<R>) {
   const [sort, setSort] = useState<{ key: string | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' })
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(columns.filter((c) => c.defaultHidden).map((c) => c.key)))
   const [selected, setSelected] = useState<Set<unknown>>(new Set())
-  const [page, setPage] = useState(0)
+  const [pageState, setPage] = useState(0)
   const [densityState, setDensityState] = useState<Density>('comfortable')
   const density = densityProp || densityState
   const setDensity = (d: string) => { setDensityState(d as Density); onDensityChange?.(d as Density) }
@@ -48,6 +50,8 @@ export function DataTable<R extends object>({
     return sort.dir === 'desc' ? s.reverse() : s
   }, [rows, sort])
   const pages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  // qatorlar soni kamaysa (filtr) sahifa chegaradan chiqmasin
+  const page = Math.min(pageState, pages - 1)
   const pageRows = sorted.slice(page * pageSize, page * pageSize + pageSize)
   const allOnPage = pageRows.length > 0 && pageRows.every((r) => selected.has(keyOf(r)))
   const someOnPage = pageRows.some((r) => selected.has(keyOf(r)))
@@ -125,7 +129,7 @@ export function DataTable<R extends object>({
           <tbody>{body}</tbody>
         </table>
       </div>
-      {!loading && !error && rows.length > 0 && (
+      {footer !== undefined ? (footer && !loading && !error && rows.length > 0 && <div className="sf-table-foot">{footer}</div>) : !loading && !error && rows.length > 0 && (
         <div className="sf-table-foot">
           <span className="sf-num">{page * pageSize + 1}–{Math.min(sorted.length, (page + 1) * pageSize)} / {sorted.length}</span>
           <div className="sf-table-foot__pages">

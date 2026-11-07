@@ -656,6 +656,100 @@ class AdminApiIT extends IntegrationTest {
         assertThat(call(HttpMethod.GET, "/grants/" + gid + "/data", token, null).getStatusCode().value()).isEqualTo(403);
     }
 
+    /** D-5: dashboard — davr validatsiyasi, KPI, seriya uzunligi, voronka, retention, faollik yozilishi. */
+    @Test
+    void dashboard_periodKpisFunnelAndActivity() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        assertThat(jdbc.queryForObject("select count(*) from user_activity_days", Long.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select last_seen_at is not null from users where telegram_user_id = ?",
+                Boolean.class, u)).isTrue();
+        // 10 kun oldin ro'yxatdan o'tgan va 8-kuni qaytgan foydalanuvchi retention'ga kiradi
+        jdbc.update("update users set created_at = now() - interval '10 days' where telegram_user_id = ?", u);
+        long uid = jdbc.queryForObject("select id from users where telegram_user_id = ?", Long.class, u);
+        jdbc.update("insert into user_activity_days(user_id, day) values (?, current_date - 2) on conflict do nothing", uid);
+
+        assertThat(call(HttpMethod.GET, "/dashboard?period=12", token, null).getStatusCode().value()).isEqualTo(400);
+        JsonNode d = json(call(HttpMethod.GET, "/dashboard?period=30", token, null));
+        assertThat(d.path("series").size()).isEqualTo(30);
+        assertThat(d.path("kpis").path("newSellers").path("value").asLong()).isEqualTo(1);
+        assertThat(d.path("kpis").path("activeSellers").path("value").asLong()).isEqualTo(1);
+        assertThat(d.path("funnel").get(0).path("step").asText()).isEqualTo("STARTED");
+        assertThat(d.path("funnel").get(0).path("count").asLong()).isEqualTo(1);
+        assertThat(d.path("funnel").get(2).path("count").asLong()).isEqualTo(1);
+        assertThat(d.path("funnel").get(4).path("count").asLong()).isZero();
+        assertThat(d.path("retention7d").path("cohort").asLong()).isEqualTo(1);
+        assertThat(d.path("retention7d").path("retained").asLong()).isEqualTo(1);
+        assertThat(d.path("retention7d").path("pct").decimalValue()).isEqualByComparingTo("100.0");
+        assertThat(d.path("channels").size()).isEqualTo(1);
+        assertThat(d.toString()).doesNotContain("unitCost").doesNotContain("profit");
+        assertThat(json(call(HttpMethod.GET, "/dashboard?period=7", token, null)).path("series").size()).isEqualTo(7);
+        assertThat(call(HttpMethod.GET, "/dashboard", null, null).getStatusCode().value()).isEqualTo(401);
+    }
+
+    /** D-5: health'da DB javob vaqti, support «oxirgi o'zgartirgan», bildirishnomalar (rol bo'yicha). */
+    @Test
+    void healthLatency_supportLastChanged_andNotifications() throws Exception {
+        String token = owner();
+        assertThat(json(call(HttpMethod.GET, "/health", token, null)).path("dbLatencyMs").isNumber()).isTrue();
+        JsonNode s0 = json(call(HttpMethod.GET, "/support", token, null));
+        assertThat(s0.path("updatedBy").isNull()).isTrue();
+        JsonNode s1 = json(call(HttpMethod.PUT, "/support", token,
+                "{\"enabled\":true,\"label\":\"Yordam\",\"url\":\"https://t.me/sellerflow_help\"}"));
+        assertThat(s1.path("updatedBy").asText()).isEqualTo(OWNER);
+        assertThat(s1.path("updatedAt").asText()).isNotBlank();
+
+        JsonNode n = json(call(HttpMethod.GET, "/notifications", token, null));
+        assertThat(n.path("items").get(0).path("action").asText()).isEqualTo("SUPPORT_UPDATED");
+        assertThat(n.path("backupState").asText()).isNotBlank();
+
+        String email = "n" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
+        String support = loginWithNewPassword(email, "temporary-pass-123");
+        JsonNode ns = json(call(HttpMethod.GET, "/notifications", support, null));
+        assertThat(ns.path("items").size()).isZero();
+    }
+
+    /** D-5: grants holat/sotuvchi filtrlari va /data sahifalash. */
+    @Test
+    void grants_filtersAndDataPagination() throws Exception {
+        String token = owner();
+        long a = onboardedUser();
+        long b = onboardedUser();
+        text(a, Texts.BTN_PRODUCTS);
+        click(a, "Yangi mahsulot");
+        text(a, "Mahsulot A");
+        text(a, "1000");
+        click(a, "O‘tkazib yuborish");
+        click(a, "O‘tkazib yuborish");
+        click(a, "Saqlash");
+        long ga = json(call(HttpMethod.POST, "/grants", token,
+                "{\"telegramUserId\":" + a + ",\"purpose\":\"Hisobni birga tekshirish kerak\",\"minutes\":30}")).path("id").asLong();
+        call(HttpMethod.POST, "/grants", token,
+                "{\"telegramUserId\":" + b + ",\"purpose\":\"Hisobni birga tekshirish kerak\",\"minutes\":30}");
+        click(a, "Ruxsat berish");
+
+        assertThat(json(call(HttpMethod.GET, "/grants", token, null)).size()).isEqualTo(2);
+        JsonNode onlyA = json(call(HttpMethod.GET, "/grants?telegramUserId=" + a, token, null));
+        assertThat(onlyA.size()).isEqualTo(1);
+        assertThat(onlyA.get(0).path("id").asLong()).isEqualTo(ga);
+        assertThat(json(call(HttpMethod.GET, "/grants?status=APPROVED", token, null)).size()).isEqualTo(1);
+        assertThat(json(call(HttpMethod.GET, "/grants?status=REQUESTED", token, null)).size()).isEqualTo(1);
+        assertThat(json(call(HttpMethod.GET, "/grants?telegramUserId=123", token, null)).size()).isZero();
+        assertThat(call(HttpMethod.GET, "/grants?status=BOGUS", token, null).getStatusCode().value()).isEqualTo(400);
+
+        JsonNode d = json(call(HttpMethod.GET, "/grants/" + ga + "/data?productPage=0&historyPage=0", token, null));
+        assertThat(d.path("productPage").path("total").asLong()).isEqualTo(1);
+        assertThat(d.path("productPage").path("totalPages").asInt()).isEqualTo(1);
+        assertThat(d.path("productPage").path("size").asInt()).isPositive();
+        assertThat(d.path("products").size()).isEqualTo(1);
+        JsonNode d2 = json(call(HttpMethod.GET, "/grants/" + ga + "/data?productPage=1", token, null));
+        assertThat(d2.path("products").size()).isZero();
+        assertThat(call(HttpMethod.GET, "/grants/" + ga + "/data?productPage=-1", token, null).getStatusCode().value())
+                .isEqualTo(400);
+    }
+
     @Test
     void accessGrant_expiresAutomatically_andDeclineWorks() throws Exception {
         String token = owner();

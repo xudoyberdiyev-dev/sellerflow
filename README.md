@@ -118,7 +118,7 @@ src/main/java/uz/sellerflow/
   bot/           dispatcher, wizardlar va bo'limlar, matnlar (Texts.java)
   admin/         Superadmin API: auth (parol + TOTP), rollar, sotuvchilar, statistika
   access/        rozilik asosidagi vaqtinchalik READ-ONLY kirish
-admin-ui/        Web Superadmin (React + TypeScript + Vite + Tailwind)
+admin-ui/        Web Superadmin (React + TypeScript + Vite; dizayn tizimi — src/styles, design/superadmin)
 scripts/         backup / restore / restore drill
 src/main/resources/db/migration/   Flyway sxemasi
 ```

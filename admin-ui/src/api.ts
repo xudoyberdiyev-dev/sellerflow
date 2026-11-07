@@ -111,3 +111,23 @@ export const fmtMoney = (v?: string | number | null) => {
   const n = Number(v)
   return Number.isFinite(n) ? n.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' so‘m' : String(v)
 }
+
+/** D-6: autentifikatsiyalangan fayl yuklab olish (CSV eksport) — token header orqali, URL'da emas. */
+export async function download(path: string, filename: string): Promise<void> {
+  const headers: Record<string, string> = {}
+  if (memoryToken) headers.Authorization = `Bearer ${memoryToken}`
+  const res = await fetch(BASE + path, { headers })
+  if (!res.ok) {
+    let code = `HTTP_${res.status}`
+    try { code = (await res.json()).error ?? code } catch { /* JSON emas */ }
+    throw new ApiError(res.status, code)
+  }
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}

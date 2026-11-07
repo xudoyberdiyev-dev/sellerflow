@@ -1,13 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/index.css'
-import './index.css'
 import App from './App'
-import { applyTheme, storedTheme } from './theme'
+import { applyTheme, storedTheme, systemTheme } from './theme'
 
-// O'tish davri (D-1…D-6): eski Tailwind sahifalari faqat yorug' mavzuda — standart 'light'.
-// D-7 da standart tizim sozlamasiga (prefers-color-scheme) o'tkaziladi.
-applyTheme(storedTheme() ?? 'light')
+// D-7: mavzu — foydalanuvchi tanlovi (localStorage), bo'lmasa tizim sozlamasi (prefers-color-scheme)
+applyTheme(storedTheme() ?? systemTheme())
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
