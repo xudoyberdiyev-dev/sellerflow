@@ -72,7 +72,7 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
   30 4 * * * cd /opt/sellerflow && rclone copy backups offsite:sellerflow-backups --include "sellerflow_*.dump.gpg" --max-age 48h >> /var/log/sellerflow-offsite.log 2>&1
   ```
   Off-site tomonda ham saqlash muddati (lifecycle) sozlang, masalan 30–90 kun.
-- Tiklash: `./scripts/restore.sh backups/<fayl>.dump`
+- Tiklash: `./scripts/restore.sh backups/<fayl>.dump` (yoki `.dump.gpg` — gpg parol so'raydi). Skript avval faylni tekshiradi, joriy bazaning snapshot'ini `backups/pre-restore/` ga oladi, so'ng bitta tranzaksiyada tiklaydi: xato bo'lsa baza o'zgarmaydi. Snapshot'lar avtomatik o'chirilmaydi — keraksizini qo'lda o'chiring.
 - Oylik tiklash sinovi: `./scripts/restore-drill.sh` (ishlab turgan bazaga tegmaydi).
 
 ## 6. Monitoring
