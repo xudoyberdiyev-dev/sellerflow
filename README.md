@@ -31,7 +31,7 @@ Talablar: Docker va Docker Compose o‘rnatilgan Linux server (VPS). Kamida 1 vC
 git clone https://github.com/xudoyberdiyev-dev/sellerflow.git
 cd sellerflow
 cp .env.example .env
-nano .env        # TELEGRAM_BOT_TOKEN, DB_PASSWORD, ADMIN_API_KEY ni to'ldiring
+nano .env        # TELEGRAM_BOT_TOKEN, DB_PASSWORD, ADMIN_BOOTSTRAP_EMAIL, ADMIN_BOOTSTRAP_PASSWORD ni to'ldiring
 docker compose up -d --build
 docker compose logs -f app     # "Telegram long polling started" chiqishi kerak
 ```

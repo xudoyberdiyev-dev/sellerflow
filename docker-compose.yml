@@ -1,7 +1,15 @@
+# LOW (DevOps): Docker loglari cheksiz o'smasin — har servis uchun 3 × 10 MB
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:16
     restart: unless-stopped
+    logging: *default-logging
     # M-20: xotira chegaralari 2 GB RAM'li server uchun (db 512M + app 768M + backup 256M ≈ 1.5 GB, qolgani OS)
     mem_limit: 512m
     environment:
@@ -19,6 +27,7 @@ services:
   app:
     build: .
     restart: unless-stopped
+    logging: *default-logging
     # JVM: -XX:MaxRAMPercentage=75 (Dockerfile) → heap ≈ 576M, qolgani metaspace/thread/direct buffer
     mem_limit: 768m
     depends_on:
@@ -36,6 +45,8 @@ services:
       SUPPORT_LABEL: ${SUPPORT_LABEL:-}
       SUPPORT_URL: ${SUPPORT_URL:-}
       DELETION_PURGE_DATA: ${DELETION_PURGE_DATA:-false}
+      # Shartlar matni o'zgarsa versiyani oshiring — foydalanuvchilardan qayta rozilik so'raladi
+      TERMS_VERSION: ${TERMS_VERSION:-2026-11-05-v0.1}
       ALERT_TELEGRAM_CHAT_ID: ${ALERT_TELEGRAM_CHAT_ID:-}
     volumes:
       # Backup holati (status.json) — faqat o'qish uchun
@@ -56,6 +67,7 @@ services:
   backup:
     image: postgres:16
     restart: unless-stopped
+    logging: *default-logging
     mem_limit: 256m
     depends_on:
       db:

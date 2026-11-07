@@ -31,7 +31,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **M-18:** `restore.sh`: tiklashdan oldin joriy bazaning xavfsizlik snapshoti; `--single-transaction`; xatoda to'xtash. — oldindan `pg_restore --list` tekshiruvi, `backups/pre-restore/` snapshot, `--single-transaction --exit-on-error`, `.gpg` qo'llab-quvvatlash (restore-drill ham); test `scripts/tests/restore.test.sh` (docker shim, CI).
 - [x] **M-12:** bot holatini aks ettiruvchi `HealthIndicator` (poller oxirgi muvaffaqiyati < 120 s); `app` uchun Docker healthcheck. — `BotHealthIndicator` ("bot"), health group `container` (db+bot), compose app healthcheck (bash /dev/tcp, curl kerak emas); testlar `BotHealthIndicatorTest`, `containerHealthGroup_isExposed`.
 - [x] **M-20:** compose'da xotira limitlari (`mem_limit`), JVM sozlamasi bilan mos; README/OPERATIONS RAM talablari bir xil. — db 512m / app 768m (MaxRAMPercentage=75) / backup 256m; README va OPERATIONS §1: 2 GB RAM.
-- [ ] **LOW (DevOps):** Docker log rotatsiyasi (`logging.options.max-size`); README'dagi eskirgan `ADMIN_API_KEY` eslatmasi olib tashlansin; `TERMS_VERSION` compose orqali uzatilsin.
+- [x] **LOW (DevOps):** Docker log rotatsiyasi (`logging.options.max-size`); README'dagi eskirgan `ADMIN_API_KEY` eslatmasi olib tashlansin; `TERMS_VERSION` compose orqali uzatilsin. — `x-logging` (json-file 3×10m) barcha servislarga, README `ADMIN_API_KEY` → bootstrap o'zgaruvchilari, `TERMS_VERSION` compose + .env.example.
 
 ## 3-bosqich — Platforma yangilanishi va Telegram
 - [ ] **M-19:** Spring Boot → qo'llab-quvvatlanadigan 3.5.x (yoki 3.4.x); `spring-security-crypto` CVE-2025-22228 yopilsin; barcha testlar yashil.
