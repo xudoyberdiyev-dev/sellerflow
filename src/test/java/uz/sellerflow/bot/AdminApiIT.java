@@ -400,6 +400,26 @@ class AdminApiIT extends IntegrationTest {
         assertThat(call(HttpMethod.GET, "/sellers/" + u, null, null).getStatusCode().value()).isEqualTo(401);
     }
 
+    /** D-5: /auth/me expiresAt, sessiyalar ro'yxati (xeshsiz) va boshqalarini bekor qilish. */
+    @Test
+    void sessions_listAndRevokeOthers() throws Exception {
+        String a = owner();
+        String b = owner();
+        assertThat(json(call(HttpMethod.GET, "/auth/me", a, null)).path("expiresAt").asText()).isNotBlank();
+        JsonNode list = json(call(HttpMethod.GET, "/auth/sessions", a, null));
+        assertThat(list.size()).isGreaterThanOrEqualTo(2);
+        long current = 0;
+        for (JsonNode n : list) if (n.path("current").asBoolean()) current++;
+        assertThat(current).isEqualTo(1);
+        assertThat(list.toString()).doesNotContain("token").doesNotContain("hash");
+        JsonNode r = json(call(HttpMethod.POST, "/auth/sessions/revoke-others", a, null));
+        assertThat(r.path("revoked").asInt()).isGreaterThanOrEqualTo(1);
+        assertThat(call(HttpMethod.GET, "/auth/me", b, null).getStatusCode().value()).isEqualTo(401);
+        assertThat(call(HttpMethod.GET, "/auth/me", a, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(json(call(HttpMethod.GET, "/auth/sessions", a, null)).size()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ADMIN_SESSIONS_REVOKED'", Long.class)).isEqualTo(1);
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();

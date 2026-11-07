@@ -178,6 +178,10 @@ public class AdminAuthService {
                 + " where admin_id = ?1 and token_hash <> ?2 and not revoked")
         int revokeAllExcept(Long adminId, String keepTokenHash);
 
+        @Query(nativeQuery = true, value = "select * from admin_sessions where admin_id = ?1 and kind = 'FULL'"
+                + " and not revoked and expires_at > now() order by created_at desc")
+        List<AdminSession> findActive(Long adminId);
+
         @Modifying
         @Query(nativeQuery = true, value = "delete from admin_sessions where expires_at < now() - interval '1 day'")
         int purgeOld();
@@ -423,6 +427,30 @@ public class AdminAuthService {
                 .flatMap(s -> admins.findById(s.adminId))
                 .filter(a -> a.status == Status.ACTIVE)
                 .map(AdminAuthService::principal);
+    }
+
+    /** D-5: faol sessiya ko'rinishi (token xeshi qaytarilmaydi). */
+    public record SessionView(Instant createdAt, Instant expiresAt, boolean current) {}
+
+    @Transactional(readOnly = true)
+    public Instant sessionExpiresAt(String token) {
+        if (token == null || token.isBlank()) return null;
+        return sessions.findById(hash(token)).map(s -> s.expiresAt).orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SessionView> activeSessions(Principal p, String currentToken) {
+        String cur = currentToken == null ? "" : hash(currentToken);
+        return sessions.findActive(p.id()).stream()
+                .map(s -> new SessionView(s.createdAt, s.expiresAt, s.tokenHash.equals(cur))).toList();
+    }
+
+    /** D-5: joriy sessiyadan boshqa barcha sessiyalarni bekor qilish (auditga yoziladi). */
+    @Transactional
+    public int revokeOtherSessions(Principal p, String currentToken) {
+        int n = sessions.revokeAllExcept(p.id(), currentToken == null ? "" : hash(currentToken));
+        audit.record(Actor.ADMIN, p.email(), null, "ADMIN_SESSIONS_REVOKED", "ADMIN", p.id(), "revoked=" + n);
+        return n;
     }
 
     @Transactional

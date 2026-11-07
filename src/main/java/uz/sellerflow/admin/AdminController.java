@@ -135,8 +135,21 @@ public class AdminController {
 
     @AllowedWithTempPassword
     @GetMapping("/auth/me")
-    public Map<String, Object> current(@RequestAttribute(PRINCIPAL) Principal p) {
-        return me(p);
+    public Map<String, Object> current(@RequestAttribute(PRINCIPAL) Principal p, HttpServletRequest req) {
+        Map<String, Object> r = me(p);
+        r.put("expiresAt", str(auth.sessionExpiresAt(bearer(req))));
+        return r;
+    }
+
+    @GetMapping("/auth/sessions")
+    public List<Map<String, Object>> sessions(@RequestAttribute(PRINCIPAL) Principal p, HttpServletRequest req) {
+        return auth.activeSessions(p, bearer(req)).stream()
+                .map(s -> m("createdAt", str(s.createdAt()), "expiresAt", str(s.expiresAt()), "current", s.current())).toList();
+    }
+
+    @PostMapping("/auth/sessions/revoke-others")
+    public Map<String, Object> revokeOthers(@RequestAttribute(PRINCIPAL) Principal p, HttpServletRequest req) {
+        return m("revoked", auth.revokeOtherSessions(p, bearer(req)));
     }
 
     @AllowedWithTempPassword
