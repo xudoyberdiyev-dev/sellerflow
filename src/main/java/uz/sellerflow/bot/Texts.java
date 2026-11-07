@@ -53,8 +53,14 @@ public final class Texts {
     public static final String ACCOUNT_SUSPENDED =
             "⛔ Akkauntingiz vaqtincha cheklangan. Biznes amallari hozircha mavjud emas.\nSavollar bo‘lsa, /help orqali yordam bo‘limiga o‘ting.";
     public static final String ACCOUNT_DELETION_REQUESTED =
-            "🗑 Akkauntni o‘chirish so‘rovingiz qabul qilingan. 30 kunlik kutish davri amal qilmoqda.\nSo‘rovni bekor qilish yoki savollar uchun /help orqali qo‘llab-quvvatlashga murojaat qiling.";
-    public static final String ACCOUNT_CLOSED = "Bu akkaunt yopilgan.";
+            "🗑 Akkauntni o‘chirish so‘rovingiz qabul qilingan. 30 kunlik kutish davri amal qilmoqda — bu davrda biznes amallari to‘xtatilgan.";
+    public static final String DELETION_CANCEL_PROMPT =
+            "Fikringiz o‘zgardimi? 30 kun ichida so‘rovni shu yerda bekor qilishingiz mumkin — ma’lumotlaringiz joyida qoladi.";
+    public static final String BTN_DELETION_CANCEL = "↩️ O‘chirish so‘rovini bekor qilish";
+    public static final String DELETION_CANCELLED = "✅ O‘chirish so‘rovi bekor qilindi. Akkauntingiz yana faol.";
+    public static final String ACCOUNT_CLOSED =
+            "Bu akkaunt yopilgan.\n\nXohlasangiz, yangi akkaunt ochishingiz mumkin. Eski akkauntdagi ma’lumotlar yangisiga <b>o‘tkazilmaydi</b>.";
+    public static final String BTN_REOPEN = "🆕 Yangi akkaunt ochish";
     public static final String RATE_LIMITED = "⏳ Juda ko‘p so‘rov yuborildi. Iltimos, bir necha soniya kuting.";
     public static final String RECONSENT =
             "📄 <b>Xizmat shartlari yangilandi</b> (versiya: %s)\n\n%s\n\nDavom etish uchun yangi shartlarga <b>aniq rozilik</b> bering. "
@@ -242,10 +248,18 @@ public final class Texts {
     public static final String CHANNEL_SAME = "Bu kanal allaqachon tanlangan.";
     public static final String SETTINGS_SAVED = "✅ Saqlandi.";
     public static final String TERMS_INFO = "📄 <b>Xizmat shartlari</b>\nQabul qilingan versiya: <b>%s</b>\nQabul qilingan vaqt: %s\n\n%s";
+    /** M-23: nima o'chadi / nima qoladi — haqiqatga mos. %s — DELETE_DATA_PURGED yoki DELETE_DATA_RETAINED. */
     public static final String DELETE_STEP1 =
-            "🗑 <b>Akkauntni o‘chirish so‘rovi</b>\n\nSo‘rov yuborilgach:\n• biznes amallari to‘xtatiladi;\n"
-                    + "• 30 kunlik kutish davri boshlanadi — bu davrda qo‘llab-quvvatlash orqali tiklash mumkin;\n"
-                    + "• keyingi ma’lumotlarni qayta ishlash qonunchilikka muvofiq amalga oshiriladi.\n\nDavom etasizmi?";
+            "🗑 <b>Akkauntni o‘chirish so‘rovi</b>\n\nSo‘rov yuborilgach:\n• biznes amallari darhol to‘xtatiladi;\n"
+                    + "• 30 kunlik kutish davri boshlanadi — bu davrda so‘rovni <b>botning o‘zida</b> bekor qilishingiz mumkin.\n\n"
+                    + "<b>30 kundan keyin:</b>\n• akkaunt yopiladi;\n• biznes nomi, ismingiz va tugallanmagan qoralamalar o‘chiriladi;\n"
+                    + "• administratorlarga berilgan kirish ruxsatlari bekor qilinadi;\n%s\n"
+                    + "• rozilik yozuvlari va xavfsizlik jurnali qonuniy dalil sifatida saqlanadi (tijoriy qiymatlarsiz).\n\nDavom etasizmi?";
+    public static final String DELETE_DATA_PURGED =
+            "• mahsulotlar va saqlangan hisoblashlar <b>o‘chiriladi</b>, Telegram ID’ingiz akkauntdan ajratiladi.";
+    public static final String DELETE_DATA_RETAINED =
+            "• mahsulotlar va saqlangan hisoblashlar hozircha <b>saqlanib qoladi</b> (ma’lumotlarni saqlash siyosati yuridik tasdiqlanguncha) "
+                    + "va hech kimga ko‘rsatilmaydi. To‘liq o‘chirishni qo‘llab-quvvatlash orqali so‘rashingiz mumkin.";
     public static final String DELETE_STEP2 = "❗ <b>Yakuniy tasdiq.</b> Akkauntni o‘chirish so‘rovini yuboraymi?";
     public static final String BTN_DELETE_CONTINUE = "Davom etish";
     public static final String BTN_DELETE_FINAL = "Ha, so‘rov yuborilsin";

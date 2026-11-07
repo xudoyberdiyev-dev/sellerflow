@@ -49,6 +49,11 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 - **"Bitta faol jarayon":** faqat ko'rish bo'limlariga (ro'yxatlar, tariflar, yordam) o'tish qoralamani o'chirmaydi, u to'xtatib qo'yiladi. Yangi kiritish jarayonini boshlashda saqlanmagan ma'lumot bo'lsa, tasdiq so'raladi (UX-DEC-17).
 - **Admin API auth (H-1, 2026-11-07):** Spring Security qo'shilmadi (bog'liqlik va konfiguratsiya hajmi). O'rniga: `RequestFirewall` (eng birinchi filtr; `;`, `%2f`/`%5c`/`%2e`/`%25`/`%3b`, `\\`, `//`, `.`/`..` segmentlari → 400) va `AdminAuthInterceptor` (`/admin/api/**` path pattern — Spring MVC handler tanlaydigan yo'l bo'yicha). Deny-by-default: faqat `@PublicAdminEndpoint` (login, TOTP tasdiqlash) sessiyasiz ochiq.
 - **Update qayta ishlash semantikasi (M-10, 2026-11-07):** at-least-once. `processed_updates` belgisi update MUVAFFAQIYATLI qayta ishlangandan keyin qo'yiladi. Vaqtinchalik infratuzilma xatosida (`common/Infra.isTransient`: baza uzilishi, SQLState 08xxx/57Pxx) poller offset'ni surmaydi, backoff bilan qayta so'raydi — update yo'qolmaydi; foydalanuvchi ayrim xabarlarni ikki marta olishi mumkin. Dastur xatolari (bug) — eskicha: log, foydalanuvchiga umumiy xato, update belgilanadi. Poller `@PreDestroy` da to'xtaydi (joriy update tugashi ≤ 10 s kutiladi).
+- **Akkaunt o'chirish va qayta ochish (M-23/M-24/M-25, 2026-11-07):**
+  - O'chirish matni nima o'chadi / nima qoladi ni aniq aytadi va `DELETION_PURGE_DATA` ga qarab o'zgaradi.
+  - 30 kunlik kutish davrida foydalanuvchi so'rovni botning o'zida bekor qiladi (`dc:` callback, audit `DELETION_CANCELLED`).
+  - `DELETION_PURGE_DATA=true` da yopishda `users.telegram_user_id` **tasodifiy manfiy psevdonimga** almashtiriladi. Audit «hash» deb tavsiya qilgan, lekin Telegram ID maydoni kichik (≈10¹⁰) — hash'ni brute-force bilan qaytarish mumkin, shuning uchun bog'lanmaydigan tasodifiy qiymat tanlandi.
+  - CLOSED akkaunt egasi «Yangi akkaunt ochish» tugmasi bilan yangidan boshlaydi: eski yozuv Telegram ID'dan ajratiladi (psevdonim), eski ma'lumot yangi akkauntga o'tmaydi; audit `CLOSED_ACCOUNT_DETACHED`.
 
 ## Ochiq qolganlar (ishga tushirishdan oldin)
 

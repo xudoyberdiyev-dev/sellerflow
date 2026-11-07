@@ -54,9 +54,15 @@ public class DeletionJob {
                     jdbc.update("delete from products where business_id = ?", businessId);
                 }
             }
-            jdbc.update("update users set status = 'CLOSED', updated_at = now() where id = ?", userId);
+            if (purge) {
+                // M-23: purge yoqilgan bo'lsa Telegram ID ham psevdonimga almashtiriladi (shaxs bilan bog'lanish uziladi)
+                jdbc.update("update users set status = 'CLOSED', telegram_user_id = ?, updated_at = now() where id = ?",
+                        AccountService.pseudonymousTelegramId(), userId);
+            } else {
+                jdbc.update("update users set status = 'CLOSED', updated_at = now() where id = ?", userId);
+            }
             audit.record(Actor.SYSTEM, "deletion-job", businessId, "ACCOUNT_CLOSED", "USER", userId,
-                    "grace " + grace + " days; commercial data " + (purge ? "purged" : "retained (pending legal policy)"));
+                    "grace " + grace + " days; commercial data " + (purge ? "purged, telegram id pseudonymized" : "retained (pending legal policy)"));
         }
         if (!due.isEmpty()) log.info("Closed {} accounts after deletion grace period", due.size());
         return due.size();

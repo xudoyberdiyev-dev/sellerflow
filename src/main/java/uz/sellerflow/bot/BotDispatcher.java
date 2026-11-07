@@ -280,7 +280,16 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             case DELETION_REQUESTED -> Texts.ACCOUNT_DELETION_REQUESTED;
             default -> Texts.ACCOUNT_CLOSED;
         };
+        if (status == AccountStatus.CLOSED) {
+            // M-24: yopilgan akkaunt egasi yangidan boshlay oladi
+            ctx.send(msg, Kb.create().row(Kb.cb(Texts.BTN_REOPEN, "rn:x")).build());
+            return;
+        }
         ctx.send(msg, new Tg.RemoveKeyboard(true));
+        if (status == AccountStatus.DELETION_REQUESTED) {
+            // M-25: bekor qilish support'ga bog'liq emas
+            ctx.send(Texts.DELETION_CANCEL_PROMPT, Kb.create().row(Kb.cb(Texts.BTN_DELETION_CANCEL, "dc:x")).build());
+        }
     }
 
     private static String command(String text) {
@@ -300,6 +309,20 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             if ("o".equals(prefix)) onboarding.onCallback(ctx, p);
             else if ("f".equals(prefix)) info.onCallback(ctx, p);
             else ctx.send(Texts.STALE);
+            return;
+        }
+        if (status == AccountStatus.DELETION_REQUESTED && "dc".equals(prefix)) {
+            ctx.clearSourceButtons();
+            accounts.cancelDeletion(ctx.userId());
+            ctx.sendMenu(Texts.DELETION_CANCELLED);
+            return;
+        }
+        if (status == AccountStatus.CLOSED && "rn".equals(prefix)) {
+            ctx.clearSourceButtons();
+            accounts.reopenClosed(ctx.telegramUserId);
+            Ctx fresh = context(ctx.chatId, ctx.telegramUserId, null);
+            onboarding.onText(fresh, "/start", "/start");
+            flows.save(fresh.session);
             return;
         }
         if (status != AccountStatus.ACTIVE) {

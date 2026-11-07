@@ -152,6 +152,44 @@ public class AccountService {
         return u;
     }
 
+    /** DELETION_PURGE_DATA — o'chirish matni haqiqatga mos bo'lishi uchun (M-23). */
+    public boolean purgeEnabled() {
+        return props.deletion() != null && props.deletion().purgeData();
+    }
+
+    /** M-25: kutish davrida foydalanuvchi o'zi bekor qiladi. Idempotent. */
+    @Transactional
+    public UserAccount cancelDeletion(long userId) {
+        UserAccount u = users.findById(userId).orElseThrow(() -> new Errors.NotFound("user"));
+        if (u.getStatus() == AccountStatus.ACTIVE) return u;
+        if (u.getStatus() != AccountStatus.DELETION_REQUESTED) throw new Errors.Forbidden("Cancel not allowed in " + u.getStatus());
+        u.cancelDeletion();
+        Long businessId = businesses.findByOwnerUserId(userId).map(Business::getId).orElse(null);
+        audit.record(Actor.USER, userId, businessId, "DELETION_CANCELLED", "USER", userId, "by user in bot");
+        return u;
+    }
+
+    /**
+     * M-24: CLOSED akkaunt egasi yangidan boshlaydi. Eski yozuv Telegram ID'dan ajratiladi (psevdonim),
+     * eski ma'lumot yangi akkauntga o'tmaydi; keyingi findOrCreate yangi ONBOARDING akkaunt yaratadi.
+     */
+    @Transactional
+    public void reopenClosed(long telegramUserId) {
+        UserAccount u = users.findByTelegramUserId(telegramUserId).orElseThrow(() -> new Errors.NotFound("user"));
+        if (u.getStatus() != AccountStatus.CLOSED) throw new Errors.Forbidden("Reopen not allowed in " + u.getStatus());
+        u.detachTelegramId(pseudonymousTelegramId());
+        users.saveAndFlush(u);
+        audit.record(Actor.USER, u.getId(), null, "CLOSED_ACCOUNT_DETACHED", "USER", u.getId(),
+                "user started a new account; old data not transferred");
+    }
+
+    private static final java.security.SecureRandom RNG = new java.security.SecureRandom();
+
+    /** Manfiy tasodifiy qiymat — haqiqiy Telegram ID (musbat) bilan to'qnashmaydi. */
+    public static long pseudonymousTelegramId() {
+        return -1L - (RNG.nextLong() >>> 2);
+    }
+
     // ----------------------------------------------------------- admin
 
     @Transactional

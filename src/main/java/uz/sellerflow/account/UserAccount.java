@@ -54,6 +54,23 @@ public class UserAccount {
         this.updatedAt = Instant.now();
     }
 
+    /** M-25: o'chirish so'rovini bekor qilish (kutish davri ichida). */
+    public void cancelDeletion() {
+        this.deletionRequestedAt = null;
+        setStatus(AccountStatus.ACTIVE);
+    }
+
+    /**
+     * M-23/M-24: yopilgan akkauntni Telegram ID'dan ajratish — ID tasodifiy manfiy psevdonimga almashtiriladi
+     * (haqiqiy Telegram ID'lar musbat, shuning uchun to'qnashuv yo'q). Hash ishlatilmaydi: Telegram ID maydoni
+     * kichik, hash'ni brute-force bilan qaytarish mumkin.
+     */
+    public void detachTelegramId(long pseudonym) {
+        if (pseudonym >= 0) throw new IllegalArgumentException("pseudonym must be negative");
+        this.telegramUserId = pseudonym;
+        this.updatedAt = Instant.now();
+    }
+
     public void markDeletionRequested(Instant at) {
         this.deletionRequestedAt = at;
         setStatus(AccountStatus.DELETION_REQUESTED);

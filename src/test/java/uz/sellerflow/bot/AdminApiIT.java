@@ -23,6 +23,9 @@ class AdminApiIT extends IntegrationTest {
     @org.springframework.boot.test.web.server.LocalServerPort int port;
     @Autowired ObjectMapper mapper;
     @Autowired DeletionJob deletionJob;
+    @Autowired uz.sellerflow.common.SellerFlowProperties props;
+    @Autowired uz.sellerflow.audit.AuditService auditService;
+    @Autowired org.springframework.transaction.support.TransactionTemplate txTemplate;
     @Autowired uz.sellerflow.admin.LoginRateLimiter loginLimiter;
     @Autowired uz.sellerflow.admin.AdminAuthService authService;
 
@@ -533,5 +536,68 @@ class AdminApiIT extends IntegrationTest {
         assertThat(jdbc.queryForObject("select business_name from businesses", String.class)).isNull();
         text(u, "/start");
         assertThat(lastText(u)).contains("yopilgan");
+    }
+
+    /** M-23 + M-25: o'chirish matni haqiqatga mos; foydalanuvchi so'rovni botning o'zida bekor qiladi. */
+    @Test
+    void deletionRequest_textIsTruthful_andUserCanCancelInBot() {
+        long u = onboardedUser();
+        text(u, Texts.BTN_SETTINGS);
+        click(u, "Akkauntni o‘chirish");
+        assertThat(lastText(u)).contains("saqlanib qoladi").contains("botning o‘zida").doesNotContain("qonunchilikka muvofiq");
+        click(u, "Davom etish");
+        click(u, "Ha, so‘rov yuborilsin");
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("DELETION_REQUESTED");
+        text(u, "/menu");
+        click(u, "O‘chirish so‘rovini bekor qilish");
+        assertThat(lastText(u)).contains("bekor qilindi");
+        assertThat(jdbc.queryForMap("select status, deletion_requested_at from users where telegram_user_id = ?", u))
+                .containsEntry("status", "ACTIVE").containsEntry("deletion_requested_at", null);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'DELETION_CANCELLED'", Long.class)).isEqualTo(1);
+        // muddati o'tgan so'rov endi yopilmaydi
+        jdbc.update("update users set deletion_requested_at = now() - interval '31 days' where telegram_user_id = ?", u);
+        assertThat(deletionJob.run()).isZero();
+    }
+
+    /** M-24: CLOSED foydalanuvchi yangi akkaunt ochadi; eski ma'lumot unga o'tmaydi. */
+    @Test
+    void closedAccount_canStartFresh_withoutOldData() {
+        long u = onboardedUser();
+        long oldUserId = jdbc.queryForObject("select id from users where telegram_user_id = ?", Long.class, u);
+        jdbc.update("update users set status = 'CLOSED' where id = ?", oldUserId);
+        text(u, "/start");
+        assertThat(lastText(u)).contains("yopilgan").contains("o‘tkazilmaydi");
+        click(u, "Yangi akkaunt ochish");
+        assertThat(jdbc.queryForObject("select telegram_user_id from users where id = ?", Long.class, oldUserId)).isNegative();
+        var fresh = jdbc.queryForMap("select id, status from users where telegram_user_id = ?", u);
+        assertThat(fresh.get("status")).isEqualTo("ONBOARDING");
+        assertThat(((Number) fresh.get("id")).longValue()).isNotEqualTo(oldUserId);
+        assertThat(lastText(u)).isNotBlank();
+        // onboarding yangidan o'tadi va yangi biznes yaratiladi
+        click(u, "Boshlash");
+        click(u, "Roziman");
+        click(u, "Uzum Market");
+        click(u, "O‘tkazib yuborish");
+        click(u, "O‘tkazib yuborish");
+        click(u, "Faollashtirish");
+        assertThat(lastText(u)).contains("faollashtirildi");
+        assertThat(jdbc.queryForObject("select count(*) from businesses", Long.class)).isEqualTo(2);
+    }
+
+    /** M-23: purge yoqilganda Telegram ID ham psevdonimga almashtiriladi. */
+    @Test
+    void deletionJob_withPurge_pseudonymizesTelegramId() {
+        long u = onboardedUser();
+        jdbc.update("update users set status = 'DELETION_REQUESTED', deletion_requested_at = now() - interval '31 days' where telegram_user_id = ?", u);
+        var base = props;
+        var purgeProps = new uz.sellerflow.common.SellerFlowProperties(base.telegram(), base.admin(), base.terms(), base.draft(),
+                base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true), base.rateLimit());
+        var job = new DeletionJob(jdbc, auditService, purgeProps);
+        assertThat((int) txTemplate.execute(st -> job.run())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, u)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from users where status = 'CLOSED' and telegram_user_id < 0", Long.class)).isEqualTo(1);
+        // keyingi /start — yangi akkaunt (onboarding)
+        text(u, "/start");
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("ONBOARDING");
     }
 }

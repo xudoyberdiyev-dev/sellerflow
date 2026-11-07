@@ -95,7 +95,8 @@ public class SettingsHandler {
                         c.map(x -> FULL.format(x.getAcceptedAt())).orElse("—"),
                         Ctx.esc(onboarding.termsText())), Kb.create().row(Kb.cb(Texts.BTN_BACK, "s:c")));
             }
-            case "del1" -> ctx.send(Texts.DELETE_STEP1, Kb.create()
+            case "del1" -> ctx.send(String.format(Texts.DELETE_STEP1,
+                    accounts.purgeEnabled() ? Texts.DELETE_DATA_PURGED : Texts.DELETE_DATA_RETAINED), Kb.create()
                     .row(Kb.cb(Texts.BTN_DELETE_CONTINUE, "s:del2"), Kb.cb(Texts.BTN_CANCEL, "s:c")));
             case "del2" -> {
                 ctx.clearSourceButtons();
@@ -107,6 +108,7 @@ public class SettingsHandler {
                 accounts.requestDeletion(ctx.userId());
                 ctx.session.clear();
                 ctx.send(Texts.DELETE_DONE + "\n\n" + Texts.ACCOUNT_DELETION_REQUESTED, new Tg.RemoveKeyboard(true));
+                ctx.send(Texts.DELETION_CANCEL_PROMPT, Kb.create().row(Kb.cb(Texts.BTN_DELETION_CANCEL, "dc:x")).build());
             }
             default -> ctx.send(Texts.STALE);
         }

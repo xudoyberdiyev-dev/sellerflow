@@ -42,9 +42,9 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **M-13:** Micrometer + `/actuator/prometheus` (faqat localhost), asosiy metrikalar: update'lar, xatolar, Telegram latency, hisoblashlar. — `micrometer-registry-prometheus`, `ActuatorAccessFilter` (loopback/private), metrikalar `sellerflow.updates`, `sellerflow.update.errors`, `sellerflow.calculations`, `sellerflow.history.saved`, `telegram.api.*`; testlar `prometheusMetrics_exposedLocally_hiddenFromInternet`, `ActuatorAccessFilterTest`.
 
 ## 4-bosqich — Maxfiylik va akkaunt oqimi
-- [ ] **M-23:** o'chirish matnlari haqiqatga mos bo'lsin (nima o'chadi / nima qoladi); `DELETION_PURGE_DATA` haqida aniq yozuv; purge yoqilganda Telegram ID ham anonimlashtirilsin (hash) — qaror `docs/DECISIONS.md` ga.
-- [ ] **M-24:** CLOSED foydalanuvchi `/start` bosganda yangi akkaunt ochish yo'li (eski ma'lumotsiz), qaror hujjatlansin.
-- [ ] **M-25:** o'chirishni kutayotgan foydalanuvchi botning o'zida «O'chirish so'rovini bekor qilish» tugmasi bilan 30 kun ichida tiklay olsin (support'ga bog'liq bo'lmasin).
+- [x] **M-23:** o'chirish matnlari haqiqatga mos bo'lsin (nima o'chadi / nima qoladi); `DELETION_PURGE_DATA` haqida aniq yozuv; purge yoqilganda Telegram ID ham anonimlashtirilsin (hash) — qaror `docs/DECISIONS.md` ga. — `DELETE_STEP1` dinamik (purge/retain), purge → telegram ID psevdonim; test `deletionJob_withPurge_pseudonymizesTelegramId`, `deletionRequest_textIsTruthful_*`.
+- [x] **M-24:** CLOSED foydalanuvchi `/start` bosganda yangi akkaunt ochish yo'li (eski ma'lumotsiz), qaror hujjatlansin. — «Yangi akkaunt ochish» (`rn:`), `AccountService.reopenClosed`; test `closedAccount_canStartFresh_withoutOldData`.
+- [x] **M-25:** o'chirishni kutayotgan foydalanuvchi botning o'zida «O'chirish so'rovini bekor qilish» tugmasi bilan 30 kun ichida tiklay olsin (support'ga bog'liq bo'lmasin). — «O'chirish so'rovini bekor qilish» (`dc:`), `AccountService.cancelDeletion`; test `deletionRequest_textIsTruthful_andUserCanCancelInBot`.
 - [ ] **M-26:** onboardingni tugatmagan foydalanuvchi uchun ma'lumotni o'chirish (`/delete` yoki onboardingda «Bekor qilish va ma'lumotni o'chirish»); onboardingda «Ortga» tugmasi.
 - [ ] **LOW (maxfiylik):** shartlar versiyasi matn hash'iga bog'lansin; bloklashda faol grantlar DB'da bekor qilinsin; `DELETION_PURGE_DATA` keyin yoqilsa eski CLOSED akkauntlar ham tozalansin; USER audit yozuvlarida user ID.
 

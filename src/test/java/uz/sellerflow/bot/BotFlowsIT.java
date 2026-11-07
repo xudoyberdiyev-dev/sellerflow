@@ -439,7 +439,9 @@ class BotFlowsIT extends IntegrationTest {
         click(u, "Ha, so‘rov yuborilsin");
         assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("DELETION_REQUESTED");
         text(u, Texts.BTN_PROFIT);
-        assertThat(lastText(u)).contains("o‘chirish so‘rovingiz");
+        var msgs = tg.forChat(u);
+        assertThat(msgs.get(msgs.size() - 2).text()).contains("o‘chirish so‘rovingiz");
+        assertThat(msgs.get(msgs.size() - 1).buttons()).anyMatch(b -> b.text().contains("bekor qilish")); // M-25
     }
 
     @Test
