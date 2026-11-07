@@ -87,6 +87,14 @@ class HttpTelegramGatewayRetryTest {
         assertThat(count("error")).isEqualTo(1);
     }
 
+    /** M-14: 4096 dan uzun xabar bo'laklarga bo'linadi. */
+    @Test
+    void longMessage_isSplit() {
+        String text = ("<b>qator</b> " + "x".repeat(90) + "\n").repeat(100); // ~10 000 belgi
+        gateway.sendMessage(7, text, null);
+        assertThat(calls.get()).isEqualTo(3);
+    }
+
     @Test
     void clientError_notRetried() {
         script.add(new Resp(400, "{\"ok\":false,\"description\":\"Bad Request: chat not found\"}"));

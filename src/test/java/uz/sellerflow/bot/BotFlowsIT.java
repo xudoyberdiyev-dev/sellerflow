@@ -276,6 +276,16 @@ class BotFlowsIT extends IntegrationTest {
         assertThat(count("select count(*) from processed_updates where update_id = 4343")).isEqualTo(1);
     }
 
+    /** M-14 LOW: soxta callback data — istisno tashqariga chiqmaydi, foydalanuvchi xato xabarini oladi. */
+    @Test
+    void malformedCallbackData_isHandledGracefully() {
+        long u = onboardedUser();
+        tg.clear();
+        callback(u, "g:not-a-number:a");
+        callback(u, "PPROFIT");
+        assertThat(tg.forChat(u)).isNotEmpty();
+    }
+
     @Test
     void groupChat_noBusinessFlow() {
         long u = newUserId();

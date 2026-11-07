@@ -149,7 +149,7 @@ public class HistoryHandler {
     private String itemLabel(HistoryEntry e) {
         JsonNode out = read(e.getOutputSnapshot());
         String name = e.getProductNameSnapshot() == null ? "Nomsiz" : e.getProductNameSnapshot();
-        if (name.length() > 28) name = name.substring(0, 27) + "…";
+        name = uz.sellerflow.common.TextUtil.truncate(name, 28, "…");
         String value;
         if (e.getType() == Type.PROFIT) {
             value = "foyda " + Money.format(new BigDecimal(out.path("profit").asText("0")));
@@ -168,7 +168,7 @@ public class HistoryHandler {
             ctx.send(Texts.ERR_TEXT_EMPTY);
             return;
         }
-        ctx.session.ui().put("hQ", q.length() > 60 ? q.substring(0, 60) : q);
+        ctx.session.ui().put("hQ", uz.sellerflow.common.TextUtil.truncate(q, 60));
         refreshAnchor(ctx);
         showList(ctx, 0);
     }

@@ -60,7 +60,7 @@ public class AuditService {
             this.action = action;
             this.entityType = entityType;
             this.entityId = entityId;
-            this.summary = summary == null ? null : summary.substring(0, Math.min(summary.length(), 500));
+            this.summary = uz.sellerflow.common.TextUtil.truncate(summary, 500);
             this.sourceIp = currentRequestIp();
         }
 
@@ -98,7 +98,7 @@ public class AuditService {
     public void record(Actor actor, Object actorId, Long businessId, String action,
                        String entityType, Object entityId, String summary) {
         String aid = actorId == null ? null : actorId.toString();
-        if (aid != null && aid.length() > 64) aid = aid.substring(0, 64);
+        aid = uz.sellerflow.common.TextUtil.truncate(aid, 64);
         repo.save(new AuditEvent(actor.name(), aid, businessId, action,
                 entityType, entityId == null ? null : entityId.toString(), summary));
     }

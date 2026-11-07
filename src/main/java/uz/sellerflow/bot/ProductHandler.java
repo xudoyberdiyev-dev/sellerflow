@@ -98,7 +98,7 @@ public class ProductHandler {
     }
 
     private static String itemLabel(Product p) {
-        String name = p.getName().length() > 40 ? p.getName().substring(0, 39) + "…" : p.getName();
+        String name = uz.sellerflow.common.TextUtil.truncate(p.getName(), 40, "…");
         return name + " — " + Money.format(p.getUnitCost()) + " so‘m";
     }
 

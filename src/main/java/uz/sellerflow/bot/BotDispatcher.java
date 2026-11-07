@@ -140,6 +140,10 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             flows.save(ctx.session);
         } catch (Errors.Forbidden e) {
             ctx.send(Texts.FEATURE_LIMITED);
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            // Soxta/eskirgan callback data yoki buzilgan kiritish — dastur xatosi emas, stacktrace'siz WARN
+            log.warn("Malformed input for user {}: {}", ctx.account.user().getId(), e.toString());
+            ctx.send(Texts.GENERIC_ERROR);
         } catch (RuntimeException e) {
             if (uz.sellerflow.common.Infra.isTransient(e)) throw e; // M-10: update qayta ishlanadi
             log.error("Bot handling error for user {}", ctx.account.user().getId(), e);

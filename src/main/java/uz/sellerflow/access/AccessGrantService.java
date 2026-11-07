@@ -163,7 +163,7 @@ public class AccessGrantService {
             throw new Errors.Validation("GRANT_LIMIT");
         }
         String p = purpose.strip();
-        Grant g = grants.saveAndFlush(new Grant(b.getId(), admin.id(), p.length() > 300 ? p.substring(0, 300) : p, minutes));
+        Grant g = grants.saveAndFlush(new Grant(b.getId(), admin.id(), uz.sellerflow.common.TextUtil.truncate(p, 300), minutes));
         audit.record(Actor.ADMIN, admin.email(), b.getId(), "ACCESS_REQUESTED", "ACCESS_GRANT", g.getId(),
                 "minutes=" + minutes + "; purpose: " + g.purpose);
         sendAfterCommit(telegramUserId, String.format(

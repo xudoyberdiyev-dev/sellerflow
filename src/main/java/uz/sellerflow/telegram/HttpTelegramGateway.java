@@ -69,6 +69,14 @@ public class HttpTelegramGateway implements TelegramGateway {
 
     @Override
     public void sendMessage(long chatId, String html, Tg.Markup markup) {
+        // M-14: 4096 belgidan uzun xabar bo'laklarga bo'linadi; tugmalar faqat oxirgi bo'lakda
+        List<String> parts = uz.sellerflow.common.TextUtil.splitForTelegram(html, uz.sellerflow.common.TextUtil.TELEGRAM_LIMIT);
+        for (int i = 0; i < parts.size(); i++) {
+            sendOne(chatId, parts.get(i), i == parts.size() - 1 ? markup : null);
+        }
+    }
+
+    private void sendOne(long chatId, String html, Tg.Markup markup) {
         Map<String, Object> body = new HashMap<>();
         body.put("chat_id", chatId);
         body.put("text", html);
