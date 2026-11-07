@@ -71,8 +71,8 @@ Audit bandlari (1–6-bosqich) tugagach boshlanadi.
 - [x] **D-7:** holatlar (skeleton/bo'sh/xato/403), mobil va planshet, qorong'i, fokus tartibi, Playwright skrinshot-tekshiruvi; eski UI kodi olib tashlanadi. + error boundary (API kutilmagan javobida oq ekran bo'lmasin) — BAJARILDI (2026-11-07 kech): skeleton/bo'sh/xato holatlari har sahifada, SUPPORT uchun 403 sahifasi (jim yo'naltirish o'rniga), `ErrorBoundary` (sahifa almashganda tiklanadi), «Asosiy kontentga o'tish» havolasi va sahifa almashganda fokus kontentga, mavzu standarti — tizim sozlamasi, planshet/mobil topbar toshishi tuzatildi, Tailwind va eski `index.css`/`ui.tsx` olib tashlandi. `admin-ui/e2e/screens.py` — Playwright tekshiruvi (2 mavzu × 1440/768/390 px × 8 sahifa: konsol xatosi, gorizontal toshish, Tab tartibi): SUPERADMIN va SUPPORT bilan 0 muammo.
 
 ## 7-bosqich — Yakun
-- [ ] Barcha bandlar qayta ko'rib chiqiladi; qolgan LOW topilmalar ro'yxati shu faylga «Qoldirilganlar» sifatida sababi bilan yoziladi.
-- [ ] Yakuniy hisobot: `docs/AUDIT_FIX_REPORT.md` (nima tuzatildi, qaysi commit, qaysi test, nima qoldi va nega).
+- [x] Barcha bandlar qayta ko'rib chiqiladi; qolgan LOW topilmalar ro'yxati shu faylga «Qoldirilganlar» sifatida sababi bilan yoziladi. — «Qoldirilganlar» bo'limi: `docs/AUDIT_FIX_REPORT.md` (TOTP secret DB shifrlash, ikkinchi instansiya lock, versiyalangan image/rollback, lokal PG versiyasi, Boot 4.x).
+- [x] Yakuniy hisobot: `docs/AUDIT_FIX_REPORT.md` (nima tuzatildi, qaysi commit, qaysi test, nima qoldi va nega). — yozildi 2026-11-07. **Audit zanjiri tugadi; rejalashtirilgan «SellerFlow audit» vazifalari o'chirildi.**
 
 ## Foydalanuvchi (loyiha egasi) ishlari — avtomatik sessiya qila olmaydi
 - [x] Telegram bot tokenini @BotFather orqali bekor qilish va yangisini olish (2026-11-07).
@@ -89,3 +89,4 @@ Audit bandlari (1–6-bosqich) tugagach boshlanadi.
 | 2026-11-07 00:10 | Reja tuzildi; `.env.example` dagi sirlar olib tashlandi (292cd7b) | — | Avtomatik ish 2026-11-07 11:30 dan boshlanadi |
 | 2026-11-07 11:10 | Superadmin dizayni repoga qo'shildi (`design/superadmin/`), 6½-bosqich rejaga kiritildi | — | Dizayn audit tugagach ko'chiriladi |
 | 2026-11-07 11:30–13:15 | 1–6-bosqich to'liq: C-1, H-1, M-1…M-8, LOW(admin); H-2, M-15…M-18, M-12, M-20, LOW(DevOps); M-19, M-11, M-10, M-9, M-14, M-13; M-23…M-26, LOW(maxfiylik); LOW(hisob), LOW(DB); M-21, M-22, LOW(testlar/CI/UI). 6½: D-1…D-4 [x], D-5 [~] | 9227471 … 719df77 (40 ta `audit:` commit) | 142 test yashil, CI (gitleaks, shellcheck, docker build) yashil. Engine 1.0.0→1.0.1 (DECISIONS). Keyingi: D-5 qolgani (dashboard, grants tablari, health DB latency, support meta, bildirishnomalar), so'ng D-6, D-7, 7-bosqich. |
+| 2026-11-07 22:55–23:40 | D-5 qolgani, D-6, D-7, 7-bosqich — HAMMASI TUGADI | 6f50304, 49b1b0b, c4b134b + yakuniy hisobot | 145 test yashil; UI build/lint toza, npm audit 0; Playwright 0 muammo. Egasining ishlari: parollar, H-3, 2 savol. |
