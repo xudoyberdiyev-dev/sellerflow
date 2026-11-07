@@ -181,6 +181,36 @@ public class AdminAuthService {
         int purgeOld();
     }
 
+    @Entity
+    @Table(name = "admin_recovery_log")
+    public static class RecoveryLogEntry {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        @Column(name = "admin_id", nullable = false)
+        private Long adminId;
+        @Column(name = "password_hash", nullable = false)
+        private String passwordHash;
+        @Column(name = "applied_at", nullable = false)
+        private Instant appliedAt = Instant.now();
+
+        protected RecoveryLogEntry() {}
+
+        RecoveryLogEntry(Long adminId, String passwordHash) {
+            this.adminId = adminId;
+            this.passwordHash = passwordHash;
+        }
+    }
+
+    public interface RecoveryLogRepository extends JpaRepository<RecoveryLogEntry, Long> {
+        @Query(nativeQuery = true, value = "select password_hash from admin_recovery_log where admin_id = ?1")
+        List<String> usedHashes(Long adminId);
+
+        default void record(Long adminId, String hash) {
+            save(new RecoveryLogEntry(adminId, hash));
+        }
+    }
+
     /** Autentifikatsiyadan o'tgan admin (har so'rovda serverda qayta tekshiriladi). */
     public record Principal(long id, String email, Role role, boolean mustChangePassword) {
         public Principal(long id, String email, Role role) { this(id, email, role, false); }
@@ -194,23 +224,78 @@ public class AdminAuthService {
     private final SessionRepository sessions;
     private final AuditService audit;
     private final SellerFlowProperties props;
+    private final RecoveryLogRepository recoveryLog;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
     private final SecureRandom rng = new SecureRandom();
     /** Mavjud bo'lmagan email uchun ham BCrypt tekshiruvi — vaqt bo'yicha farqlanmasligi uchun. */
     private final String dummyHash = encoder.encode("dummy-password-for-timing");
 
     public AdminAuthService(AdminRepository admins, SessionRepository sessions, AuditService audit,
-                            SellerFlowProperties props) {
+                            SellerFlowProperties props, RecoveryLogRepository recoveryLog) {
+        this.recoveryLog = recoveryLog;
         this.admins = admins;
         this.sessions = sessions;
         this.audit = audit;
         this.props = props;
     }
 
-    /** ADMIN_BOOTSTRAP_EMAIL / ADMIN_BOOTSTRAP_PASSWORD — faqat bitta ham admin bo'lmaganda birinchi SUPERADMIN. */
+    /** Startup: birinchi SUPERADMIN (bootstrap) va kerak bo'lsa break-glass tiklash (M-7). */
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
-    public void bootstrap() {
+    public void onStartup() {
+        bootstrap();
+        recoverFromEnvironment();
+    }
+
+    /**
+     * M-7 break-glass: ADMIN_RECOVERY_EMAIL + ADMIN_RECOVERY_PASSWORD berilsa — shu email'li admin faol SUPERADMIN
+     * qilinadi, parol shu qiymatga o'rnatiladi (keyin almashtirish majburiy), 2FA, blok va hisoblagichlar tiklanadi,
+     * barcha sessiyalar bekor. Admin bo'lmasa — yangi SUPERADMIN yaratiladi. Bir xil recovery paroli faqat bir marta
+     * qo'llanadi (admin_recovery_log, BCrypt), shuning uchun env o'chirilmay qolsa ham 2FA har restartda tiklanmaydi.
+     */
+    void recoverFromEnvironment() {
+        var a = props.admin();
+        if (a == null || a.recoveryEmail() == null || a.recoveryEmail().isBlank()
+                || a.recoveryPassword() == null || a.recoveryPassword().isBlank()) return;
+        recover(a.recoveryEmail(), a.recoveryPassword());
+    }
+
+    /** @return true — tiklash qo'llandi. */
+    boolean recover(String email, String pass) {
+        if (pass.length() < MIN_PASSWORD) {
+            log.error("ADMIN_RECOVERY_PASSWORD must be at least {} characters — recovery skipped", MIN_PASSWORD);
+            return false;
+        }
+        Admin admin = admins.findByEmailIgnoreCase(email.strip()).orElse(null);
+        if (admin != null) {
+            List<String> used = recoveryLog.usedHashes(admin.id);
+            if (used.stream().anyMatch(h -> encoder.matches(pass, h))) {
+                log.warn("ADMIN_RECOVERY_* is still set but was already applied — remove it from .env");
+                return false;
+            }
+        } else {
+            admin = new Admin(email.strip(), "", Role.SUPERADMIN, true);
+        }
+        admin.passwordHash = encoder.encode(pass);
+        admin.role = Role.SUPERADMIN;
+        admin.status = Status.ACTIVE;
+        admin.totpEnabled = false;
+        admin.totpSecret = null;
+        admin.totpLastStep = null;
+        admin.failedAttempts = 0;
+        admin.lockedUntil = null;
+        admin.mustChangePassword = true;
+        admin = admins.save(admin);
+        sessions.revokeAll(admin.id);
+        recoveryLog.record(admin.id, encoder.encode(pass));
+        audit.record(Actor.SYSTEM, "break-glass", null, "ADMIN_RECOVERED", "ADMIN", admin.id,
+                "via ADMIN_RECOVERY_* env; 2FA reset, sessions revoked");
+        log.warn("Break-glass recovery applied for admin id={} — remove ADMIN_RECOVERY_* from .env now", admin.id);
+        return true;
+    }
+
+    /** ADMIN_BOOTSTRAP_EMAIL / ADMIN_BOOTSTRAP_PASSWORD — faqat bitta ham admin bo'lmaganda birinchi SUPERADMIN. */
+    void bootstrap() {
         if (admins.count() > 0) return;
         var a = props.admin();
         if (a == null || a.bootstrapEmail() == null || a.bootstrapEmail().isBlank()

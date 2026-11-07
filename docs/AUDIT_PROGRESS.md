@@ -20,8 +20,8 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **M-4:** parol o'zgarganda boshqa barcha sessiyalar bekor; joriy parolni tekshirishda ham urinishlar hisobga olinsin. — `revokeAllExcept`, joriy parol xatosi → atomik hisoblagich, lockoutda barcha sessiyalar bekor; test `passwordChange_revokesOtherSessions_andCountsWrongCurrentPassword`.
 - [x] **M-5:** vaqtinchalik parol bilan sessiya serverda cheklangan (faqat `/auth/me`, `/auth/password`, `/auth/logout`) — almashtirmaguncha boshqa API 403 `PASSWORD_CHANGE_REQUIRED`; UI shunga mos. — `@AllowedWithTempPassword` + interceptor, `/auth/me` da `mustChangePassword`, UI faqat Profilni ko'rsatadi; test `tempPasswordSession_isRestrictedUntilChanged`.
 - [x] **M-6:** auditga xavfsizlik hodisalari (ADMIN_LOGIN_FAILED, ADMIN_LOCKED) va manba IP. — V4 `audit_events.source_ip` (so'rovdan avtomatik), `ADMIN_LOGIN_FAILED` (reason=…), UI audit jadvalida IP; test `failedLoginsAndLockout_areAudited_withSourceIp`.
-- [ ] **M-7:** break-glass: `ADMIN_RECOVERY_EMAIL` + `ADMIN_RECOVERY_PASSWORD` env berilsa va shu email'li admin bloklangan/2FA yo'qotilgan bo'lsa — startupda qayta tiklash (audit bilan), hujjatlash.
-- [ ] **M-8:** `docs/OPERATIONS.md` §4B: public HTTPS varianti uchun IP allowlist majburiy deb yozish, Caddy misoliga `remote_ip` cheklovi.
+- [x] **M-7:** break-glass: `ADMIN_RECOVERY_EMAIL` + `ADMIN_RECOVERY_PASSWORD` env berilsa va shu email'li admin bloklangan/2FA yo'qotilgan bo'lsa — startupda qayta tiklash (audit bilan), hujjatlash. — `recoverFromEnvironment` (V5 `admin_recovery_log`: bir parol bir marta), OPERATIONS §4C; test `AdminRecoveryIT`.
+- [x] **M-8:** `docs/OPERATIONS.md` §4B: public HTTPS varianti uchun IP allowlist majburiy deb yozish, Caddy misoliga `remote_ip` cheklovi. — §4B qayta yozildi (`@allowed remote_ip`, aks holda 403; IP doimiy bo'lmasa SSH/VPN).
 - [ ] **LOW (admin):** HSTS sarlavhasi; parol uzunligi yuqori chegarasi (72 bayt, BCrypt); `/sellers` paging overflow → 400; SUPPORT uchun grant so'rovlariga limit (masalan, 1 sotuvchiga 24 soatda 3 ta).
 
 ## 2-bosqich — Backup va ishonchlilik

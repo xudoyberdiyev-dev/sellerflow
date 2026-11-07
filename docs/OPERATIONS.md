@@ -28,7 +28,8 @@ ssh -L 8080:127.0.0.1:8080 user@SERVER_IP
 # brauzer: http://localhost:8080/admin/
 ```
 
-**B) Domen + HTTPS (Caddy misoli).** `docker-compose.yml` ga qo'shimcha servis qo'shing:
+**B) Domen + HTTPS (Caddy misoli) — faqat IP allowlist bilan.** Panelni internetga ochganda **IP cheklovi majburiy**
+(parol + 2FA + rate-limit yagona himoya bo'lib qolmasin). `docker-compose.yml` ga qo'shimcha servis qo'shing:
 ```yaml
   caddy:
     image: caddy:2
@@ -36,13 +37,29 @@ ssh -L 8080:127.0.0.1:8080 user@SERVER_IP
     ports: ["80:80", "443:443"]
     volumes: ["./Caddyfile:/etc/caddy/Caddyfile:ro", "caddy_data:/data"]
 ```
-`Caddyfile`:
+`Caddyfile` (`203.0.113.10` va `198.51.100.0/24` o'rniga o'zingizning ofis/uy IP manzillaringizni yozing):
 ```
 admin.sizning-domen.uz {
-    reverse_proxy app:8080
+    @allowed remote_ip 203.0.113.10 198.51.100.0/24
+    handle @allowed {
+        reverse_proxy app:8080
+    }
+    handle {
+        respond "Forbidden" 403
+    }
 }
 ```
-`volumes:` bo'limiga `caddy_data:` ni qo'shing. Panel faqat parol va 2FA bilan himoyalangan. Imkon bo'lsa, Caddy'da IP cheklovini ham qo'ying.
+`volumes:` bo'limiga `caddy_data:` ni qo'shing. Ilova `X-Forwarded-For` ni faqat ichki (private) tarmoqdagi proxy'dan qabul qiladi
+(`server.forward-headers-strategy: native`), shuning uchun login rate-limit va audit haqiqiy mijoz IP'sini ko'radi.
+IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) dan foydalaning, panelni ochiq qoldirmang.
+
+**C) Favqulodda tiklash (break-glass).** Yagona SUPERADMIN bloklansa, 2FA qurilmasi yo'qolsa yoki parol unutilsa:
+1. `.env` ga yozing: `ADMIN_RECOVERY_EMAIL=<admin email>` va `ADMIN_RECOVERY_PASSWORD=<yangi, kamida 12 belgi>`.
+2. `docker compose up -d app` — startupda shu admin: faol SUPERADMIN, parol yangilanadi, 2FA va blok tiklanadi,
+   barcha sessiyalar bekor qilinadi, auditga `ADMIN_RECOVERED` yoziladi. Email bo'yicha admin topilmasa — yangi SUPERADMIN yaratiladi.
+3. Panelga kiring: 2FA qayta ulanadi, so'ng parolni almashtirish majburiy.
+4. **Darhol** `.env` dan ikkala qatorni o'chiring va `docker compose up -d app`. (Bir xil recovery paroli ikkinchi marta
+   qo'llanmaydi — logda ogohlantirish chiqadi — lekin sirni `.env` da qoldirmang.)
 
 ## 5. Backup va tiklash
 - `backup` servisi har 24 soatda `./backups/sellerflow_*.dump` faylini yaratadi va 14 kundan eskilarini o'chiradi.

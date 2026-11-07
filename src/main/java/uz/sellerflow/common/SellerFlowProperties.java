@@ -8,7 +8,7 @@ public record SellerFlowProperties(Telegram telegram, Admin admin, Terms terms, 
 
     public record Telegram(String botToken, String apiBaseUrl, boolean pollingEnabled, int pollingTimeoutSeconds) {}
 
-    public record Admin(String bootstrapEmail, String bootstrapPassword) {}
+    public record Admin(String bootstrapEmail, String bootstrapPassword, String recoveryEmail, String recoveryPassword) {}
 
     /** graceDays — o'chirish so'rovidan keyin CLOSED gacha; purgeData — yurist qaroriga qadar false. */
     public record Deletion(int graceDays, boolean purgeData) {}
