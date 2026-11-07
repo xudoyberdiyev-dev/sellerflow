@@ -374,6 +374,32 @@ class AdminApiIT extends IntegrationTest {
                 .isEqualTo(4);
     }
 
+    /** D-5: sotuvchi kartasi — metadata va sonlar, tijoriy qiymatlarsiz; SUPPORT o'qiy oladi; 404. */
+    @Test
+    void sellerCard_metadataOnly() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"Spam faoliyati tekshiruvi\"}");
+        JsonNode r = json(call(HttpMethod.GET, "/sellers/" + u, token, null));
+        assertThat(r.path("telegramUserId").asLong()).isEqualTo(u);
+        assertThat(r.path("status").asText()).isEqualTo("SUSPENDED");
+        assertThat(r.path("primaryChannel").asText()).isNotBlank();
+        assertThat(r.path("terms").path("version").asText()).isNotBlank();
+        assertThat(r.path("productCount").asLong()).isZero();
+        assertThat(r.path("savedCalculationCount").asLong()).isZero();
+        assertThat(r.path("lastStatusChange").asText()).contains("Spam faoliyati");
+        assertThat(r.has("userId")).isFalse();
+        assertThat(r.toString()).doesNotContain("unitCost").doesNotContain("profit");
+        assertThat(call(HttpMethod.GET, "/sellers/999999999999", token, null).getStatusCode().value()).isEqualTo(404);
+
+        String email = "card" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
+        String support = loginWithNewPassword(email, "temporary-pass-123");
+        assertThat(call(HttpMethod.GET, "/sellers/" + u, support, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.GET, "/sellers/" + u, null, null).getStatusCode().value()).isEqualTo(401);
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();

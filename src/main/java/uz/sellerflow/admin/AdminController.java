@@ -202,6 +202,46 @@ public class AdminController {
     // ================================================================= sellers
 
     /** Sotuvchilar ro'yxati: faqat metadata (holat, kanal, tarif, sanalar). */
+    /**
+     * D-5: sotuvchi kartasi — faqat metadata va sonlar (tijoriy qiymatlar yo'q; ular faqat grant orqali).
+     * SUPPORT ham o'qiy oladi (ro'yxat kabi).
+     */
+    @GetMapping("/sellers/{telegramUserId}")
+    public Map<String, Object> seller(@PathVariable long telegramUserId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                select u.id as "userId", u.telegram_user_id as "telegramUserId", u.status, u.created_at as "createdAt",
+                       u.deletion_requested_at as "deletionRequestedAt",
+                       b.id as "businessId", b.primary_channel as "primaryChannel", b.plan_code as "planCode",
+                       b.created_at as "activatedAt", b.business_name as "businessName", b.display_name as "displayName"
+                from users u left join businesses b on b.owner_user_id = u.id where u.telegram_user_id = ?""", telegramUserId);
+        if (rows.isEmpty()) throw new Errors.NotFound("seller");
+        Map<String, Object> r = new LinkedHashMap<>(rows.get(0));
+        long userId = ((Number) r.remove("userId")).longValue();
+        Object bid = r.get("businessId");
+        List<Map<String, Object>> consent = jdbc.queryForList(
+                "select terms_version as \"version\", accepted_at as \"acceptedAt\" from consents where user_id = ? order by accepted_at desc limit 1",
+                userId);
+        r.put("terms", consent.isEmpty() ? null : consent.get(0));
+        if (bid != null) {
+            long b = ((Number) bid).longValue();
+            r.put("productCount", count("select count(*) from products where business_id = " + b + " and status = 'ACTIVE'"));
+            r.put("savedCalculationCount", count("select count(*) from calculation_history where business_id = " + b));
+            r.put("lastActivityAt", jdbc.queryForObject("""
+                    select greatest((select max(updated_at) from products where business_id = ?),
+                                    (select max(saved_at) from calculation_history where business_id = ?))""",
+                    java.sql.Timestamp.class, b, b));
+        } else {
+            r.put("productCount", 0L);
+            r.put("savedCalculationCount", 0L);
+            r.put("lastActivityAt", null);
+        }
+        List<String> reason = jdbc.queryForList("""
+                select summary from audit_events where action = 'ADMIN_STATUS_CHANGE' and entity_type = 'USER'
+                  and entity_id = ? order by id desc limit 1""", String.class, String.valueOf(userId));
+        r.put("lastStatusChange", reason.isEmpty() ? null : reason.get(0));
+        return r;
+    }
+
     @GetMapping("/sellers")
     public Map<String, Object> sellers(@RequestParam(defaultValue = "0") int page,
                                        @RequestParam(defaultValue = "50") int size,
