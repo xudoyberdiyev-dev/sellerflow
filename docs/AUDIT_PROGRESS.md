@@ -55,7 +55,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 ## 6-bosqich — Testlar, CI va UI
 - [x] **M-21:** admin boshqaruvi (create/disable/enable/reset-2fa) va parol almashtirish uchun testlar. — `adminManagement_createDisableEnableReset2fa` (+ M-4/M-5 parol testlari); reset-2fa `totp_last_step` ni ham tozalaydi.
 - [x] **M-22:** `TelegramPoller` testlari (offset, backoff, xato ishlash) — soxta gateway bilan. — `TelegramPollerTest` (11 test: offset, transient retry, polling xatosi, backoff 1→30 s, bo'sh partiya, parallel workerlar, callback partitsiyasi) — soxta gateway bilan.
-- [ ] **LOW (testlar):** DeletionJob purge=true; rate-limit yo'llari; `IntegrationTest` faqat nomi `_test` bilan tugaydigan bazada TRUNCATE qilsin (aks holda to'xtasin); Maven enforcer (Java 21).
+- [x] **LOW (testlar):** DeletionJob purge=true; rate-limit yo'llari; `IntegrationTest` faqat nomi `_test` bilan tugaydigan bazada TRUNCATE qilsin (aks holda to'xtasin); Maven enforcer (Java 21). — purge=true (`deletionJob_withPurge_*`, `enablingPurgeLater_*`); rate-limit: admin IP (`ipRateLimit_*`) + bot `RateLimiterTest`; `TestDatabase.requireTestDatabase` + `cleanDb` da `current_database()` tekshiruvi (`TestDatabaseTest`); `maven-enforcer-plugin` (Java 21+, Maven 3.9+).
 - [ ] **LOW (CI):** Docker image build, admin-ui lint, `npm audit --omit=dev`, OWASP dependency-check yoki `mvn versions` hisobot, shellcheck.
 - [ ] **LOW (UI):** grant muddati tugaganda ma'lumot ekrandan tozalansin; formalarda busy holat (ikki marta yuborish yo'q); `index.html` uchun `Cache-Control: no-cache`; `vite` va `react-router` yangilansin; mobil menyuda Profil; `useLoad` da AbortController.
 

@@ -51,6 +51,10 @@ public abstract class IntegrationTest {
 
     @BeforeEach
     void cleanDb() {
+        String db = jdbc.queryForObject("select current_database()", String.class);
+        if (!TestDatabase.isEmbedded() && (db == null || !db.endsWith("_test"))) {
+            throw new IllegalStateException("Refusing to TRUNCATE non-test database: " + db);
+        }
         jdbc.execute("truncate table audit_events, calculation_history, products, telegram_flows, consents, businesses, users, processed_updates restart identity cascade");
         jdbc.update("update support_settings set enabled = false, contact_label = null, contact_url = null");
         tg.clear();
