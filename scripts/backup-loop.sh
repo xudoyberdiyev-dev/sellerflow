@@ -3,6 +3,8 @@
 # - Rotatsiya FAQAT muvaffaqiyatli backupdan keyin; eng yangi BACKUP_MIN_KEEP (standart 7) nusxa hech qachon o'chirilmaydi.
 # - Holat: ${BACKUP_DIR}/status.json (lastSuccessAt, lastSuccessFile, lastFailureAt, lastError, consecutiveFailures).
 #   Ilova shu faylni o'qiydi (health + Telegram alert), compose healthcheck ham shundan foydalanadi.
+# - BACKUP_ENCRYPTION_PASSPHRASE berilsa: nusxa gpg (AES256, simmetrik) bilan shifrlanadi -> sellerflow_*.dump.gpg.
+#   gpg topilmasa backup XATO hisoblanadi (shifrlanmagan nusxa jim yozilmaydi). Parol process ro'yxatida ko'rinmaydi (fd 3).
 # - BACKUP_RUN_ONCE=1 — bitta backup va chiqish (test/qo'lda ishga tushirish uchun).
 set -u
 
@@ -61,7 +63,19 @@ run_backup() {
   ts=$(date -u +%Y%m%dT%H%M%SZ)
   file="${BACKUP_DIR}/sellerflow_${ts}.dump"
   err="$(pg_dump -Fc -f "${file}.tmp" 2>&1 >/dev/null)"
-  if [ $? -eq 0 ] && [ -s "${file}.tmp" ] && mv "${file}.tmp" "${file}"; then
+  local rc=$?
+  if [ ${rc} -eq 0 ] && [ -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" ]; then
+    if ! command -v gpg >/dev/null 2>&1; then
+      err="BACKUP_ENCRYPTION_PASSPHRASE berilgan, lekin gpg topilmadi"; rc=1
+    else
+      err="$(gpg --batch --yes --quiet --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 \
+              -o "${file}.gpg.tmp" "${file}.tmp" 3<<<"${BACKUP_ENCRYPTION_PASSPHRASE}" 2>&1)"; rc=$?
+      rm -f "${file}.tmp"
+      if [ ${rc} -eq 0 ]; then mv "${file}.gpg.tmp" "${file}.tmp"; else rm -f "${file}.gpg.tmp"; fi
+      file="${file}.gpg"
+    fi
+  fi
+  if [ ${rc} -eq 0 ] && [ -s "${file%.gpg}.tmp" ] && mv "${file%.gpg}.tmp" "${file}"; then
     chmod 600 "${file}"
     failures=0
     last_success_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -71,7 +85,7 @@ run_backup() {
     rotate
     return 0
   fi
-  rm -f "${file}.tmp"
+  rm -f "${file}.tmp" "${file%.gpg}.tmp"
   failures=$((failures + 1))
   last_failure_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   last_error="$(printf '%s' "${err:-pg_dump failed}" | tail -n 3 | tr '\n' ' ' | cut -c1-300)"

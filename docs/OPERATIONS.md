@@ -64,7 +64,14 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 ## 5. Backup va tiklash
 - `backup` servisi har 24 soatda `./backups/sellerflow_*.dump` (huquq 600) faylini yaratadi. Eski nusxalar (`BACKUP_KEEP_DAYS`, 14 kun) **faqat muvaffaqiyatli backupdan keyin** o'chiriladi va eng yangi `BACKUP_MIN_KEEP` (7) nusxa hech qachon o'chirilmaydi — backup ketma-ket xato bersa ham eski nusxalar qoladi.
 - Holat fayli: `./backups/status.json` (`lastSuccessAt`, `lastError`, `consecutiveFailures`). Qo'lda tekshirish: `cat backups/status.json`.
-- **Backuplarni server tashqarisiga nusxalang** (server yo'qolsa backup ham yo'qoladi). Masalan, cron orqali `rclone` yoki `scp` bilan.
+- **Shifrlash (tavsiya):** `.env` da `BACKUP_ENCRYPTION_PASSPHRASE` bering → fayllar `sellerflow_*.dump.gpg` (gpg, AES256). Parolni parol menejerida ham saqlang: usiz backup tiklanmaydi. Qo'lda ochish: `gpg -d backups/<fayl>.dump.gpg > /tmp/x.dump`.
+- **Backuplarni server tashqarisiga nusxalang** (server yo'qolsa backup ham yo'qoladi). Off-site nusxa faqat **shifrlangan** fayllar bilan. `rclone` misoli (S3/Backblaze B2/Google Drive va h.k.):
+  ```bash
+  # bir marta: rclone config  (masalan, "offsite" nomli remote)
+  # crontab -e  — har kuni 04:30 da (backup 03:00 atrofida bo'lsa):
+  30 4 * * * cd /opt/sellerflow && rclone copy backups offsite:sellerflow-backups --include "sellerflow_*.dump.gpg" --max-age 48h >> /var/log/sellerflow-offsite.log 2>&1
+  ```
+  Off-site tomonda ham saqlash muddati (lifecycle) sozlang, masalan 30–90 kun.
 - Tiklash: `./scripts/restore.sh backups/<fayl>.dump`
 - Oylik tiklash sinovi: `./scripts/restore-drill.sh` (ishlab turgan bazaga tegmaydi).
 

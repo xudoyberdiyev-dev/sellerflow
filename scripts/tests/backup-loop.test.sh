@@ -34,4 +34,19 @@ if PGHOST=127.0.0.1 PGPORT=1 BACKUP_DIR="${DIR}" BACKUP_RUN_ONCE=1 bash "${HERE}
 grep -q '"lastSuccessAt": "20' "${DIR}/status.json" || fail "xatodan keyin lastSuccessAt yo'qoldi"
 [ "$(ls "${DIR}"/sellerflow_*.dump | wc -l)" -eq 7 ] || fail "xatodan keyin nusxalar o'zgardi"
 
+# 4) Shifrlash (M-15): .dump.gpg, ochiq dump qolmaydi, to'g'ri parol bilan ochiladi
+if command -v gpg >/dev/null 2>&1; then
+  ENC="$(mktemp -d)"
+  BACKUP_DIR="${ENC}" BACKUP_ENCRYPTION_PASSPHRASE="test-passphrase-123" BACKUP_RUN_ONCE=1 bash "${HERE}/backup-loop.sh" || fail "shifrlangan backup"
+  g="$(ls -1 "${ENC}"/sellerflow_*.dump.gpg | head -n1)"
+  [ -n "${g}" ] || fail ".dump.gpg yaratilmadi"
+  [ -z "$(ls -1 "${ENC}" | grep -E '\.dump$|\.tmp$' || true)" ] || fail "shifrlanmagan/vaqtinchalik fayl qoldi: $(ls "${ENC}")"
+  [ "$(stat -c %a "${g}")" = "600" ] || fail "shifrlangan fayl huquqi 600 emas"
+  GNUPGHOME="$(mktemp -d)" gpg --batch --quiet --pinentry-mode loopback --passphrase "test-passphrase-123" -d "${g}" | pg_restore --list >/dev/null \
+    || fail "shifrlangan backup ochilmadi"
+  rm -rf "${ENC}"
+else
+  echo "gpg yo'q — shifrlash testi o'tkazib yuborildi"
+fi
+
 echo "backup-loop.test: OK"

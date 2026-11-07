@@ -55,6 +55,7 @@ services:
       PGDATABASE: sellerflow
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
       BACKUP_MIN_KEEP: ${BACKUP_MIN_KEEP:-7}
+      BACKUP_ENCRYPTION_PASSPHRASE: ${BACKUP_ENCRYPTION_PASSPHRASE:-}
     volumes:
       - ./backups:/backups
       - ./scripts/backup-loop.sh:/backup-loop.sh:ro
