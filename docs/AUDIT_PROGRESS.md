@@ -35,7 +35,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 
 ## 3-bosqich — Platforma yangilanishi va Telegram
 - [x] **M-19:** Spring Boot → qo'llab-quvvatlanadigan 3.5.x (yoki 3.4.x); `spring-security-crypto` CVE-2025-22228 yopilsin; barcha testlar yashil. — 3.3.5 → **3.5.16** (spring-security-crypto 6.5.11, Tomcat 10.1.55, Hibernate 6.6.53, Flyway 11.7.2); kod o'zgarishsiz, 99 test yashil. Boot 4.x ga o'tish — «Egasiga savollar» ga qarang.
-- [ ] **M-11:** chiquvchi Telegram chaqiruvlari: 429 `retry_after` ni hurmat qilish, 5xx da cheklangan retry (eksponensial), muvaffaqiyatsizlik metrikasi.
+- [x] **M-11:** chiquvchi Telegram chaqiruvlari: 429 `retry_after` ni hurmat qilish, 5xx da cheklangan retry (eksponensial), muvaffaqiyatsizlik metrikasi. — `HttpTelegramGateway.post`: 429 retry_after (≤10 s), 5xx/tarmoq 500→1000 ms, 3 urinish; Micrometer `telegram.api.calls{method,outcome}`, `telegram.api.latency`; test `HttpTelegramGatewayRetryTest`.
 - [ ] **M-10 + LOW:** at-least-once: update DB xatosida qayta ishlanishi uchun `processed_updates` belgisi muvaffaqiyatdan keyin (yoki tranzaksiya ichida); DB uzilganda offset oldinga surilmasin; graceful shutdown (`@PreDestroy` → `stop()`).
 - [ ] **M-9:** parallel qayta ishlash — foydalanuvchi bo'yicha ketma-ketlik saqlangan holda (masalan, `userId % N` bo'yicha N ta worker navbat); Telegram HTTP chaqiruvlari DB tranzaksiyasidan tashqarida.
 - [ ] **M-14 + LOW:** matnni qisqartirish code point bo'yicha (surrogate juftini buzmaslik); 4096 belgi limiti (uzun xabarni bo'lish yoki qisqartirish); soxta callback data — ERROR stacktrace emas, WARN.
