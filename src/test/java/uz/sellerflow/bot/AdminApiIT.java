@@ -51,6 +51,8 @@ class AdminApiIT extends IntegrationTest {
 
     /** Parol + TOTP (birinchi marta — 2FA ulash) orqali token olish. */
     private String login(String email, String password) throws Exception {
+        // M-1: bitta 30 s qadamdagi kod faqat bir marta qabul qilinadi — testlar ketma-ket login qilishi uchun tozalaymiz
+        jdbc.update("update admins set totp_last_step = null where lower(email) = lower(?)", email);
         JsonNode r = json(call(HttpMethod.POST, "/auth/login", null,
                 "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"));
         if ("TOTP_SETUP_REQUIRED".equals(r.path("status").asText())) {
@@ -110,6 +112,31 @@ class AdminApiIT extends IntegrationTest {
         if (token != null) b.header("Authorization", "Bearer " + token);
         return java.net.http.HttpClient.newHttpClient()
                 .send(b.build(), java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode();
+    }
+
+    /** M-1 regression: TOTP kodi (va undan eski qadam) qayta ishlatilmaydi. */
+    @Test
+    void totpCode_cannotBeReplayed() throws Exception {
+        owner(); // 2FA ulangan bo'lsin
+        jdbc.update("update admins set totp_last_step = null, failed_attempts = 0, locked_until = null where lower(email) = lower(?)", OWNER);
+        String secret = jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, OWNER);
+        long step = Instant.now().getEpochSecond() / 30;
+        String body = "{\"email\":\"" + OWNER + "\",\"password\":\"" + OWNER_PASS + "\",\"code\":\"%s\"}";
+
+        ResponseEntity<String> first = call(HttpMethod.POST, "/auth/login", null, body.formatted(Totp.code(secret, step)));
+        assertThat(json(first).path("status").asText()).isEqualTo("OK");
+
+        ResponseEntity<String> replay = call(HttpMethod.POST, "/auth/login", null, body.formatted(Totp.code(secret, step)));
+        assertThat(replay.getStatusCode().value()).isEqualTo(401);
+        assertThat(json(replay).path("error").asText()).isEqualTo("INVALID_CODE");
+
+        ResponseEntity<String> older = call(HttpMethod.POST, "/auth/login", null, body.formatted(Totp.code(secret, step - 1)));
+        assertThat(older.getStatusCode().value()).isEqualTo(401);
+
+        ResponseEntity<String> next = call(HttpMethod.POST, "/auth/login", null, body.formatted(Totp.code(secret, step + 1)));
+        assertThat(json(next).path("status").asText()).isEqualTo("OK");
+        assertThat(jdbc.queryForObject("select totp_last_step from admins where lower(email) = lower(?)", Long.class, OWNER))
+                .isEqualTo(step + 1);
     }
 
     @Test

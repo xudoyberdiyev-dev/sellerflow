@@ -29,14 +29,22 @@ public final class Totp {
 
     /** ±1 qadam (soat farqi) ruxsat etiladi. */
     public static boolean verify(String secret, String code, long epochSeconds) {
-        if (secret == null || code == null) return false;
+        return matchStep(secret, code, epochSeconds).isPresent();
+    }
+
+    /**
+     * Kod mos kelgan qadam (±1 oyna ichida). Replay himoyasi uchun chaqiruvchi shu qadamni
+     * oxirgi ishlatilgan qadam bilan solishtiradi (M-1).
+     */
+    public static java.util.OptionalLong matchStep(String secret, String code, long epochSeconds) {
+        if (secret == null || code == null) return java.util.OptionalLong.empty();
         String c = code.replace(" ", "");
-        if (!c.matches("\\d{6}")) return false;
+        if (!c.matches("\\d{6}")) return java.util.OptionalLong.empty();
         long step = epochSeconds / 30;
         for (long s = step - 1; s <= step + 1; s++) {
-            if (code(secret, s).equals(c)) return true;
+            if (code(secret, s).equals(c)) return java.util.OptionalLong.of(s);
         }
-        return false;
+        return java.util.OptionalLong.empty();
     }
 
     public static String code(String secret, long step) {

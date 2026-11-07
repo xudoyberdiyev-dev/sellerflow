@@ -72,6 +72,9 @@ public class AdminAuthService {
         private Status status = Status.ACTIVE;
         @Column(name = "totp_secret")
         private String totpSecret;
+        /** M-1: oxirgi muvaffaqiyatli ishlatilgan TOTP qadami (shu yoki eskiroq qadam qayta qabul qilinmaydi). */
+        @Column(name = "totp_last_step")
+        private Long totpLastStep;
         @Column(name = "totp_enabled", nullable = false)
         private boolean totpEnabled;
         @Column(name = "must_change_password", nullable = false)
@@ -132,6 +135,12 @@ public class AdminAuthService {
 
     public interface AdminRepository extends JpaRepository<Admin, Long> {
         Optional<Admin> findByEmailIgnoreCase(String email);
+
+        /** Atomik: faqat yangi (kattaroq) qadam yoziladi; 0 qaytsa — kod allaqachon ishlatilgan (replay). */
+        @Modifying(flushAutomatically = true)
+        @Query(nativeQuery = true, value = "update admins set totp_last_step = ?2 where id = ?1"
+                + " and (totp_last_step is null or totp_last_step < ?2)")
+        int consumeTotpStep(Long adminId, long step);
     }
 
     public interface SessionRepository extends JpaRepository<AdminSession, String> {
@@ -217,7 +226,7 @@ public class AdminAuthService {
         if (code == null || code.isBlank()) {
             return new LoginResult("TOTP_REQUIRED", null, null, null, null, null, false);
         }
-        if (!Totp.verify(a.totpSecret, code, now.getEpochSecond())) {
+        if (!consumeTotp(a, code, now)) {
             registerFailure(a, now, "totp");
             throw new Errors.Forbidden("INVALID_CODE");
         }
@@ -230,7 +239,7 @@ public class AdminAuthService {
         AdminSession s = sessions.findById(hash(setupToken)).orElseThrow(() -> new Errors.Forbidden("INVALID_SESSION"));
         if (s.revoked || !"TOTP_SETUP".equals(s.kind) || now.isAfter(s.expiresAt)) throw new Errors.Forbidden("INVALID_SESSION");
         Admin a = admins.findById(s.adminId).orElseThrow(() -> new Errors.Forbidden("INVALID_SESSION"));
-        if (!Totp.verify(a.totpSecret, code, now.getEpochSecond())) {
+        if (!consumeTotp(a, code, now)) {
             registerFailure(a, now, "totp-setup");
             throw new Errors.Forbidden("INVALID_CODE");
         }
@@ -239,6 +248,16 @@ public class AdminAuthService {
         sessions.save(s);
         audit.record(Actor.ADMIN, a.email, null, "ADMIN_2FA_ENABLED", "ADMIN", a.id, null);
         return completeLogin(a, now);
+    }
+
+    /** Kod to'g'ri va uning qadami hali ishlatilmagan bo'lsa — qadamni band qiladi (M-1, replay himoyasi). */
+    private boolean consumeTotp(Admin a, String code, Instant now) {
+        var step = Totp.matchStep(a.totpSecret, code, now.getEpochSecond());
+        if (step.isEmpty()) return false;
+        if (a.totpLastStep != null && step.getAsLong() <= a.totpLastStep) return false;
+        if (admins.consumeTotpStep(a.id, step.getAsLong()) == 0) return false;
+        a.totpLastStep = step.getAsLong();
+        return true;
     }
 
     private LoginResult completeLogin(Admin a, Instant now) {
