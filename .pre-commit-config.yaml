@@ -1,0 +1,14 @@
+# O'rnatish: pip install pre-commit && pre-commit install
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: env-example-empty
+        name: .env.example faqat bo'sh qiymatlar bilan
+        entry: sh scripts/check-env-example.sh
+        language: system
+        files: ^\.env\.example$
+        pass_filenames: false

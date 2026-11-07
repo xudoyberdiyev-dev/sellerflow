@@ -13,7 +13,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - Har sessiya oxirida (13:15 dan kechiktirmay): shu fayl yangilanadi (sessiya jurnali + belgilar), push qilinadi.
 
 ## 1-bosqich — Xavfsizlik (eng muhim)
-- [ ] **C-1 (qolgani):** gitleaks secret-scan — CI'ga qadam + `.pre-commit-config.yaml`; README'da eslatma. `.env.example` faqat bo'sh qiymatlar bilan qolishi testlansin (CI'da grep).
+- [x] **C-1 (qolgani):** gitleaks secret-scan — CI'ga qadam + `.pre-commit-config.yaml`; README'da eslatma. `.env.example` faqat bo'sh qiymatlar bilan qolishi testlansin (CI'da grep). — `scripts/check-env-example.sh`, CI `secrets` job (gitleaks 8.21.2, tarix 292cd7b..HEAD — undan oldingi revoked sirlar ataylab tashqarida), `.pre-commit-config.yaml`.
 - [ ] **H-1:** Admin auth'ni xom URI emas, Spring Security (`SecurityFilterChain`, `requestMatchers("/admin/api/**")`, StrictHttpFirewall) yoki `HandlerInterceptor` + path pattern bilan; deny-by-default. Regression testlar: `/admin/api;x=1/v1/sellers`, `/admin;/api/v1/sellers`, `/admin/%61pi/v1/sellers` → 401/400.
 - [ ] **M-1:** TOTP replay himoyasi — admin uchun oxirgi ishlatilgan qadam (`totp_last_step`) saqlansin, shu yoki eskiroq qadam rad etilsin.
 - [ ] **M-2 / M-3:** IP bo'yicha login rate-limit; failed/lockout hisoblagichlarini atomik (`UPDATE ... SET failed_attempts = failed_attempts + 1`) qilish; lockout javobi parol to'g'riligini oshkor qilmasin.

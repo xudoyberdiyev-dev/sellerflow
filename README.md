@@ -39,6 +39,7 @@ docker compose logs -f app     # "Telegram long polling started" chiqishi kerak
 So‘ng Telegramda botingizga `/start` yozing.
 
 - **Token** faqat `.env` faylida turadi. `.env` gitga tushmaydi. Tokenni chatga, kodga yoki screenshotga qo‘ymang.
+- `.env.example` — faqat shablon: sirli kalitlar **bo‘sh** qoladi. CI buni `scripts/check-env-example.sh` va `gitleaks` bilan tekshiradi. Lokal himoya uchun: `pip install pre-commit && pre-commit install` (commitdan oldin secret-scan).
 - Bot **long polling** rejimida ishlaydi: domen yoki HTTPS shart emas.
 - Bitta token bilan bir vaqtda faqat **bitta** nusxa ishlashi kerak.
 - Holatni tekshirish: `curl localhost:8080/actuator/health`.
