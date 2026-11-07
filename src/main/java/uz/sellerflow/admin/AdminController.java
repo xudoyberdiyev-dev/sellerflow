@@ -417,15 +417,110 @@ public class AdminController {
     @GetMapping("/audit")
     public Map<String, Object> audit(@RequestAttribute(PRINCIPAL) Principal p,
                                      @RequestParam(defaultValue = "0") int page,
-                                     @RequestParam(defaultValue = "50") int size) {
+                                     @RequestParam(defaultValue = "50") int size,
+                                     @RequestParam(required = false) String from,
+                                     @RequestParam(required = false) String to,
+                                     @RequestParam(required = false) String actor,
+                                     @RequestParam(required = false) String action,
+                                     @RequestParam(required = false) Long businessId) {
         AdminAuthService.requireSuper(p);
         if (page < 0 || page > MAX_PAGE) throw new Errors.Validation("PAGE_RANGE");
-        var pg = audit.list(page, Math.max(size, 1));
-        return m("total", pg.getTotalElements(), "page", page, "items", pg.map(e -> m(
-                "id", e.getId(), "at", e.getCreatedAt().toString(), "actorType", e.getActorType(),
-                "actorId", e.getActorId(), "businessId", e.getBusinessId(), "action", e.getAction(),
-                "entityType", e.getEntityType(), "entityId", e.getEntityId(), "summary", e.getSummary(),
-                "sourceIp", e.getSourceIp())).getContent());
+        int limit = Math.min(Math.max(size, 1), 100);
+        List<Object> args = new java.util.ArrayList<>();
+        String where = auditWhere(from, to, actor, action, businessId, args);
+        long total = jdbc.queryForObject("select count(*) from audit_events" + where, Long.class, args.toArray());
+        args.add(limit);
+        args.add((long) page * limit);
+        return m("total", total, "page", page, "items", jdbc.queryForList(AUDIT_COLS + where + " order by id desc limit ? offset ?",
+                args.toArray()));
+    }
+
+    private static final String AUDIT_COLS = """
+            select id, created_at as "at", actor_type as "actorType", actor_id as "actorId", business_id as "businessId",
+                   action, entity_type as "entityType", entity_id as "entityId", summary, source_ip as "sourceIp"
+            from audit_events""";
+
+    /** D-5: audit filtrlari (sana — Asia/Tashkent kunlari, bajaruvchi, amal, biznes). */
+    private static String auditWhere(String from, String to, String actor, String action, Long businessId, List<Object> args) {
+        StringBuilder w = new StringBuilder(" where 1=1");
+        java.time.ZoneId tz = java.time.ZoneId.of("Asia/Tashkent");
+        if (from != null && !from.isBlank()) {
+            w.append(" and created_at >= ?");
+            args.add(java.sql.Timestamp.from(day(from).atStartOfDay(tz).toInstant()));
+        }
+        if (to != null && !to.isBlank()) {
+            w.append(" and created_at < ?");
+            args.add(java.sql.Timestamp.from(day(to).plusDays(1).atStartOfDay(tz).toInstant()));
+        }
+        if (actor != null && !actor.isBlank()) {
+            w.append(" and lower(actor_id) = lower(?)");
+            args.add(actor.strip());
+        }
+        if (action != null && !action.isBlank()) {
+            w.append(" and action = ?");
+            args.add(action.strip());
+        }
+        if (businessId != null) {
+            w.append(" and business_id = ?");
+            args.add(businessId);
+        }
+        return w.toString();
+    }
+
+    static final int EXPORT_MAX_ROWS = 10_000;
+
+    /** D-5: audit CSV eksporti (faqat SUPERADMIN), eksportning o'zi ham auditga yoziladi. */
+    @GetMapping(value = "/audit/export.csv", produces = "text/csv")
+    public ResponseEntity<String> auditCsv(@RequestAttribute(PRINCIPAL) Principal p,
+                                           @RequestParam(required = false) String from,
+                                           @RequestParam(required = false) String to,
+                                           @RequestParam(required = false) String actor,
+                                           @RequestParam(required = false) String action,
+                                           @RequestParam(required = false) Long businessId) {
+        AdminAuthService.requireSuper(p);
+        List<Object> args = new java.util.ArrayList<>();
+        String where = auditWhere(from, to, actor, action, businessId, args);
+        args.add(EXPORT_MAX_ROWS);
+        List<Map<String, Object>> rows = jdbc.queryForList(AUDIT_COLS + where + " order by id desc limit ?", args.toArray());
+        audit.recordStandalone(AuditService.Actor.ADMIN, p.email(), null, "EXPORT_AUDIT", "AUDIT", null, "rows=" + rows.size());
+        return csv("audit.csv", rows);
+    }
+
+    /** D-5: sotuvchilar CSV eksporti — faqat metadata (tijoriy qiymatlar yo'q), auditga yoziladi. */
+    @GetMapping(value = "/sellers/export.csv", produces = "text/csv")
+    public ResponseEntity<String> sellersCsv(@RequestAttribute(PRINCIPAL) Principal p) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                select u.telegram_user_id as "telegramUserId", u.status, u.created_at as "createdAt",
+                       b.primary_channel as "primaryChannel", b.plan_code as "planCode", b.created_at as "activatedAt"
+                from users u left join businesses b on b.owner_user_id = u.id where u.telegram_user_id > 0
+                order by u.id desc limit ?""", EXPORT_MAX_ROWS);
+        audit.recordStandalone(AuditService.Actor.ADMIN, p.email(), null, "EXPORT_SELLERS", "USER", null, "rows=" + rows.size());
+        return csv("sellers.csv", rows);
+    }
+
+    private static ResponseEntity<String> csv(String name, List<Map<String, Object>> rows) {
+        StringBuilder sb = new StringBuilder("\uFEFF"); // Excel uchun UTF-8 BOM
+        if (!rows.isEmpty()) {
+            sb.append(String.join(",", rows.get(0).keySet().stream().map(AdminController::csvCell).toList())).append("\r\n");
+            for (Map<String, Object> r : rows) {
+                sb.append(String.join(",", r.values().stream().map(v -> csvCell(v == null ? "" : v.toString())).toList()))
+                        .append("\r\n");
+            }
+        }
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + name + "\"")
+                .header("Content-Type", "text/csv; charset=UTF-8")
+                .body(sb.toString());
+    }
+
+    /** CSV injection himoyasi: = + - @ (va tab/CR) bilan boshlangan qiymat oldiga ' qo'shiladi. */
+    static String csvCell(String v) {
+        String s = v;
+        if (!s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) s = "'" + s;
+        if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
+            s = "\"" + s.replace("\"", "\"\"") + "\"";
+        }
+        return s;
     }
 
     // ================================================================= admins (SUPERADMIN)

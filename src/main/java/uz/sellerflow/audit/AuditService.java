@@ -110,6 +110,13 @@ public class AuditService {
                 entityType, entityId == null ? null : entityId.toString(), summary));
     }
 
+    /** Tranzaksiyasiz kontekstdan (masalan, eksport endpointi) yozish uchun. */
+    @Transactional
+    public void recordStandalone(Actor actor, Object actorId, Long businessId, String action,
+                                 String entityType, Object entityId, String summary) {
+        record(actor, actorId, businessId, action, entityType, entityId, summary);
+    }
+
     @Transactional(readOnly = true)
     public Page<AuditEvent> list(int page, int size) {
         return repo.findAll(PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "id")));

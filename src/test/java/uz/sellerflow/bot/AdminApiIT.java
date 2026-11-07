@@ -449,6 +449,38 @@ class AdminApiIT extends IntegrationTest {
         }
     }
 
+    /** D-5: audit filtrlari va CSV eksportlar (injection-safe, auditga yoziladi, rollar). */
+    @Test
+    void auditFilters_andCsvExports() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"=HYPERLINK(1) test sabab\"}");
+        JsonNode f = json(call(HttpMethod.GET, "/audit?action=ADMIN_STATUS_CHANGE&actor=" + OWNER, token, null));
+        assertThat(f.path("total").asLong()).isEqualTo(1);
+        assertThat(f.path("items").get(0).path("action").asText()).isEqualTo("ADMIN_STATUS_CHANGE");
+        assertThat(json(call(HttpMethod.GET, "/audit?from=2000-01-01&to=2000-01-02", token, null)).path("total").asLong()).isZero();
+        assertThat(call(HttpMethod.GET, "/audit?from=bad", token, null).getStatusCode().value()).isEqualTo(400);
+
+        ResponseEntity<String> csv = call(HttpMethod.GET, "/audit/export.csv?action=ADMIN_STATUS_CHANGE", token, null);
+        assertThat(csv.getStatusCode().value()).isEqualTo(200);
+        assertThat(csv.getHeaders().getFirst("Content-Disposition")).contains("audit.csv");
+        assertThat(csv.getBody()).contains("ADMIN_STATUS_CHANGE");
+        ResponseEntity<String> sellers = call(HttpMethod.GET, "/sellers/export.csv", token, null);
+        assertThat(sellers.getBody()).contains(String.valueOf(u)).doesNotContain("unitCost");
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action in ('EXPORT_AUDIT','EXPORT_SELLERS')", Long.class)).isEqualTo(2);
+
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("=1+2")).isEqualTo("'=1+2");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("a,b")).isEqualTo("\"a,b\"");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("@x")).startsWith("'");
+
+        String email = "csv" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
+        String support = loginWithNewPassword(email, "temporary-pass-123");
+        assertThat(call(HttpMethod.GET, "/audit/export.csv", support, null).getStatusCode().value()).isEqualTo(403);
+        assertThat(call(HttpMethod.GET, "/sellers/export.csv", support, null).getStatusCode().value()).isEqualTo(200);
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();
