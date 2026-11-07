@@ -134,8 +134,9 @@ public class AdminController {
     }
 
     @PostMapping("/auth/password")
-    public Map<String, Object> password(@RequestAttribute(PRINCIPAL) Principal p, @RequestBody PasswordChange r) {
-        auth.changePassword(p, r.currentPassword(), r.newPassword());
+    public Map<String, Object> password(@RequestAttribute(PRINCIPAL) Principal p, @RequestBody PasswordChange r,
+                                        HttpServletRequest req) {
+        auth.changePassword(p, bearer(req), r.currentPassword(), r.newPassword());
         return m("ok", true);
     }
 

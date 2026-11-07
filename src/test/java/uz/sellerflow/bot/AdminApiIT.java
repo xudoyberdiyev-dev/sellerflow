@@ -148,6 +148,38 @@ class AdminApiIT extends IntegrationTest {
                 .isEqualTo(step + 1);
     }
 
+    /** M-4 regression: parol almashganda boshqa sessiyalar bekor; joriy parol xatosi lockout hisoblagichiga qo'shiladi. */
+    @Test
+    void passwordChange_revokesOtherSessions_andCountsWrongCurrentPassword() throws Exception {
+        String token = owner();
+        String email = "pwd" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
+        String a = login(email, "temporary-pass-123");
+        String b = login(email, "temporary-pass-123");
+
+        ResponseEntity<String> wrong = call(HttpMethod.POST, "/auth/password", a,
+                "{\"currentPassword\":\"not-the-password\",\"newPassword\":\"brand-new-pass-456\"}");
+        assertThat(wrong.getStatusCode().value()).isEqualTo(400);
+        assertThat(jdbc.queryForObject("select failed_attempts from admins where lower(email) = lower(?)", Integer.class, email))
+                .isEqualTo(1);
+
+        ResponseEntity<String> ok = call(HttpMethod.POST, "/auth/password", a,
+                "{\"currentPassword\":\"temporary-pass-123\",\"newPassword\":\"brand-new-pass-456\"}");
+        assertThat(ok.getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.GET, "/auth/me", a, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.GET, "/auth/me", b, null).getStatusCode().value()).isEqualTo(401);
+
+        // Joriy parolni sessiya orqali taxmin qilish lockout'ga olib keladi va barcha sessiyalar bekor bo'ladi
+        for (int i = 0; i < 10; i++) {
+            call(HttpMethod.POST, "/auth/password", a,
+                    "{\"currentPassword\":\"guess-" + i + "\",\"newPassword\":\"brand-new-pass-789\"}");
+        }
+        assertThat(jdbc.queryForObject("select locked_until from admins where lower(email) = lower(?)", Instant.class, email))
+                .isNotNull();
+        assertThat(call(HttpMethod.GET, "/auth/me", a, null).getStatusCode().value()).isEqualTo(401);
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();

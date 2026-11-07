@@ -172,6 +172,11 @@ public class AdminAuthService {
         int revokeAll(Long adminId);
 
         @Modifying
+        @Query(nativeQuery = true, value = "update admin_sessions set revoked = true"
+                + " where admin_id = ?1 and token_hash <> ?2 and not revoked")
+        int revokeAllExcept(Long adminId, String keepTokenHash);
+
+        @Modifying
         @Query(nativeQuery = true, value = "delete from admin_sessions where expires_at < now() - interval '1 day'")
         int purgeOld();
     }
@@ -322,15 +327,29 @@ public class AdminAuthService {
         });
     }
 
-    @Transactional
-    public void changePassword(Principal p, String current, String next) {
+    /**
+     * M-4: joriy parol xatosi ham lockout hisoblagichiga qo'shiladi (sessiya orqali brute-force yo'q);
+     * akkaunt shu sababli bloklansa — barcha sessiyalar bekor. Muvaffaqiyatda joriy sessiyadan boshqa
+     * barcha sessiyalar bekor qilinadi.
+     */
+    @Transactional(noRollbackFor = Errors.Validation.class)
+    public void changePassword(Principal p, String currentToken, String current, String next) {
         Admin a = admins.findById(p.id()).orElseThrow(() -> new Errors.NotFound("admin"));
-        if (!encoder.matches(current == null ? "" : current, a.passwordHash)) throw new Errors.Validation("WRONG_PASSWORD");
+        if (!encoder.matches(current == null ? "" : current, a.passwordHash)) {
+            if (admins.registerFailure(a.id, MAX_FAILED, Instant.now().plus(LOCK)) > 0) {
+                sessions.revokeAll(a.id);
+                audit.record(Actor.SYSTEM, "auth", null, "ADMIN_LOCKED", "ADMIN", a.id, "after failed current-password");
+            }
+            throw new Errors.Validation("WRONG_PASSWORD");
+        }
         validatePassword(next);
         a.passwordHash = encoder.encode(next);
         a.mustChangePassword = false;
+        a.failedAttempts = 0;
         admins.save(a);
-        audit.record(Actor.ADMIN, p.email(), null, "ADMIN_PASSWORD_CHANGED", "ADMIN", a.id, null);
+        int revoked = sessions.revokeAllExcept(a.id, currentToken == null ? "" : hash(currentToken));
+        audit.record(Actor.ADMIN, p.email(), null, "ADMIN_PASSWORD_CHANGED", "ADMIN", a.id,
+                "other sessions revoked=" + revoked);
     }
 
     // ================================================================= admin management (SUPERADMIN)
