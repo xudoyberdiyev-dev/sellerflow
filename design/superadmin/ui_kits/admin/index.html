@@ -1,0 +1,25 @@
+<!-- @dsCard group="SellerFlow Admin" viewport="1440x900" name="Admin panel (click-through)" subtitle="Login → 2FA → dashboard, sellers, consent flow, access requests, audit, admins" -->
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SellerFlow Admin — UI kit</title>
+<link rel="icon" href="../../assets/logo-mark.svg">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../../components/ds-loader.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  // Default the preview to the logged-in dashboard; Tizimdan chiqish shows the login + 2FA flow.
+  if (localStorage.getItem('sf-kit-authed') == null) localStorage.setItem('sf-kit-authed', '1');
+  window.loadSellerFlowModules(['data.js', 'Shell.jsx', 'Login.jsx', 'Dashboard.jsx', 'Sellers.jsx', 'SellerDetail.jsx', 'AccessRequests.jsx', 'Admins.jsx', 'App.jsx'])
+    .then(function (K) { ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(K.KitApp)); })
+    .catch(function (e) { document.getElementById('root').textContent = 'Yuklashda xato: ' + e.message; console.error(e); });
+</script>
+</body>
+</html>

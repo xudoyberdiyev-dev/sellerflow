@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<style>html,body{margin:0;background:#f5f5f4;} a{color:#1c1917;} a:hover{color:#57534e;}</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:40px;font-family:Inter,system-ui,sans-serif;color:#1c1917;">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:960px;">
+    <span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#57534e;">SellerFlow Admin · Kirish so‘rovlari</span>
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.02em;">Rozilik asosidagi vaqtinchalik kirish</h1>
+    <p style="margin:0;font-size:15px;line-height:24px;color:#57534e;text-wrap:pretty;">Taymerlar jonli ishlaydi: ro‘yxatdagi chiplar, banner va qolgan vaqt har soniyada kamayadi, oxirgi 5 daqiqada sariq rangga o‘tadi. Yangi so‘rov formasi, Telegram preview, bekor qilish, hisob tafsiloti drawer’i va muddat tugash modali interaktiv.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:24px;"><h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;">A · Ro‘yxat sahifasi</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="5a" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5a</span><span style="font-size:14px;font-weight:500;">Faol ruxsatlar · SUPERADMIN</span></div>
+      <div style="width:1440px;height:1040px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access"  preview-width="{{ 1440 }}" hint-size="1440px,1040px"></dc-import></div>
+    </div>
+    <div id="5b" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5b</span><span style="font-size:14px;font-weight:500;">Kutilmoqda</span></div>
+      <div style="width:1440px;height:1040px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-tab="pending" preview-width="{{ 1440 }}" hint-size="1440px,1040px"></dc-import></div>
+    </div>
+    <div id="5c" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5c</span><span style="font-size:14px;font-weight:500;">Tarix · rad etilgan, bekor qilingan, eskirgan</span></div>
+      <div style="width:1440px;height:1160px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-tab="history" preview-width="{{ 1440 }}" hint-size="1440px,1160px"></dc-import></div>
+    </div>
+    <div id="5d" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5d</span><span style="font-size:14px;font-weight:500;">SUPPORT · faqat o‘z so‘rovlari</span></div>
+      <div style="width:1280px;height:1040px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" role="SUPPORT" preview-width="{{ 1280 }}" hint-size="1280px,1040px"></dc-import></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:24px;"><h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;">B · Yangi so‘rov drawer</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="5e" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5e</span><span style="font-size:14px;font-weight:500;">To‘ldirilgan · jonli Telegram preview</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-demo="new" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5f" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5f</span><span style="font-size:14px;font-weight:500;">Xato: sotuvchi akkaunti faol emas</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-demo="newError" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5g" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5g</span><span style="font-size:14px;font-weight:500;">Qorong‘i mavzu</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-demo="new" theme="dark" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:24px;"><h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;">So‘rov holatlari</h2><p style="margin:0;font-size:14px;color:#57534e;">Qatorni bosish tafsilot drawer’ini ochadi</p></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="5h" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5h</span><span style="font-size:14px;font-weight:500;">Kutilmoqda · yuborilgan xabar</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-tab="pending" access-demo="detailPending" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5i" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5i</span><span style="font-size:14px;font-weight:500;">Ruxsat faol · o‘ziniki</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-demo="detailGranted" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5j" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5j</span><span style="font-size:14px;font-weight:500;">Boshqa admin ruxsati</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-demo="detailOther" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5k" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5k</span><span style="font-size:14px;font-weight:500;">Rad etilgan</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-tab="history" access-demo="detailDenied" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5l" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5l</span><span style="font-size:14px;font-weight:500;">Bekor qilingan · kim</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-tab="history" access-demo="detailCancelled" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5m" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5m</span><span style="font-size:14px;font-weight:500;">Muddati tugagan · javobsiz</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-tab="history" access-demo="detailExpired" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5n" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5n</span><span style="font-size:14px;font-weight:500;">Sotuvchi bloklangani sababli tugagan</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-tab="history" access-demo="detailBlocked" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="5o" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5o</span><span style="font-size:14px;font-weight:500;">Bekor qilish tasdig‘i</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-demo="cancel" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:24px;"><h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;">C · Read-only ko‘ruvchi</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="5p" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5p</span><span style="font-size:14px;font-weight:500;">Mahsulotlar · sticky banner + watermark</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer"  preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+    <div id="5q" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5q</span><span style="font-size:14px;font-weight:500;">Saqlangan hisoblashlar</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-tab="calcs" preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+    <div id="5r" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5r</span><span style="font-size:14px;font-weight:500;">Foyda hisobi tafsiloti · taxminiy</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-demo="calc" preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+    <div id="5s" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5s</span><span style="font-size:14px;font-weight:500;">Narx hisobi tafsiloti</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-demo="calcPrice" preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+    <div id="5t" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5t</span><span style="font-size:14px;font-weight:500;">Oxirgi 5 daqiqa · amber taymer</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-demo="expiring" preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+    <div id="5u" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5u</span><span style="font-size:14px;font-weight:500;">Muddat tugadi · ekran xiralashgan</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-demo="expired" preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+    <div id="5v" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5v</span><span style="font-size:14px;font-weight:500;">Sotuvchi ruxsatni bekor qildi</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-demo="sellerRevoked" preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+    <div id="5w" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5w</span><span style="font-size:14px;font-weight:500;">Qorong‘i · hisoblashlar</span></div>
+      <div style="width:1440px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-tab="calcs" theme="dark" preview-width="{{ 1440 }}" hint-size="1440px,1100px"></dc-import></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:24px;"><h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;">Planshet va mobil</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="5x" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5x</span><span style="font-size:14px;font-weight:500;">Planshet · ro‘yxat</span></div>
+      <div style="width:1024px;height:1200px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access"  preview-width="{{ 1024 }}" hint-size="1024px,1200px"></dc-import></div>
+    </div>
+    <div id="5y" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5y</span><span style="font-size:14px;font-weight:500;">Mobil · kartalar</span></div>
+      <div style="width:390px;height:2000px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access"  preview-width="{{ 390 }}" hint-size="390px,2000px"></dc-import></div>
+    </div>
+    <div id="5z" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">5z</span><span style="font-size:14px;font-weight:500;">Mobil · yangi so‘rov</span></div>
+      <div style="width:390px;height:1500px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" access-demo="new" preview-width="{{ 390 }}" hint-size="390px,1500px"></dc-import></div>
+    </div>
+    <div id="6a" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">6a</span><span style="font-size:14px;font-weight:500;">Mobil · ko‘ruvchi</span></div>
+      <div style="width:390px;height:1500px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-tab="calcs" preview-width="{{ 390 }}" hint-size="390px,1500px"></dc-import></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:24px;"><h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;">Yuklanish, bo‘sh, xato, 403</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="6b" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">6b</span><span style="font-size:14px;font-weight:500;">Skeleton</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" page-state="loading" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="6c" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">6c</span><span style="font-size:14px;font-weight:500;">Bo‘sh</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" page-state="empty" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="6d" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">6d</span><span style="font-size:14px;font-weight:500;">Xato</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="access" page-state="error" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="6e" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">6e</span><span style="font-size:14px;font-weight:500;">403 · boshqa admin ruxsati</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" seller-id="611908233" viewer-view="forbidden" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+    <div id="6f" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">6f</span><span style="font-size:14px;font-weight:500;">Bloklangan sotuvchi · ruxsat tugagan</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" seller-id="388102557" viewer-view="blocked" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+    <div id="6g" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">6g</span><span style="font-size:14px;font-weight:500;">Ko‘ruvchi · skeleton</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" viewer-view="loading" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

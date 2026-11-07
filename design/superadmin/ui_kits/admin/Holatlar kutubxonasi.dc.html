@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+html,body{margin:0;background:#e7e5e4;}
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+[data-sfk] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfk] button,[data-sfk] input,[data-sfk] textarea{font-family:inherit;}
+[data-sfk] [class^="icon-"]{line-height:1;display:inline-flex;}
+[data-sfk] a{color:var(--text-link);} [data-sfk] a:hover{color:var(--primary-hover);}
+</style>
+</helmet>
+<div data-sfk="" data-theme="{{ theme }}" style="width:1600px;box-sizing:border-box;padding:56px;margin:48px auto;background:var(--bg-subtle);border-radius:16px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:56px;">
+
+  <header style="display:flex;align-items:flex-end;gap:24px;">
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+      <span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-secondary);">SellerFlow Admin · Kutubxona</span>
+      <h1 style="margin:0;font-size:36px;line-height:44px;font-weight:600;letter-spacing:-.02em;">Umumiy holatlar va tizim xabarlari</h1>
+      <p style="margin:0;max-width:880px;color:var(--text-secondary);font-size:15px;line-height:24px;text-wrap:pretty;">Panelning barcha ekranlarida bir xil ishlatiladigan bo‘sh holatlar, skeletonlar, xatolar, toastlar, tasdiq oynalari, bannerlar, validatsiya va kirish ruxsati taymeri. Har bir namuna yonida uning kodi bor.</p>
+    </div>
+    <div role="radiogroup" aria-label="Mavzu" style="display:flex;gap:2px;padding:2px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);">
+      <sc-for list="{{ themeOpts }}" as="t" hint-placeholder-count="2">
+        <button type="button" role="radio" aria-checked="{{ t.on }}" onClick="{{ t.pick }}" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:0;border-radius:4px;background:{{ t.bg }};color:{{ t.fg }};font-size:13px;font-weight:500;cursor:pointer;"><i class="icon-{{ t.icon }}" aria-hidden="true" style="font-size:14px;"></i>{{ t.label }}</button>
+      </sc-for>
+    </div>
+  </header>
+
+  <section aria-labelledby="k1" style="display:flex;flex-direction:column;gap:16px;">
+    <h2 id="k1" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">01</span>Bo‘sh holatlar</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;">
+      <sc-for list="{{ empties }}" as="e" hint-placeholder-count="4">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+          <div style="min-height:280px;box-sizing:border-box;padding:32px 20px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;">
+            <span style="width:48px;height:48px;border-radius:12px;background:{{ e.bg }};border:1px solid {{ e.border }};color:{{ e.fg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ e.icon }}" aria-hidden="true" style="font-size:22px;"></i></span>
+            <h3 style="margin:4px 0 0;font-size:16px;line-height:22px;font-weight:600;">{{ e.title }}</h3>
+            <p style="margin:0;max-width:280px;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">{{ e.text }}</p>
+            <button type="button" style="margin-top:6px;height:34px;flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:6px;padding:0 12px;border:{{ e.btnBorder }};border-radius:6px;background:{{ e.btnBg }};color:{{ e.btnFg }};font-size:13px;font-weight:500;cursor:pointer;"><i class="icon-{{ e.btnIcon }}" aria-hidden="true" style="font-size:15px;"></i>{{ e.btn }}</button>
+          </div>
+          <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ e.code }}</figcaption>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-labelledby="k2" style="display:flex;flex-direction:column;gap:16px;">
+    <h2 id="k2" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">02</span>Skeletonlar</h2>
+    <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:start;">
+      <figure style="grid-column:span 3;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div role="status" aria-label="KPI yuklanmoqda" style="padding:18px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:12px;">
+          <div style="width:55%;height:12px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+          <div style="width:40%;height:28px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+          <div style="width:70%;height:10px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+          <div style="height:36px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">skeleton/kpi</figcaption>
+      </figure>
+      <figure style="grid-column:span 9;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div role="status" aria-label="Grafik yuklanmoqda" style="padding:18px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;justify-content:space-between;"><div style="width:180px;height:14px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div><div style="width:120px;height:28px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></div>
+          <div style="height:120px;display:flex;align-items:flex-end;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--border-default);">
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="24"><div style="flex:1;height:{{ b }};border-radius:3px 3px 0 0;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></sc-for>
+          </div>
+          <div style="display:flex;gap:16px;"><div style="width:90px;height:10px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div><div style="width:90px;height:10px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">skeleton/chart</figcaption>
+      </figure>
+      <figure style="grid-column:span 8;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div role="status" aria-label="Jadval yuklanmoqda" style="border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);overflow:hidden;">
+          <div style="height:40px;display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr 1fr;gap:16px;align-items:center;padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);">
+            <sc-for list="{{ skHead }}" as="h" hint-placeholder-count="5"><div style="width:{{ h }};height:10px;border-radius:4px;background:var(--border-default);"></div></sc-for>
+          </div>
+          <sc-for list="{{ skRows }}" as="r" hint-placeholder-count="8">
+            <div style="height:48px;display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr 1fr;gap:16px;align-items:center;padding:0 16px;border-bottom:1px solid var(--border-default);">
+              <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5"><div style="width:{{ c }};height:12px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">skeleton/table · 8 qator</figcaption>
+      </figure>
+      <figure style="grid-column:span 4;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div role="status" aria-label="Tafsilot yuklanmoqda" style="height:498px;box-sizing:border-box;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;overflow:hidden;box-shadow:-8px 0 24px rgba(12,10,9,.06);">
+          <div style="height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border-default);"><div style="width:140px;height:14px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div><div style="width:24px;height:24px;border-radius:6px;background:var(--bg-muted);"></div></div>
+          <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px;">
+            <div style="width:65%;height:24px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+            <div style="display:flex;gap:6px;"><div style="width:60px;height:20px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div><div style="width:80px;height:20px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></div>
+            <sc-for list="{{ skDrawer }}" as="d" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border-default);"><div style="width:35%;height:10px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div><div style="width:{{ d }};height:10px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></div></sc-for>
+          </div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">skeleton/drawer · 560px</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="k3" style="display:flex;flex-direction:column;gap:16px;">
+    <h2 id="k3" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">03</span>Xatolar</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;">
+      <sc-for list="{{ errors }}" as="x" hint-placeholder-count="4">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+          <div role="{{ x.role }}" style="min-height:300px;box-sizing:border-box;padding:32px 20px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;">
+            <span style="width:52px;height:52px;border-radius:14px;background:{{ x.bg }};border:1px solid {{ x.border }};color:{{ x.fg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ x.icon }}" aria-hidden="true" style="font-size:24px;"></i></span>
+            <span style="font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text-tertiary);letter-spacing:.04em;">{{ x.codeLabel }}</span>
+            <h3 style="margin:0;font-size:18px;line-height:24px;font-weight:600;">{{ x.title }}</h3>
+            <p style="margin:0;max-width:320px;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">{{ x.text }}</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+              <sc-for list="{{ x.btns }}" as="bt" hint-placeholder-count="1"><button type="button" style="height:34px;flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:6px;padding:0 12px;border:{{ bt.border }};border-radius:6px;background:{{ bt.bg }};color:{{ bt.fg }};font-size:13px;font-weight:500;cursor:pointer;"><i class="icon-{{ bt.icon }}" aria-hidden="true" style="font-size:15px;"></i>{{ bt.label }}</button></sc-for>
+            </div>
+            <sc-if value="{{ x.hasRef }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);">{{ x.ref }}</span></sc-if>
+          </div>
+          <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ x.code }}</figcaption>
+        </figure>
+      </sc-for>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="min-height:300px;box-sizing:border-box;border-radius:10px;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;padding:20px;">
+          <div role="alertdialog" aria-labelledby="k3s" style="width:100%;max-width:380px;box-sizing:border-box;padding:24px;border-radius:12px;background:var(--bg-surface);box-shadow:0 24px 64px rgba(12,10,9,.28);display:flex;flex-direction:column;gap:12px;">
+            <span style="width:44px;height:44px;border-radius:12px;background:var(--warning-bg);border:1px solid var(--warning-border);color:var(--warning-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-clock-alert" aria-hidden="true" style="font-size:20px;"></i></span>
+            <h3 id="k3s" style="margin:0;font-size:18px;line-height:24px;font-weight:600;">Sessiya tugadi</h3>
+            <p style="margin:0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Xavfsizlik uchun 12 soat faolsizlikdan keyin tizimdan chiqarildingiz. Davom etish uchun qayta kiring — ochiq sahifangiz saqlanadi.</p>
+            <button type="button" style="height:38px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;"><i class="icon-log-in" aria-hidden="true" style="font-size:16px;"></i>Qayta kirish</button>
+          </div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">error/session-expired · modal</figcaption>
+      </figure>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="min-height:300px;box-sizing:border-box;padding:20px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:12px;justify-content:center;">
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">Karta ichida (inline)</span>
+          <div role="alert" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--danger-border);border-radius:8px;background:var(--danger-bg);color:var(--danger-text);">
+            <i class="icon-wifi-off" aria-hidden="true" style="font-size:16px;margin-top:2px;color:var(--danger-icon);"></i>
+            <span style="flex:1;display:flex;flex-direction:column;gap:2px;font-size:13px;"><strong style="font-weight:600;">Grafikni yuklab bo‘lmadi</strong><span>Server bilan aloqa yo‘q. Qaytadan urinib ko‘ring.</span></span>
+            <button type="button" style="height:30px;padding:0 10px;border:1px solid var(--danger-border);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:12px;font-weight:500;cursor:pointer;">Qayta urinish</button>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-top:6px;">Forma ostida</span>
+          <div role="alert" style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--danger-text);"><i class="icon-circle-alert" aria-hidden="true" style="font-size:14px;margin-top:3px;"></i><span style="text-wrap:pretty;">Saqlab bo‘lmadi: server javob bermadi. O‘zgarishlar yo‘qolmadi — qayta urinib ko‘ring.</span></div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">error/inline</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="k4" style="display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">
+      <h2 id="k4" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">04</span>Toastlar</h2>
+      <span style="font-size:13px;color:var(--text-secondary);">Pastki o‘ng burchak · ustma-ust 3 tagacha · 5 soniyada avtomatik yopiladi, kursor ustida turganda to‘xtaydi</span>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start;">
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+        <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="5">
+          <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+            <div role="status" style="position:relative;overflow:hidden;display:flex;align-items:flex-start;gap:10px;padding:12px 12px 14px 14px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.22);font-size:14px;">
+              <i class="icon-{{ t.icon }}" aria-hidden="true" style="font-size:17px;margin-top:1px;color:{{ t.iconFg }};"></i>
+              <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><strong style="font-weight:600;">{{ t.title }}</strong><span style="font-size:13px;opacity:.85;text-wrap:pretty;">{{ t.sub }}</span></span>
+              <sc-if value="{{ t.hasAction }}" hint-placeholder-val="{{ false }}"><button type="button" style="height:28px;flex-shrink:0;white-space:nowrap;padding:0 10px;border:1px solid rgba(255,255,255,.3);border-radius:6px;background:transparent;color:var(--text-inverse);font-size:13px;font-weight:600;cursor:pointer;">{{ t.action }}</button></sc-if>
+              <button type="button" aria-label="Xabarni yopish" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-inverse);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+              <span aria-hidden="true" style="position:absolute;left:0;bottom:0;height:3px;width:{{ t.progress }};background:{{ t.iconFg }};opacity:.8;"></span>
+            </div>
+            <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ t.code }}</figcaption>
+          </figure>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:18px;border:1px dashed var(--border-strong);border-radius:10px;background:var(--bg-surface);">
+        <span style="font-weight:600;">Jonli namuna</span>
+        <span style="font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Tugmani bosing — toast pastki o‘ng burchakda chiqadi va 5 soniyadan keyin yopiladi. Kursorni ustiga olib boring — taymer to‘xtaydi.</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <sc-for list="{{ toastBtns }}" as="tb" hint-placeholder-count="4"><button type="button" onClick="{{ tb.run }}" style="height:34px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-{{ tb.icon }}" aria-hidden="true" style="font-size:14px;color:{{ tb.fg }};"></i>{{ tb.label }}</button></sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="k5" style="display:flex;flex-direction:column;gap:16px;">
+    <h2 id="k5" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">05</span>Tasdiq oynalari</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="min-height:340px;box-sizing:border-box;border-radius:10px;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div role="dialog" aria-labelledby="k5a" style="width:100%;max-width:440px;background:var(--bg-surface);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);">
+            <div style="padding:20px;display:flex;gap:14px;align-items:flex-start;">
+              <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--info-bg);color:var(--info-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-circle-slash" aria-hidden="true" style="font-size:20px;"></i></span>
+              <div><h3 id="k5a" style="margin:0;font-size:17px;line-height:24px;font-weight:600;">So‘rov #1044 bekor qilinsinmi?</h3><p style="margin:6px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Sotuvchi botdagi so‘rovga endi javob bera olmaydi. Amal auditga yoziladi.</p></div>
+            </div>
+            <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;border-radius:0 0 12px 12px;">
+              <button type="button" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;">Ortga</button>
+              <button type="button" style="height:36px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;">Bekor qilish</button>
+            </div>
+          </div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">confirm/default</figcaption>
+      </figure>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="min-height:340px;box-sizing:border-box;border-radius:10px;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div role="alertdialog" aria-labelledby="k5b" style="width:100%;max-width:440px;background:var(--bg-surface);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);">
+            <div style="padding:20px;display:flex;gap:14px;align-items:flex-start;">
+              <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-log-out" aria-hidden="true" style="font-size:20px;"></i></span>
+              <div><h3 id="k5b" style="margin:0;font-size:17px;line-height:24px;font-weight:600;">Boshqa sessiyalardan chiqilsinmi?</h3><p style="margin:6px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">2 ta boshqa qurilmadagi sessiya darhol yopiladi. Joriy sessiya ochiq qoladi.</p></div>
+            </div>
+            <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;border-radius:0 0 12px 12px;">
+              <button type="button" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;">Bekor qilish</button>
+              <button type="button" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--danger-solid);color:#fff;font-size:14px;font-weight:500;cursor:pointer;"><i class="icon-log-out" aria-hidden="true" style="font-size:16px;"></i>Chiqish</button>
+            </div>
+          </div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">confirm/danger</figcaption>
+      </figure>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="min-height:420px;box-sizing:border-box;border-radius:10px;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;padding:24px;">
+          <form role="alertdialog" aria-labelledby="k5c" onSubmit="{{ stop }}" style="width:100%;max-width:460px;background:var(--bg-surface);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);">
+            <div style="padding:20px 20px 0;display:flex;gap:14px;align-items:flex-start;">
+              <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-user-x" aria-hidden="true" style="font-size:20px;"></i></span>
+              <div><h3 id="k5c" style="margin:0;font-size:17px;line-height:24px;font-weight:600;">Admin o‘chirilsinmi?</h3><p style="margin:6px 0 0;font-size:13px;color:var(--text-secondary);">Barcha faol sessiyalari darhol yopiladi.</p></div>
+            </div>
+            <div style="padding:16px 20px;">
+              <label style="display:flex;flex-direction:column;gap:6px;">
+                <span style="font-size:13px;font-weight:500;">Sabab <span style="color:var(--danger-text);">*</span><span style="font-weight:400;color:var(--text-tertiary);"> — auditga yoziladi</span></span>
+                <textarea value="{{ reason }}" onChange="{{ onReason }}" rows="3" placeholder="Masalan: Shtatdan chiqdi" aria-invalid="{{ reasonEmpty }}" aria-describedby="k5ce" style="resize:none;padding:8px 10px;border:1px solid {{ reasonBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;line-height:20px;outline:none;" style-focus="border-color:var(--border-focus);"></textarea>
+                <span style="display:flex;justify-content:space-between;font-size:12px;line-height:16px;"><span id="k5ce" style="color:{{ reasonHintFg }};">{{ reasonHint }}</span><span style="color:var(--text-tertiary);">{{ reasonCount }}/300</span></span>
+              </label>
+            </div>
+            <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;border-radius:0 0 12px 12px;">
+              <button type="button" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;">Bekor qilish</button>
+              <button type="submit" disabled="{{ reasonEmpty }}" aria-disabled="{{ reasonEmpty }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:{{ reasonBtnBg }};color:{{ reasonBtnFg }};font-size:14px;font-weight:500;cursor:{{ reasonCursor }};"><i class="icon-user-x" aria-hidden="true" style="font-size:16px;"></i>O‘chirish</button>
+            </div>
+          </form>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">confirm/reason-required · sabab yozilmaguncha tugma o‘chiq</figcaption>
+      </figure>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="min-height:420px;box-sizing:border-box;border-radius:10px;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;padding:24px;">
+          <form role="alertdialog" aria-labelledby="k5d" onSubmit="{{ stop }}" style="width:100%;max-width:460px;background:var(--bg-surface);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);">
+            <div style="padding:20px 20px 0;display:flex;gap:14px;align-items:flex-start;">
+              <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-ban" aria-hidden="true" style="font-size:20px;"></i></span>
+              <div><h3 id="k5d" style="margin:0;font-size:17px;line-height:24px;font-weight:600;"><span style="font-family:var(--font-mono);">388 102 557</span> bloklansinmi?</h3><p style="margin:6px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Botda hisoblash va saqlash darhol to‘xtaydi. Faol kirish ruxsatlari bekor qilinadi.</p></div>
+            </div>
+            <div style="padding:16px 20px;">
+              <label style="display:flex;flex-direction:column;gap:6px;">
+                <span style="font-size:13px;font-weight:500;">Tasdiqlash uchun Telegram ID ni qayta yozing: <span style="font-family:var(--font-mono);font-weight:600;">388 102 557</span></span>
+                <input value="{{ typed }}" onChange="{{ onTyped }}" inputMode="numeric" autoComplete="off" placeholder="388 102 557" aria-describedby="k5de" style="height:40px;padding:0 12px;border:1px solid {{ typedBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:15px;letter-spacing:.02em;outline:none;" style-focus="border-color:var(--border-focus);">
+                <span id="k5de" style="display:flex;align-items:center;gap:6px;font-size:12px;line-height:16px;color:{{ typedFg }};"><i class="icon-{{ typedIcon }}" aria-hidden="true" style="font-size:13px;"></i>{{ typedHint }}</span>
+              </label>
+            </div>
+            <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;border-radius:0 0 12px 12px;">
+              <button type="button" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;">Bekor qilish</button>
+              <button type="submit" disabled="{{ typedLock }}" aria-disabled="{{ typedLock }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:{{ typedBtnBg }};color:{{ typedBtnFg }};font-size:14px;font-weight:500;cursor:{{ typedCursor }};"><i class="icon-ban" aria-hidden="true" style="font-size:16px;"></i>Bloklash</button>
+            </div>
+          </form>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">confirm/type-to-confirm · bo‘shliqlar hisobga olinmaydi</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="k6" style="display:flex;flex-direction:column;gap:16px;">
+    <h2 id="k6" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">06</span>Bannerlar</h2>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <sc-for list="{{ banners }}" as="b" hint-placeholder-count="4">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:6px;">
+          <div role="{{ b.role }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid {{ b.border }};border-radius:8px;background:{{ b.bg }};color:{{ b.fg }};">
+            <i class="icon-{{ b.icon }}" aria-hidden="true" style="font-size:18px;color:{{ b.dot }};"></i>
+            <span style="flex:1;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;"><strong style="font-weight:600;">{{ b.title }}</strong><span style="font-size:13px;">{{ b.text }}</span></span>
+            <sc-if value="{{ b.hasTimer }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;background:var(--bg-surface);border:1px solid {{ b.border }};font-family:var(--font-mono);font-weight:600;">{{ b.timer }}</span></sc-if>
+            <sc-if value="{{ b.hasAction }}" hint-placeholder-val="{{ false }}"><button type="button" style="height:32px;padding:0 12px;border:1px solid {{ b.border }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">{{ b.action }}</button></sc-if>
+            <sc-if value="{{ b.dismiss }}" hint-placeholder-val="{{ false }}"><button type="button" aria-label="Bannerni yopish" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:{{ b.fg }};cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button></sc-if>
+          </div>
+          <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ b.code }}</figcaption>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-labelledby="k7" style="display:flex;flex-direction:column;gap:16px;">
+    <h2 id="k7" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">07</span>Inline validatsiya</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;">
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="padding:20px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:18px;">
+          <sc-for list="{{ fieldErrs }}" as="fe" hint-placeholder-count="3">
+            <label style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:13px;font-weight:500;">{{ fe.label }}</span>
+              <input value="{{ fe.value }}" readOnly="{{ true }}" aria-invalid="true" style="height:40px;padding:0 12px;border:1px solid var(--danger-icon);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:{{ fe.font }};font-size:14px;outline:none;">
+              <span role="alert" style="display:flex;gap:6px;align-items:flex-start;font-size:12px;line-height:16px;color:var(--danger-text);"><i class="icon-circle-alert" aria-hidden="true" style="font-size:13px;margin-top:1px;"></i><span style="display:flex;flex-direction:column;gap:1px;"><span style="font-weight:600;">{{ fe.err }}</span><span style="color:var(--text-secondary);">Masalan: <span style="font-family:var(--font-mono);color:var(--text-primary);">{{ fe.example }}</span></span></span></span>
+            </label>
+          </sc-for>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">field/error · sabab + misol</figcaption>
+      </figure>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="padding:20px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:18px;">
+          <label style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:13px;font-weight:500;">Sabab <span style="font-weight:400;color:var(--text-tertiary);">— jonli</span></span>
+            <textarea value="{{ cc }}" onChange="{{ onCc }}" rows="3" maxLength="300" style="resize:none;padding:8px 10px;border:1px solid {{ ccBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;line-height:20px;outline:none;" style-focus="border-color:var(--border-focus);"></textarea>
+            <span style="display:flex;justify-content:space-between;gap:8px;font-size:12px;line-height:16px;"><span style="color:{{ ccHintFg }};">{{ ccHint }}</span><span aria-live="polite" style="font-weight:{{ ccWeight }};color:{{ ccFg }};">{{ ccCount }}/300</span></span>
+          </label>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">Hisoblagich bosqichlari</span>
+            <sc-for list="{{ ccStages }}" as="cs" hint-placeholder-count="3"><span style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-secondary);">{{ cs.label }}</span><span style="font-weight:{{ cs.weight }};color:{{ cs.fg }};">{{ cs.v }}</span></span></sc-for>
+          </div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">field/counter · 90% dan amber</figcaption>
+      </figure>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px;">
+        <div style="padding:20px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:18px;">
+          <label style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:13px;font-weight:500;">Yangi parol <span style="font-weight:400;color:var(--text-tertiary);">— jonli</span></span>
+            <input value="{{ pw }}" onChange="{{ onPw }}" type="text" autoComplete="off" spellCheck="false" style="height:40px;padding:0 12px;border:1px solid var(--border-input);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none;" style-focus="border-color:var(--border-focus);">
+            <span style="display:flex;align-items:center;gap:8px;font-size:12px;"><span aria-hidden="true" style="display:flex;gap:3px;"><sc-for list="{{ pwBars }}" as="b" hint-placeholder-count="3"><span style="width:40px;height:4px;border-radius:2px;background:{{ b }};"></span></sc-for></span><span style="font-weight:600;color:{{ pwFg }};">{{ pwLabel }}</span></span>
+          </label>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">Bosqichlar</span>
+            <sc-for list="{{ pwStages }}" as="ps" hint-placeholder-count="3">
+              <span style="display:grid;grid-template-columns:132px 64px minmax(0,1fr);gap:10px;align-items:center;font-size:12px;"><span aria-hidden="true" style="display:flex;gap:3px;"><sc-for list="{{ ps.bars }}" as="b" hint-placeholder-count="3"><span style="width:40px;height:4px;border-radius:2px;background:{{ b }};"></span></sc-for></span><span style="font-weight:600;color:{{ ps.fg }};">{{ ps.label }}</span><span style="color:var(--text-secondary);">{{ ps.rule }}</span></span>
+            </sc-for>
+          </div>
+        </div>
+        <figcaption style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">field/password-strength</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="k8" style="display:flex;flex-direction:column;gap:16px;">
+    <h2 id="k8" style="margin:0;display:flex;align-items:baseline;gap:12px;font-size:22px;line-height:30px;font-weight:600;"><span style="font-family:var(--font-mono);font-size:14px;color:var(--text-tertiary);">08</span>Kirish ruxsati countdown chip</h2>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start;">
+      <div style="padding:24px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:20px;">
+        <ol aria-label="Taymer bosqichlari" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;">
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5">
+            <li style="display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:14px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-subtle);">
+              <span role="timer" aria-label="{{ c.aria }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;background:{{ c.bg }};border:1px solid {{ c.border }};color:{{ c.fg }};font-family:var(--font-mono);font-size:13px;font-weight:600;"><i class="icon-{{ c.icon }}" aria-hidden="true" style="font-size:13px;"></i>{{ c.t }}</span>
+              <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:13px;font-weight:600;">{{ c.title }}</span><span style="font-size:12px;line-height:16px;color:var(--text-secondary);text-wrap:pretty;">{{ c.text }}</span></span>
+            </li>
+          </sc-for>
+        </ol>
+        <div aria-hidden="true" style="position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--success-icon) 0%,var(--success-icon) 91.6%,var(--warning-icon) 91.6%,var(--warning-icon) 100%);"></div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);"><span>60:00</span><span>05:00 — amber</span><span>00:00</span></div>
+        <p style="margin:0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Chip ichida doim ikonka va vaqt bor — rangni ko‘rmagan foydalanuvchi ham bosqichni ikonka (taymer → ogohlantirish → qulf) va matndan tushunadi. Ekran o‘quvchiga har daqiqada emas, faqat 05:00 va 00:00 da e’lon qilinadi.</p>
+      </div>
+      <div style="padding:20px;border:1px dashed var(--border-strong);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;gap:14px;">
+        <span style="font-weight:600;">Jonli namuna</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span role="timer" aria-label="{{ live.aria }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;background:{{ live.bg }};border:1px solid {{ live.border }};color:{{ live.fg }};font-family:var(--font-mono);font-size:15px;font-weight:600;"><i class="icon-{{ live.icon }}" aria-hidden="true" style="font-size:14px;"></i>{{ live.t }}</span>
+          <span style="font-size:13px;color:var(--text-secondary);">{{ live.title }}</span>
+        </div>
+        <span aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">{{ liveAnnounce }}</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <sc-for list="{{ jumps }}" as="j" hint-placeholder-count="4"><button type="button" onClick="{{ j.run }}" style="height:30px;padding:0 10px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;cursor:pointer;" style-hover="background:var(--bg-hover);">{{ j.label }}</button></sc-for>
+        </div>
+        <span style="font-size:12px;color:var(--text-tertiary);">Tugma taymerni shu nuqtaga o‘tkazadi, keyin u real vaqtda davom etadi.</span>
+      </div>
+    </div>
+  </section>
+
+  <div aria-live="polite" style="position:fixed;right:24px;bottom:24px;z-index:80;display:flex;flex-direction:column;gap:8px;width:380px;">
+    <sc-for list="{{ liveToasts }}" as="t" hint-placeholder-count="0">
+      <div role="status" onMouseEnter="{{ t.hold }}" onMouseLeave="{{ t.release }}" style="position:relative;overflow:hidden;display:flex;align-items:flex-start;gap:10px;padding:12px 12px 14px 14px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.28);font-size:14px;">
+        <i class="icon-{{ t.icon }}" aria-hidden="true" style="font-size:17px;margin-top:1px;color:{{ t.iconFg }};"></i>
+        <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><strong style="font-weight:600;">{{ t.title }}</strong><span style="font-size:13px;opacity:.85;">{{ t.sub }}</span></span>
+        <sc-if value="{{ t.hasAction }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ t.undo }}" style="height:28px;flex-shrink:0;white-space:nowrap;padding:0 10px;border:1px solid rgba(255,255,255,.3);border-radius:6px;background:transparent;color:var(--text-inverse);font-size:13px;font-weight:600;cursor:pointer;">Bekor qilish</button></sc-if>
+        <button type="button" aria-label="Xabarni yopish" onClick="{{ t.close }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-inverse);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+        <span aria-hidden="true" style="position:absolute;left:0;bottom:0;height:3px;width:{{ t.progress }};background:{{ t.iconFg }};opacity:.8;transition:width .1s linear;"></span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
+const pad = n => String(n).padStart(2, '0');
+const fmtT = r => pad(Math.floor(r / 60)) + ':' + pad(r % 60);
+const tone = t => ({ bg: `var(--${t}-bg)`, border: `var(--${t}-border)`, fg: `var(--${t}-text)`, dot: `var(--${t}-icon)` });
+const TT = { success: ['circle-check', 'var(--success-icon)'], error: ['circle-x', 'var(--danger-icon)'], warning: ['triangle-alert', 'var(--warning-icon)'], info: ['info', 'var(--info-icon)'] };
+const LIVE = {
+  success: { title: 'Saqlandi.', sub: 'Qo‘llab-quvvatlash kontakti yangilandi.' },
+  error: { title: 'Saqlab bo‘lmadi.', sub: 'Server bilan aloqa yo‘q. Qaytadan urinib ko‘ring.' },
+  warning: { title: 'Ruxsat 5 daqiqada tugaydi.', sub: 'Sotuvchi 517 334 902 · faqat ko‘rish.' },
+  undo: { title: 'Sessiya yopildi.', sub: 'Firefox 132 · Windows', action: true, t: 'success' },
+};
+const chipOf = r => r <= 0
+  ? { ...tone('neutral'), icon: 'lock', t: '00:00', title: 'Tugadi', text: 'Ma’lumot yopildi, ko‘ruvchi xiralashadi', aria: 'Ruxsat muddati tugadi' }
+  : r <= 300
+  ? { ...tone('warning'), icon: 'timer', t: fmtT(r), title: 'Oxirgi 5 daqiqa', text: 'Amber rang, banner ham sariq bo‘ladi', aria: `Ruxsat tugashiga ${fmtT(r)} qoldi, oxirgi daqiqalar` }
+  : { ...tone('success'), icon: 'timer', t: fmtT(r), title: 'Faol', text: 'Yashil, faqat ko‘rish', aria: `Ruxsat tugashiga ${fmtT(r)} qoldi` };
+
+class Component extends DCLogic {
+  state = { theme: null, reason: '', typed: '388 10', cc: 'Komissiya noto‘g‘ri hisoblanmoqda — murojaat #5012', pw: 'Qor7!yomgir', live: 312, toasts: [], announce: '' };
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      const s = this.state;
+      const live = Math.max(0, s.live - 1);
+      const announce = live === 300 ? 'Ruxsat tugashiga 5 daqiqa qoldi' : live === 0 && s.live > 0 ? 'Ruxsat muddati tugadi' : s.announce;
+      this.setState({ live, announce });
+    }, 1000);
+    this.tv = setInterval(() => {
+      const t = this.state.toasts; if (!t.length) return;
+      const next = t.map(x => x.held ? x : { ...x, left: x.left - 100 }).filter(x => x.left > 0);
+      this.setState({ toasts: next });
+    }, 100);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearInterval(this.tv); }
+  push = key => {
+    const L = LIVE[key], type = L.t || key, id = Date.now() + Math.random();
+    this.setState({ toasts: [...this.state.toasts, { id, type, title: L.title, sub: L.sub, action: !!L.action, left: 5000, held: false }].slice(-3) });
+  };
+  patch = (id, p) => this.setState({ toasts: this.state.toasts.map(x => x.id === id ? { ...x, ...p } : x) });
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const theme = s.theme ?? p.theme ?? 'light';
+    const rLen = s.reason.trim().length;
+    const digits = s.typed.replace(/\s/g, ''), target = '388102557';
+    const typedOk = digits === target, typedBad = digits.length >= 9 && !typedOk;
+    const ccLen = s.cc.length;
+    const n = s.pw, len = n.length, kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(r => r.test(n)).length;
+    const lvl = len === 0 ? 0 : len < 12 || kinds < 2 ? 1 : len >= 14 && kinds >= 3 ? 3 : 2;
+    const barsOf = l => [1, 2, 3].map(i => i <= l ? ['', 'var(--danger-icon)', 'var(--warning-icon)', 'var(--success-icon)'][l] : 'var(--border-default)');
+    const LV = [['—', 'var(--text-tertiary)'], ['Zaif', 'var(--danger-text)'], ['O‘rta', 'var(--warning-text)'], ['Kuchli', 'var(--success-text)']];
+    const live = chipOf(s.live);
+
+    const E = (t, icon, title, text, btn, btnIcon, code, primary) => ({ ...tone(t), fg: `var(--${t}-icon)`, icon, title, text, btn, btnIcon, code,
+      btnBg: primary ? 'var(--primary)' : 'var(--bg-surface)', btnFg: primary ? 'var(--primary-fg)' : 'var(--text-primary)', btnBorder: primary ? '0' : '1px solid var(--border-strong)' });
+    const btn = (label, icon, primary) => ({ label, icon, bg: primary ? 'var(--primary)' : 'var(--bg-surface)', fg: primary ? 'var(--primary-fg)' : 'var(--text-primary)', border: primary ? '0' : '1px solid var(--border-strong)' });
+
+    return {
+      theme,
+      themeOpts: [['light', 'Yorug‘', 'sun'], ['dark', 'Qorong‘i', 'moon']].map(([id, label, icon]) => { const on = theme === id; return { label, icon, on, bg: on ? 'var(--bg-active)' : 'transparent', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', pick: () => this.setState({ theme: id }) }; }),
+      empties: [
+        E('info', 'store', 'Hali sotuvchi yo‘q', 'Bot ishga tushgach, /start bosgan sotuvchilar shu yerda paydo bo‘ladi.', 'Bot havolasini nusxalash', 'copy', 'empty/sellers', true),
+        E('neutral', 'search-x', 'Filtr bo‘yicha natija yo‘q', '«Bloklangan» va «Ozon» filtrlari bo‘yicha sotuvchi topilmadi. Filtrlarni kengaytiring.', 'Filtrlarni tozalash', 'x', 'empty/no-results', false),
+        E('privacy', 'key-round', 'Kirish so‘rovi yo‘q', 'Sotuvchi tijoriy ma’lumotini faqat uning botdagi roziligi bilan ko‘rish mumkin.', 'Yangi so‘rov', 'plus', 'empty/access-requests', true),
+        E('neutral', 'scroll-text', 'Audit jurnali bo‘sh', 'Tanlangan davrda hech qanday amal qayd etilmagan. Sana oralig‘ini o‘zgartirib ko‘ring.', 'Oxirgi 30 kun', 'calendar-range', 'empty/audit', false),
+      ],
+      bars: [38, 52, 44, 70, 58, 66, 48, 80, 62, 74, 56, 88, 64, 72, 50, 84, 60, 76, 54, 68, 46, 78, 58, 90].map(h => h + '%'),
+      skHead: ['40%', '50%', '45%', '55%', '40%'],
+      skRows: Array.from({ length: 8 }, (_, i) => ({ cells: ['70%', '55%', '65%', '45%', '60%'].map((w, j) => ['70%', '55%', '65%', '45%', '60%', '80%', '50%'][(i + j) % 7]) })),
+      skDrawer: ['40%', '30%', '45%', '25%', '35%', '42%'],
+      errors: [
+        { role: 'alert', ...tone('danger'), fg: 'var(--danger-icon)', icon: 'wifi-off', codeLabel: 'Tarmoq', title: 'Server bilan aloqa yo‘q', text: 'Server bilan aloqa yo‘q. Qaytadan urinib ko‘ring.', btns: [btn('Qayta urinish', 'refresh-cw', true)], hasRef: false, ref: '', code: 'error/network' },
+        { role: 'region', ...tone('privacy'), fg: 'var(--privacy-icon)', icon: 'lock', codeLabel: '403', title: 'Ruxsat yo‘q', text: 'Bu sahifa faqat SUPERADMIN uchun. Kirish kerak bo‘lsa, administratorga murojaat qiling.', btns: [btn('Boshqaruv paneliga', 'arrow-left', false)], hasRef: false, ref: '', code: 'error/403' },
+        { role: 'region', ...tone('neutral'), fg: 'var(--neutral-icon)', icon: 'map-pin-off', codeLabel: '404', title: 'Sahifa topilmadi', text: 'Havola eskirgan yoki noto‘g‘ri yozilgan. Manzilni tekshiring.', btns: [btn('Bosh sahifaga', 'house', false)], hasRef: false, ref: '', code: 'error/404' },
+        { role: 'alert', ...tone('danger'), fg: 'var(--danger-icon)', icon: 'server-crash', codeLabel: '500', title: 'Serverda xatolik', text: 'So‘rovni bajarib bo‘lmadi. Jamoa xabardor qilindi — birozdan keyin qayta urinib ko‘ring.', btns: [btn('Qayta urinish', 'refresh-cw', true), btn('Tizim holati', 'activity', false)], hasRef: true, ref: 'Xato ID: 9b2d-44e0 · 06.11.2026, 14:41', code: 'error/500' },
+      ],
+      toasts: [
+        ['success', 'Sotuvchi bloklandi.', 'Sabab va amal auditga yozildi.', null, '60%', 'toast/success'],
+        ['error', 'Saqlab bo‘lmadi.', 'Server bilan aloqa yo‘q. Qaytadan urinib ko‘ring.', 'Qayta urinish', '35%', 'toast/error · amal bilan'],
+        ['warning', 'Ruxsat 5 daqiqada tugaydi.', 'Sotuvchi 517 334 902 · faqat ko‘rish.', null, '80%', 'toast/warning'],
+        ['info', 'So‘rov yuborildi.', 'Sotuvchi botda tasdiqlashi kerak.', null, '50%', 'toast/info'],
+        ['success', 'Sessiya yopildi.', 'Firefox 132 · Windows', 'Bekor qilish', '20%', 'toast/undo · «Bekor qilish» 5 s ichida'],
+      ].map(([t, title, sub, action, progress, code]) => ({ icon: TT[t][0], iconFg: TT[t][1], title, sub, hasAction: !!action, action: action || '', progress, code })),
+      toastBtns: [['success', 'Muvaffaqiyat'], ['error', 'Xato'], ['warning', 'Ogohlantirish'], ['undo', '«Bekor qilish» bilan']].map(([k, label]) => ({ label, icon: TT[LIVE[k].t || k][0], fg: TT[LIVE[k].t || k][1], run: () => this.push(k) })),
+      liveToasts: s.toasts.map(x => ({ icon: TT[x.type][0], iconFg: TT[x.type][1], title: x.title, sub: x.sub, hasAction: x.action, progress: (x.left / 50) + '%',
+        hold: () => this.patch(x.id, { held: true }), release: () => this.patch(x.id, { held: false }),
+        close: () => this.setState({ toasts: this.state.toasts.filter(y => y.id !== x.id) }),
+        undo: () => this.setState({ toasts: [...this.state.toasts.filter(y => y.id !== x.id), { id: Date.now(), type: 'info', title: 'Bekor qilindi.', sub: 'Sessiya qayta tiklandi.', action: false, left: 5000, held: false }] }) })),
+      stop: e => e.preventDefault(),
+      reason: s.reason, onReason: e => this.setState({ reason: e.target.value.slice(0, 300) }), reasonCount: s.reason.length,
+      reasonEmpty: rLen === 0, reasonBorder: 'var(--border-input)', reasonHint: rLen === 0 ? 'Sabab yozilmaguncha tugma faol bo‘lmaydi.' : 'Tayyor.', reasonHintFg: rLen === 0 ? 'var(--text-secondary)' : 'var(--success-text)',
+      reasonBtnBg: rLen === 0 ? 'var(--bg-muted)' : 'var(--danger-solid)', reasonBtnFg: rLen === 0 ? 'var(--text-tertiary)' : '#fff', reasonCursor: rLen === 0 ? 'not-allowed' : 'pointer',
+      typed: s.typed, onTyped: e => this.setState({ typed: e.target.value.replace(/[^\d\s]/g, '').slice(0, 14) }),
+      typedLock: !typedOk, typedBorder: typedOk ? 'var(--success-icon)' : typedBad ? 'var(--danger-icon)' : 'var(--border-input)',
+      typedFg: typedOk ? 'var(--success-text)' : typedBad ? 'var(--danger-text)' : 'var(--text-secondary)', typedIcon: typedOk ? 'circle-check' : typedBad ? 'circle-alert' : 'info',
+      typedHint: typedOk ? 'Mos keldi — bloklash mumkin.' : typedBad ? 'ID mos kelmadi. Sarlavhadagi raqamni aynan yozing.' : `${digits.length}/9 raqam kiritildi`,
+      typedBtnBg: typedOk ? 'var(--danger-solid)' : 'var(--bg-muted)', typedBtnFg: typedOk ? '#fff' : 'var(--text-tertiary)', typedCursor: typedOk ? 'pointer' : 'not-allowed',
+      banners: [
+        { ...tone('warning'), role: 'status', icon: 'key-round', title: 'Vaqtinchalik parol bilan kirdingiz.', text: 'Davom etishdan oldin o‘z parolingizni o‘rnating va 2FA ni ulang.', hasAction: true, action: 'Parolni almashtirish', hasTimer: false, timer: '', dismiss: false, code: 'banner/temp-password · yopib bo‘lmaydi' },
+        { ...tone('info'), role: 'status', icon: 'clock', title: 'Sessiya 10 daqiqada tugaydi.', text: 'Faolsizlik tufayli. Ishni davom ettirsangiz, sessiya uzaytiriladi.', hasAction: true, action: 'Sessiyani uzaytirish', hasTimer: true, timer: '09:42', dismiss: true, code: 'banner/session-expiring' },
+        { ...tone('danger'), role: 'alert', icon: 'octagon-alert', title: 'Tizimda muammo.', text: 'Ma’lumotlar bazasi javob bermayapti — ba’zi sahifalar ishlamasligi mumkin. 14:46 dan beri.', hasAction: true, action: 'Tizim holati', hasTimer: false, timer: '', dismiss: false, code: 'banner/system-issue' },
+        { ...tone('privacy'), role: 'region', icon: 'lock', title: 'Faqat ko‘rish rejimi.', text: 'Sotuvchi 517 334 902 roziligi bilan · har ko‘rish auditga yozilmoqda. Tahrirlash, nusxalash va eksport o‘chirilgan.', hasAction: true, action: 'Yopish', hasTimer: true, timer: '23:41', dismiss: false, code: 'banner/read-only · sticky' },
+      ],
+      fieldErrs: [
+        { label: 'Sotuvchi Telegram ID', value: '51733490a', font: 'var(--font-mono)', err: 'Telegram ID faqat raqamlardan iborat bo‘ladi.', example: '517 334 902' },
+        { label: 'Havola', value: 'sellerflow.uz/yordam', font: 'var(--font-mono)', err: 'Havola https:// bilan boshlanishi yoki @username bo‘lishi kerak', example: '@sellerflow_support' },
+        { label: 'Sana', value: '31.02.2026', font: 'var(--font-mono)', err: 'Bunday sana yo‘q. Format: DD.MM.YYYY.', example: '28.02.2026' },
+      ],
+      cc: s.cc, onCc: e => this.setState({ cc: e.target.value.slice(0, 300) }), ccCount: ccLen,
+      ccFg: ccLen >= 300 ? 'var(--danger-text)' : ccLen >= 270 ? 'var(--warning-text)' : 'var(--text-tertiary)', ccWeight: ccLen >= 270 ? 600 : 400,
+      ccBorder: ccLen >= 300 ? 'var(--danger-icon)' : 'var(--border-input)', ccHint: ccLen < 10 ? `Yana ${10 - ccLen} ta belgi — kamida 10 ta.` : ccLen >= 300 ? 'Chegaraga yetdi.' : 'Sotuvchiga aynan shu matn ko‘rsatiladi.', ccHintFg: ccLen < 10 || ccLen >= 300 ? 'var(--danger-text)' : 'var(--text-secondary)',
+      ccStages: [['0–269', '120/300', 'var(--text-tertiary)', 400], ['270–299 · amber', '284/300', 'var(--warning-text)', 600], ['300 · chegara', '300/300', 'var(--danger-text)', 600]].map(([label, v, fg, weight]) => ({ label, v, fg, weight })),
+      pw: s.pw, onPw: e => this.setState({ pw: e.target.value.slice(0, 64) }), pwBars: barsOf(lvl), pwLabel: LV[lvl][0], pwFg: LV[lvl][1],
+      pwStages: [[1, '12 belgidan kam yoki bir xil turdagi belgilar'], [2, '12+ belgi, harf va raqam'], [3, '14+ belgi, 3 xil tur (katta, kichik, raqam, belgi)']].map(([l, rule]) => ({ bars: barsOf(l), label: LV[l][0], fg: LV[l][1], rule })),
+      chips: [3600, 1800, 300, 42, 0].map(r => { const c = chipOf(r); return { ...c, title: r === 3600 ? 'Boshlanish' : r === 1800 ? c.title : r === 42 ? 'Oxirgi soniyalar' : c.title, text: r === 3600 ? 'Ruxsat 60 daqiqaga berildi' : r === 42 ? 'Amber, yopilishdan oldin' : c.text }; }),
+      live, liveAnnounce: s.announce,
+      jumps: [['60:00', 3600], ['05:10', 310], ['00:15', 15], ['00:00', 0]].map(([label, v]) => ({ label, run: () => this.setState({ live: v, announce: v === 0 ? 'Ruxsat muddati tugadi' : '' }) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

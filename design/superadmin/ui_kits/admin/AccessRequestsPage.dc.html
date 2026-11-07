@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfa] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfa] button,[data-sfa] input,[data-sfa] textarea{font-family:inherit;}
+[data-sfa] [class^="icon-"]{line-height:1;display:inline-flex;}
+[data-sfa] tbody tr:focus-visible{outline-offset:-2px;}
+</style>
+</helmet>
+<div data-sfa="" ref="{{ rootRef }}" onKeyDown="{{ onRootKey }}" style="display:flex;flex-direction:column;gap:20px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;">
+
+  <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">
+      <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">Kirish so‘rovlari</h1>
+      <p style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;display:flex;gap:6px;align-items:flex-start;"><i class="icon-shield-check" aria-hidden="true" style="font-size:15px;color:var(--privacy-icon);margin-top:3px;"></i><span>Tijoriy ma’lumotga faqat sotuvchi roziligi bilan, vaqtinchalik va faqat o‘qish uchun kiriladi.</span></p>
+    </div>
+    <button type="button" onClick="{{ openNew }}" style="height:36px;display:{{ deskFlex }};align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--primary-hover);"><i class="icon-plus" aria-hidden="true" style="font-size:16px;"></i>Yangi so‘rov</button>
+  </div>
+
+  <section aria-labelledby="sfa-proc" style="display:flex;flex-direction:column;gap:10px;">
+    <h2 id="sfa-proc" style="margin:0;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);">Qanday ishlaydi</h2>
+    <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:{{ stepCols }};gap:1px;background:var(--privacy-border);border:1px solid var(--privacy-border);border-radius:10px;overflow:hidden;">
+      <sc-for list="{{ steps }}" as="sp" hint-placeholder-count="4">
+        <li style="position:relative;background:var(--bg-surface);padding:16px 18px;display:flex;gap:12px;align-items:flex-start;min-width:0;">
+          <span aria-hidden="true" style="width:32px;height:32px;flex-shrink:0;border-radius:50%;background:var(--privacy-bg);border:1px solid var(--privacy-border);color:var(--privacy-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-{{ sp.icon }}" style="font-size:15px;"></i></span>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+            <span style="font-size:12px;line-height:16px;font-weight:600;color:var(--privacy-text);">{{ sp.n }}-qadam</span>
+            <span style="font-weight:600;text-wrap:pretty;">{{ sp.title }}</span>
+            <span style="font-size:13px;line-height:18px;color:var(--text-secondary);text-wrap:pretty;">{{ sp.text }}</span>
+          </div>
+          <sc-if value="{{ sp.arrow }}" hint-placeholder-val="{{ false }}">
+            <span aria-hidden="true" style="position:absolute;right:-12px;top:22px;z-index:1;width:22px;height:22px;border-radius:50%;background:var(--bg-surface);border:1px solid var(--privacy-border);color:var(--privacy-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-chevron-right" style="font-size:13px;"></i></span>
+          </sc-if>
+        </li>
+      </sc-for>
+    </ol>
+  </section>
+
+  <div role="tablist" aria-label="So‘rovlar" onKeyDown="{{ tabKey }}" style="display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border-default);">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+      <button type="button" role="tab" id="{{ t.domId }}" aria-selected="{{ t.on }}" aria-controls="sfa-panel" tabIndex="{{ t.tabIndex }}" onClick="{{ t.onClick }}" style="height:40px;display:flex;align-items:center;gap:6px;padding:0 10px;margin-bottom:-1px;border:0;border-bottom:2px solid {{ t.line }};background:transparent;color:{{ t.fg }};font-size:14px;font-weight:{{ t.weight }};cursor:pointer;white-space:nowrap;" style-hover="color:var(--text-primary);"><i class="icon-{{ t.icon }}" aria-hidden="true" style="font-size:14px;color:{{ t.iconFg }};"></i>{{ t.label }}<sc-if value="{{ t.hasCount }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;line-height:16px;padding:0 6px;border-radius:8px;background:{{ t.cbg }};border:1px solid {{ t.cborder }};color:{{ t.cfg }};font-weight:500;">{{ t.count }}</span></sc-if></button>
+    </sc-for>
+  </div>
+
+  <div role="tabpanel" id="sfa-panel" aria-labelledby="{{ panelLabel }}" style="display:flex;flex-direction:column;gap:12px;">
+    <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="padding:56px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+        <span style="width:48px;height:48px;border-radius:12px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-cloud-off" aria-hidden="true" style="font-size:22px;"></i></span>
+        <h2 style="margin:0;font:var(--type-h3);">So‘rovlarni yuklab bo‘lmadi</h2>
+        <p style="margin:0;max-width:420px;color:var(--text-secondary);text-wrap:pretty;">Server javob bermadi. Faol ruxsatlar shu vaqt ichida ham taymer bo‘yicha yopiladi.</p>
+        <button type="button" onClick="{{ retry }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:16px;"></i>Qayta urinish</button>
+        <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">Xato ID: a71f-3c08 · 06.11.2026, 14:44</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:56px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+        <span style="width:48px;height:48px;border-radius:12px;background:var(--privacy-bg);border:1px solid var(--privacy-border);color:var(--privacy-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-{{ empty.icon }}" aria-hidden="true" style="font-size:22px;"></i></span>
+        <h2 style="margin:0;font:var(--type-h3);">{{ empty.title }}</h2>
+        <p style="margin:0;max-width:420px;color:var(--text-secondary);text-wrap:pretty;">{{ empty.text }}</p>
+        <sc-if value="{{ empty.hasBtn }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ openNew }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-plus" aria-hidden="true" style="font-size:16px;"></i>Yangi so‘rov</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showTable }}" hint-placeholder-val="{{ true }}">
+      <div style="border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);overflow:hidden;">
+        <div style="overflow:auto;">
+          <table aria-label="{{ tableLabel }}" aria-busy="{{ isLoading }}" style="width:100%;min-width:1140px;border-collapse:separate;border-spacing:0;font-size:13px;">
+            <thead>
+              <tr>
+                <sc-for list="{{ heads }}" as="h" hint-placeholder-count="9">
+                  <th scope="col" style="height:40px;padding:0 14px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:{{ h.align }};font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">{{ h.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+              <tbody>
+                <sc-for list="{{ skel }}" as="sk" hint-placeholder-count="5">
+                  <tr>
+                    <sc-for list="{{ sk.cells }}" as="c" hint-placeholder-count="9">
+                      <td style="height:56px;padding:0 14px;border-bottom:1px solid var(--border-default);"><div style="width:{{ c.w }};height:12px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </sc-if>
+            <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+              <tbody>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="3">
+                  <tr tabIndex="0" aria-label="So‘rov {{ r.num }}, sotuvchi {{ r.idText }}, {{ r.status }}. Tafsilotni ochish" onClick="{{ r.open }}" onKeyDown="{{ r.onKey }}" style="cursor:pointer;" style-hover="background:var(--bg-hover);">
+                    <td style="height:56px;padding:0 14px;border-bottom:1px solid var(--border-default);font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);white-space:nowrap;">{{ r.num }}</td>
+                    <td style="padding:0 14px;border-bottom:1px solid var(--border-default);font-family:var(--font-mono);font-weight:500;white-space:nowrap;">{{ r.idText }}</td>
+                    <td title="{{ r.reason }}" style="padding:0 14px;border-bottom:1px solid var(--border-default);color:var(--text-secondary);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.reason }}</td>
+                    <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;">{{ r.dur }}</td>
+                    <td style="padding:6px 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;">
+                      <span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;">
+                        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.bg }};border:1px solid {{ r.border }};color:{{ r.fg }};"><i class="icon-{{ r.icon }}" aria-hidden="true" style="font-size:12px;color:{{ r.dot }};"></i>{{ r.status }}</span>
+                        <sc-if value="{{ r.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:14px;color:var(--text-secondary);">{{ r.sub }}</span></sc-if>
+                      </span>
+                    </td>
+                    <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;">
+                      <sc-if value="{{ r.hasTimer }}" hint-placeholder-val="{{ false }}"><span role="timer" aria-label="Qolgan vaqt {{ r.timer }}" style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:12px;background:{{ r.tbg }};border:1px solid {{ r.tborder }};color:{{ r.tfg }};font-family:var(--font-mono);font-size:12px;font-weight:600;"><i class="icon-timer" aria-hidden="true" style="font-size:12px;"></i>{{ r.timer }}</span></sc-if>
+                      <sc-if value="{{ r.hasWait }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:12px;background:var(--bg-subtle);border:1px solid var(--border-default);color:var(--text-secondary);font-size:12px;"><i class="icon-hourglass" aria-hidden="true" style="font-size:12px;"></i>{{ r.wait }}</span></sc-if>
+                      <sc-if value="{{ r.noTime }}" hint-placeholder-val="{{ false }}"><span style="color:var(--text-tertiary);">—</span></sc-if>
+                    </td>
+                    <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:6px;">{{ r.admin }}<sc-if value="{{ r.isMe }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:16px;padding:0 5px;border-radius:4px;background:var(--primary-subtle);color:var(--primary-subtle-fg);font-weight:600;">siz</span></sc-if></span></td>
+                    <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;color:var(--text-secondary);">{{ r.at }}</td>
+                    <td onClick="{{ stop }}" onKeyDown="{{ stop }}" style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;text-align:right;">
+                      <span style="display:inline-flex;gap:6px;justify-content:flex-end;">
+                        <sc-if value="{{ r.canView }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ r.view }}" style="height:30px;display:flex;align-items:center;gap:6px;padding:0 10px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-eye" aria-hidden="true" style="font-size:14px;"></i>Ko‘rish</button></sc-if>
+                        <sc-if value="{{ r.canCancel }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ r.cancel }}" aria-label="So‘rov {{ r.num }} ni bekor qilish" style="height:30px;display:flex;align-items:center;gap:6px;padding:0 10px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger-text);">Bekor qilish</button></sc-if>
+                        <sc-if value="{{ r.noActions }}" hint-placeholder-val="{{ false }}"><span style="color:var(--text-tertiary);">—</span></sc-if>
+                      </span>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </sc-if>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--border-default);font-size:12px;color:var(--text-secondary);"><span>{{ footText }}</span><span style="margin-left:auto;display:flex;align-items:center;gap:6px;"><i class="icon-globe" aria-hidden="true" style="font-size:12px;"></i>Asia/Tashkent</span></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showCards }}" hint-placeholder-val="{{ false }}">
+      <ul aria-label="{{ tableLabel }}" style="list-style:none;margin:0;padding:0;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);overflow:hidden;">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="3">
+          <li style="position:relative;border-bottom:1px solid var(--border-default);display:flex;flex-direction:column;">
+            <button type="button" onClick="{{ r.open }}" aria-label="So‘rov {{ r.num }}, sotuvchi {{ r.idText }}, {{ r.status }}. Tafsilotni ochish" style="display:flex;flex-direction:column;gap:6px;padding:12px 60px 12px 16px;border:0;background:transparent;text-align:left;cursor:pointer;color:var(--text-primary);" style-hover="background:var(--bg-hover);">
+              <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;">
+                <span style="font-family:var(--font-mono);font-size:15px;font-weight:500;">{{ r.idText }}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.bg }};border:1px solid {{ r.border }};color:{{ r.fg }};"><i class="icon-{{ r.icon }}" aria-hidden="true" style="font-size:12px;color:{{ r.dot }};"></i>{{ r.status }}</span>
+                <sc-if value="{{ r.hasTimer }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:11px;background:{{ r.tbg }};border:1px solid {{ r.tborder }};color:{{ r.tfg }};font-family:var(--font-mono);font-size:12px;font-weight:600;"><i class="icon-timer" aria-hidden="true" style="font-size:12px;"></i>{{ r.timer }}</span></sc-if>
+                <span style="margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ r.num }}</span>
+              </span>
+              <span style="font-size:13px;color:var(--text-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ r.reason }}</span>
+              <span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ r.dur }} · {{ r.admin }} · {{ r.at }}</span>
+            </button>
+            <button type="button" aria-label="Amallar: so‘rov {{ r.num }}" aria-haspopup="menu" aria-expanded="{{ r.menuOpen }}" onClick="{{ r.toggleMenu }}" style="position:absolute;right:6px;top:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:{{ r.menuBg }};color:var(--text-secondary);cursor:pointer;"><i class="icon-ellipsis" aria-hidden="true" style="font-size:18px;"></i></button>
+            <sc-if value="{{ r.menuOpen }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ closeRowMenu }}" aria-hidden="true" style="position:fixed;inset:0;z-index:40;"></div>
+              <div role="menu" aria-label="Amallar: so‘rov {{ r.num }}" style="position:absolute;right:8px;top:52px;z-index:41;width:230px;padding:4px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;">
+                <sc-for list="{{ r.items }}" as="a" hint-placeholder-count="2">
+                  <button type="button" role="menuitem" onClick="{{ a.run }}" style="height:44px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:{{ a.fg }};font-size:14px;cursor:pointer;text-align:left;" style-hover="background:{{ a.hover }};"><i class="icon-{{ a.icon }}" aria-hidden="true" style="font-size:16px;color:{{ a.iconFg }};"></i>{{ a.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </li>
+        </sc-for>
+      </ul>
+    </sc-if>
+
+    <sc-if value="{{ isSupport }}" hint-placeholder-val="{{ false }}">
+      <p style="margin:0;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-tertiary);"><i class="icon-info" aria-hidden="true" style="font-size:13px;"></i>SUPPORT roli: faqat o‘zingiz yuborgan so‘rovlar ko‘rsatiladi.</p>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ mobileBar }}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="height:56px;"></div>
+    <div style="position:fixed;left:0;right:0;bottom:0;z-index:40;padding:10px 16px 14px;background:var(--bg-surface);border-top:1px solid var(--border-default);box-shadow:0 -8px 24px rgba(12,10,9,.08);">
+      <button type="button" onClick="{{ openNew }}" style="width:100%;height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:8px;background:var(--primary);color:var(--primary-fg);font-size:15px;font-weight:600;cursor:pointer;"><i class="icon-plus" aria-hidden="true" style="font-size:17px;"></i>Yangi so‘rov</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ newOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeNew }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:60;"></div>
+    <form role="dialog" aria-modal="true" aria-labelledby="sfa-nt" onSubmit="{{ submitNew }}" noValidate="{{ true }}" style="position:fixed;top:0;right:0;bottom:0;width:{{ nwW }};max-width:100%;z-index:61;background:var(--bg-surface);border-left:1px solid var(--border-default);box-shadow:-16px 0 48px rgba(12,10,9,.18);display:flex;flex-direction:column;">
+      <div style="height:56px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 12px 0 24px;border-bottom:1px solid var(--border-default);">
+        <i class="icon-key-round" aria-hidden="true" style="font-size:18px;color:var(--privacy-icon);"></i>
+        <h2 id="sfa-nt" style="margin:0;flex:1;font-size:16px;line-height:22px;font-weight:600;">Yangi kirish so‘rovi</h2>
+        <button type="button" aria-label="Yopish" onClick="{{ closeNew }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:18px;"></i></button>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:{{ nwCols }};align-items:stretch;">
+        <div style="padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0;">
+          <label style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:13px;font-weight:500;">Sotuvchi Telegram ID <span style="color:var(--danger-text);">*</span></span>
+            <input ref="{{ idRef }}" value="{{ nf.id }}" onChange="{{ onId }}" onBlur="{{ onIdBlur }}" inputMode="numeric" autoComplete="off" placeholder="Masalan: 402 118 775" aria-invalid="{{ look.invalid }}" aria-describedby="sfa-look" style="height:40px;padding:0 12px;border:1px solid {{ look.border }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:15px;letter-spacing:.02em;outline:none;" style-focus="border-color:var(--border-focus);box-shadow:0 0 0 3px var(--focus-ring, rgba(37,99,235,.18));">
+            <span id="sfa-look" role="{{ look.role }}" style="display:flex;align-items:flex-start;gap:6px;min-height:18px;font-size:13px;line-height:18px;color:{{ look.fg }};">
+              <sc-if value="{{ look.has }}" hint-placeholder-val="{{ false }}"><i class="icon-{{ look.icon }}" aria-hidden="true" style="font-size:14px;margin-top:2px;"></i><span style="display:flex;flex-direction:column;gap:2px;"><span style="font-weight:{{ look.weight }};">{{ look.text }}</span><sc-if value="{{ look.hasSub }}" hint-placeholder-val="{{ false }}"><span style="color:var(--text-secondary);font-weight:400;">{{ look.sub }}</span></sc-if></span></sc-if>
+            </span>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:13px;font-weight:500;">Sabab <span style="color:var(--danger-text);">*</span></span>
+            <span id="sfa-rhint" style="display:flex;gap:6px;align-items:center;font-size:12px;line-height:16px;color:var(--privacy-text);"><i class="icon-eye" aria-hidden="true" style="font-size:12px;"></i>Sotuvchiga aynan shu matn ko‘rsatiladi</span>
+            <textarea value="{{ nf.reason }}" onChange="{{ onReason }}" onBlur="{{ onReasonBlur }}" rows="4" maxLength="300" placeholder="Masalan: Komissiya noto‘g‘ri hisoblanmoqda — murojaat #5012" aria-invalid="{{ rInvalid }}" aria-describedby="sfa-rhint sfa-rerr" style="resize:vertical;min-height:96px;padding:10px 12px;border:1px solid {{ rBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;line-height:20px;outline:none;" style-focus="border-color:var(--border-focus);"></textarea>
+            <span style="display:flex;justify-content:space-between;gap:8px;font-size:12px;line-height:16px;">
+              <span id="sfa-rerr" role="alert" style="color:var(--danger-text);">{{ rErr }}</span>
+              <span style="color:{{ rCountFg }};">{{ rCount }}/300</span>
+            </span>
+          </label>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span id="sfa-dur" style="font-size:13px;font-weight:500;">Muddat</span>
+            <div role="radiogroup" aria-labelledby="sfa-dur" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;background:var(--bg-subtle);border:1px solid var(--border-default);border-radius:6px;">
+              <sc-for list="{{ durOpts }}" as="d" hint-placeholder-count="3">
+                <button type="button" role="radio" aria-checked="{{ d.on }}" onClick="{{ d.onClick }}" style="height:34px;border:0;border-radius:4px;background:{{ d.bg }};box-shadow:{{ d.shadow }};color:{{ d.fg }};font-size:13px;font-weight:{{ d.weight }};cursor:pointer;">{{ d.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <ul style="margin:0;padding:12px 14px;list-style:none;border-radius:8px;background:var(--privacy-bg);border:1px solid var(--privacy-border);display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--privacy-text);">
+            <li style="display:flex;gap:8px;align-items:flex-start;"><i class="icon-eye" aria-hidden="true" style="font-size:14px;margin-top:3px;color:var(--privacy-icon);"></i><span style="text-wrap:pretty;">Faqat o‘qish: tahrirlash, nusxalash va eksport yo‘q.</span></li>
+            <li style="display:flex;gap:8px;align-items:flex-start;"><i class="icon-scroll-text" aria-hidden="true" style="font-size:14px;margin-top:3px;color:var(--privacy-icon);"></i><span style="text-wrap:pretty;">So‘rov va har bir ko‘rish audit jurnaliga yoziladi.</span></li>
+            <li style="display:flex;gap:8px;align-items:flex-start;"><i class="icon-circle-x" aria-hidden="true" style="font-size:14px;margin-top:3px;color:var(--privacy-icon);"></i><span style="text-wrap:pretty;">Sotuvchi ruxsatni istalgan vaqtda botda bekor qila oladi.</span></li>
+          </ul>
+        </div>
+        <div style="padding:24px;background:var(--bg-subtle);border-left:{{ pvBorderL }};border-top:{{ pvBorderT }};display:flex;flex-direction:column;gap:12px;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:13px;font-weight:600;">Sotuvchi Telegram’da ko‘radi</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:18px;font-weight:600;padding:0 7px;border-radius:9px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success-text);"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:var(--success-icon);"></span>Jonli preview</span>
+          </div>
+          <div aria-label="Telegram xabari namunasi" role="img" style="border-radius:12px;overflow:hidden;border:1px solid var(--border-default);background:var(--bg-surface);">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border-default);">
+              <img src="../../assets/logo-mark.svg" alt="" width="32" height="32" style="display:block;border-radius:50%;">
+              <span style="display:flex;flex-direction:column;"><span style="font-size:14px;font-weight:600;line-height:18px;">SellerFlow Bot</span><span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">bot</span></span>
+            </div>
+            <div style="padding:16px 12px 14px;background:var(--bg-muted);display:flex;flex-direction:column;gap:4px;">
+              <div style="align-self:flex-start;max-width:94%;box-sizing:border-box;background:var(--bg-surface);border-radius:12px 12px 12px 4px;padding:10px 12px 6px;box-shadow:0 1px 1px rgba(12,10,9,.08);font-size:14px;line-height:20px;display:flex;flex-direction:column;gap:6px;">
+                <span style="font-weight:600;">🔐 Qo‘llab-quvvatlash so‘rovi.</span>
+                <span style="text-wrap:pretty;">SellerFlow administratori mahsulotlaringiz va saqlangan hisoblashlaringizni faqat ko‘rish uchun <strong style="font-weight:600;">{{ tg.dur }} daqiqaga</strong> ruxsat so‘ramoqda.</span>
+                <span style="text-wrap:pretty;overflow-wrap:anywhere;">Sabab: <span style="color:{{ tg.reasonFg }};">{{ tg.reason }}</span></span>
+                <span style="align-self:flex-end;font-size:11px;line-height:14px;color:var(--text-tertiary);">{{ tg.time }}</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:94%;">
+                <span style="height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--bg-surface);font-size:13px;font-weight:500;box-shadow:0 1px 1px rgba(12,10,9,.08);">✅ Ruxsat berish</span>
+                <span style="height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--bg-surface);font-size:13px;font-weight:500;box-shadow:0 1px 1px rgba(12,10,9,.08);">❌ Rad etish</span>
+              </div>
+            </div>
+          </div>
+          <p style="margin:0;font-size:12px;line-height:16px;color:var(--text-secondary);text-wrap:pretty;">Xabar sotuvchiga «{{ tg.lang }}» tilida, bot orqali yuboriladi. Sizning emailingiz ko‘rsatilmaydi.</p>
+        </div>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:12px 24px;border-top:1px solid var(--border-default);background:var(--bg-subtle);">
+        <span style="flex:1 1 260px;display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:16px;color:var(--text-secondary);"><i class="icon-hourglass" aria-hidden="true" style="font-size:13px;margin-top:1px;"></i><span style="text-wrap:pretty;">So‘rov 24 soat ichida javobsiz qolsa, avtomatik eskiradi.</span></span>
+        <button type="button" onClick="{{ closeNew }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Bekor qilish</button>
+        <button type="submit" disabled="{{ busy }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-{{ sendIcon }}" aria-hidden="true" style="font-size:16px;animation:{{ sendAnim }};"></i>{{ sendLabel }}</button>
+      </div>
+    </form>
+  </sc-if>
+
+  <sc-if value="{{ detOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDet }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:60;"></div>
+    <aside role="dialog" aria-modal="true" aria-labelledby="sfa-dt" style="position:fixed;top:0;right:0;bottom:0;width:{{ detW }};max-width:100%;z-index:61;background:var(--bg-surface);border-left:1px solid var(--border-default);box-shadow:-16px 0 48px rgba(12,10,9,.18);display:flex;flex-direction:column;">
+      <div style="height:56px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 12px 0 24px;border-bottom:1px solid var(--border-default);">
+        <h2 id="sfa-dt" style="margin:0;font-size:16px;line-height:22px;font-weight:600;">So‘rov <span style="font-family:var(--font-mono);">{{ d.num }}</span></h2>
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ d.bg }};border:1px solid {{ d.border }};color:{{ d.fg }};"><i class="icon-{{ d.icon }}" aria-hidden="true" style="font-size:12px;color:{{ d.dot }};"></i>{{ d.status }}</span>
+        <span style="flex:1;"></span>
+        <button type="button" aria-label="Yopish" onClick="{{ closeDet }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:18px;"></i></button>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:20px 24px 28px;display:flex;flex-direction:column;gap:20px;">
+        <div role="status" style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid {{ d.box.border }};border-radius:8px;background:{{ d.box.bg }};color:{{ d.box.fg }};">
+          <i class="icon-{{ d.box.icon }}" aria-hidden="true" style="font-size:20px;color:{{ d.box.dot }};margin-top:1px;"></i>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+            <span style="font-weight:600;">{{ d.box.title }}</span>
+            <span style="text-wrap:pretty;">{{ d.box.text }}</span>
+            <sc-if value="{{ d.hasTimer }}" hint-placeholder-val="{{ false }}">
+              <span role="timer" style="margin-top:6px;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;background:var(--bg-surface);border:1px solid {{ d.tborder }};color:{{ d.tfg }};font-weight:600;"><i class="icon-timer" aria-hidden="true" style="font-size:14px;"></i><span style="font-family:var(--font-mono);">{{ d.timer }}</span>qoldi</span>
+            </sc-if>
+          </div>
+        </div>
+
+        <sc-if value="{{ d.isPending }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:13px;font-weight:600;">Sotuvchiga yuborilgan xabar</span>
+            <div aria-label="Sotuvchiga yuborilgan Telegram xabari" role="img" style="border-radius:12px;overflow:hidden;border:1px solid var(--border-default);background:var(--bg-surface);">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border-default);">
+                <img src="../../assets/logo-mark.svg" alt="" width="28" height="28" style="display:block;border-radius:50%;">
+                <span style="font-size:13px;font-weight:600;">SellerFlow Bot</span>
+              </div>
+              <div style="padding:14px 12px 12px;background:var(--bg-muted);display:flex;flex-direction:column;gap:4px;">
+                <div style="align-self:flex-start;max-width:94%;box-sizing:border-box;background:var(--bg-surface);border-radius:12px 12px 12px 4px;padding:10px 12px 6px;box-shadow:0 1px 1px rgba(12,10,9,.08);font-size:13px;line-height:19px;display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-weight:600;">🔐 Qo‘llab-quvvatlash so‘rovi.</span>
+                  <span style="text-wrap:pretty;">SellerFlow administratori mahsulotlaringiz va saqlangan hisoblashlaringizni faqat ko‘rish uchun <strong style="font-weight:600;">{{ d.dur }} daqiqaga</strong> ruxsat so‘ramoqda.</span>
+                  <span style="text-wrap:pretty;">Sabab: {{ d.reason }}</span>
+                  <span style="align-self:flex-end;font-size:11px;line-height:14px;color:var(--text-tertiary);display:flex;align-items:center;gap:3px;">{{ d.time }}<i class="icon-check-check" aria-hidden="true" style="font-size:12px;"></i></span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:94%;">
+                  <span style="height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--bg-surface);font-size:13px;font-weight:500;">✅ Ruxsat berish</span>
+                  <span style="height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--bg-surface);font-size:13px;font-weight:500;">❌ Rad etish</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" onClick="{{ simGrant }}" style="height:28px;padding:0 10px;border:1px dashed var(--border-strong);border-radius:6px;background:transparent;color:var(--text-secondary);font-size:12px;cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);">Prototip: sotuvchi ruxsat berdi</button>
+              <button type="button" onClick="{{ simDeny }}" style="height:28px;padding:0 10px;border:1px dashed var(--border-strong);border-radius:6px;background:transparent;color:var(--text-secondary);font-size:12px;cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);">Prototip: rad etdi</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <dl style="margin:0;display:flex;flex-direction:column;">
+          <sc-for list="{{ d.rows }}" as="dr" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;padding:10px 0;border-top:1px solid var(--border-default);">
+              <dt style="margin:0;font-size:13px;color:var(--text-secondary);">{{ dr.k }}</dt>
+              <dd style="margin:0;font-weight:500;font-family:{{ dr.font }};text-wrap:pretty;overflow-wrap:anywhere;">{{ dr.v }}</dd>
+            </div>
+          </sc-for>
+        </dl>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 24px;border-top:1px solid var(--border-default);background:var(--bg-subtle);">
+        <button type="button" onClick="{{ d.goSeller }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--text-link);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-user-round" aria-hidden="true" style="font-size:15px;"></i>Sotuvchi kartasi</button>
+        <span style="flex:1;"></span>
+        <sc-if value="{{ d.canCancel }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ d.cancel }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger-text);">{{ d.cancelLabel }}</button></sc-if>
+        <sc-if value="{{ d.canView }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ d.view }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-eye" aria-hidden="true" style="font-size:16px;"></i>Ko‘rish</button></sc-if>
+      </div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeConfirm }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:70;"></div>
+    <div style="position:fixed;inset:0;z-index:71;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="sfa-ct" aria-describedby="sfa-cd" style="pointer-events:auto;width:440px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);display:flex;flex-direction:column;">
+        <div style="padding:20px;display:flex;gap:14px;align-items:flex-start;">
+          <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-circle-slash" aria-hidden="true" style="font-size:20px;"></i></span>
+          <div style="flex:1;min-width:0;">
+            <h2 id="sfa-ct" style="margin:0;font:var(--type-h3);">{{ cf.title }}</h2>
+            <p id="sfa-cd" style="margin:6px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">{{ cf.text }}</p>
+          </div>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-radius:0 0 12px 12px;">
+          <button type="button" ref="{{ cfRef }}" onClick="{{ closeConfirm }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Ortga</button>
+          <button type="button" onClick="{{ doCancel }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--danger-solid);color:#fff;font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--danger-solid-hover);"><i class="icon-circle-slash" aria-hidden="true" style="font-size:16px;"></i>{{ cf.btn }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:fixed;left:{{ toastLeft }};right:{{ toastRight }};bottom:20px;z-index:75;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;max-width:480px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.28);font-size:14px;">
+      <i class="icon-{{ toast.icon }}" aria-hidden="true" style="font-size:16px;color:{{ toast.iconFg }};"></i>
+      <span style="flex:1;min-width:0;"><strong style="font-weight:600;">{{ toast.title }}</strong> <span>{{ toast.sub }}</span></span>
+      <button type="button" aria-label="Xabarni yopish" onClick="{{ closeToast }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-inverse);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1000},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;SUPERADMIN&quot;,&quot;SUPPORT&quot;],&quot;default&quot;:&quot;SUPERADMIN&quot;,&quot;tsType&quot;:&quot;'SUPERADMIN'|'SUPPORT'&quot;},&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;active&quot;,&quot;pending&quot;,&quot;history&quot;],&quot;default&quot;:&quot;active&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;empty&quot;,&quot;error&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;new&quot;,&quot;newError&quot;,&quot;detailPending&quot;,&quot;detailGranted&quot;,&quot;detailOther&quot;,&quot;detailDenied&quot;,&quot;detailCancelled&quot;,&quot;detailExpired&quot;,&quot;detailBlocked&quot;,&quot;cancel&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(page: string, id?: string) =&gt; void&quot;}}">
+const pad = n => String(n).padStart(2, '0');
+const nowHM = () => { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const fmtId = id => String(id).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const fmtT = r => pad(Math.floor(r / 60)) + ':' + pad(r % 60);
+const short = e => e.split('@')[0];
+const tone = t => ({ bg: `var(--${t}-bg)`, border: `var(--${t}-border)`, fg: `var(--${t}-text)`, dot: `var(--${t}-icon)` });
+const ME = { SUPERADMIN: 'd.aliyev@sellerflow.uz', SUPPORT: 'm.karimova@sellerflow.uz' };
+const RQ = { pending: ['Kutilmoqda', 'warning', 'clock'], granted: ['Ruxsat berilgan', 'success', 'circle-check'], denied: ['Rad etilgan', 'danger', 'circle-x'], cancelled: ['Bekor qilingan', 'neutral', 'circle-slash'], expired: ['Muddati tugagan', 'neutral', 'timer-off'] };
+const CHN = { uzum: 'Uzum Market', wb: 'Wildberries', ozon: 'Ozon', instagram: 'Instagram', tgshop: 'Telegram savdo', offline: 'Offline do‘kon' };
+const STL = { active: 'Faol', blocked: 'Bloklangan', deletion: 'O‘chirish so‘ralgan', closed: 'Yopilgan' };
+const LOOK = { '517334902': ['active', 'uzum'], '402118775': ['active', 'instagram'], '611908233': ['active', 'ozon'], '733120458': ['active', 'tgshop'], '205667310': ['active', 'wb'], '571902336': ['active', 'ozon'], '290117845': ['active', 'offline'], '388102557': ['blocked', 'tgshop'], '388902114': ['deletion', 'wb'], '290445118': ['closed', 'offline'] };
+const A = 'd.aliyev@sellerflow.uz', K = 'm.karimova@sellerflow.uz', T = 's.toshev@sellerflow.uz';
+const REQS = [
+  { n: 1045, id: '571902336', reason: 'Ozon’da narx tavsiyasi kutilganidan past chiqmoqda', dur: 60, st: 'pending', admin: T, at: '06.11.2026, 13:02', exp: '07.11.2026, 13:02', wait: '22 soat 18 daq' },
+  { n: 1044, id: '733120458', reason: 'Hisoblash saqlanmayapti, murojaat #5020', dur: 30, st: 'pending', admin: K, at: '06.11.2026, 14:40', exp: '07.11.2026, 14:40', wait: '23 soat 56 daq' },
+  { n: 1043, id: '205667310', reason: 'Wildberries komissiyasi bo‘yicha savol — murojaat #5017', dur: 45, st: 'pending', admin: A, at: '06.11.2026, 09:15', exp: '07.11.2026, 09:15', wait: '18 soat 31 daq' },
+  { n: 1042, id: '517334902', reason: 'Komissiya noto‘g‘ri hisoblanmoqda — murojaat #5012', dur: 45, st: 'granted', admin: A, at: '06.11.2026, 14:20', grantedAt: '06.11.2026, 14:22', remain: 1421, views: 3 },
+  { n: 1039, id: '611908233', reason: 'Narx tavsiyasi juda yuqori chiqyapti', dur: 30, st: 'granted', admin: K, at: '06.11.2026, 14:16', grantedAt: '06.11.2026, 14:18', remain: 252, views: 1 },
+  { n: 1036, id: '402118775', reason: 'Import qilingan SKU’lar takrorlanmoqda', dur: 60, st: 'granted', admin: T, at: '06.11.2026, 14:33', grantedAt: '06.11.2026, 14:35', remain: 3065, views: 0 },
+  { n: 1041, id: '290117845', reason: 'Tannarx valyutasi noto‘g‘ri ko‘rinmoqda', dur: 30, st: 'denied', admin: T, at: '05.11.2026, 17:02', endAt: '05.11.2026, 17:06' },
+  { n: 1040, id: '517334902', reason: 'Marja hisobidagi farqni tekshirish', dur: 45, st: 'cancelled', why: 'admin', by: A, admin: A, at: '05.11.2026, 12:30', grantedAt: '05.11.2026, 12:31', endAt: '05.11.2026, 12:41', views: 1 },
+  { n: 1038, id: '402118775', reason: 'Mahsulot importidagi xato, murojaat #3920', dur: 30, st: 'expired', why: 'noanswer', admin: K, at: '04.11.2026, 10:05', endAt: '05.11.2026, 10:05' },
+  { n: 1037, id: '388102557', reason: 'Hisoblashlar soni keskin oshgan — tekshiruv', dur: 60, st: 'cancelled', why: 'blocked', by: A, admin: T, at: '02.11.2026, 15:50', grantedAt: '02.11.2026, 15:52', endAt: '02.11.2026, 16:20', views: 2 },
+  { n: 1035, id: '611908233', reason: 'Logistika xarajati ikki marta hisoblangan', dur: 30, st: 'expired', why: 'finished', admin: T, at: '01.11.2026, 11:10', grantedAt: '01.11.2026, 11:12', endAt: '01.11.2026, 11:42', views: 2 },
+  { n: 1034, id: '733120458', reason: 'Onboarding’da kanal tanlash xatosi', dur: 30, st: 'cancelled', why: 'seller', admin: K, at: '31.10.2026, 16:45', grantedAt: '31.10.2026, 16:47', endAt: '31.10.2026, 16:58', views: 1 },
+];
+const TABS = [['active', 'Faol', 'lock-open'], ['pending', 'Kutilmoqda', 'clock'], ['history', 'Tarix', 'history']];
+const DEMO_DET = { detailPending: 1043, detailGranted: 1042, detailOther: 1039, detailDenied: 1041, detailCancelled: 1040, detailExpired: 1038, detailBlocked: 1037 };
+const subOf = r => r.st === 'denied' ? 'sotuvchi rad etdi' : r.st === 'cancelled' ? (r.why === 'seller' ? 'sotuvchi bekor qildi' : r.why === 'blocked' ? 'sotuvchi bloklandi' : short(r.by) + ' bekor qildi') : r.st === 'expired' ? (r.why === 'noanswer' ? 'javobsiz, 24 soat' : 'muddat tugadi') : '';
+
+class Component extends DCLogic {
+  state = { reqs: null, tab: null, view: null, nw: undefined, nf: { id: '', reason: '', dur: '45' }, idTouched: false, rTouched: false, busy: false, det: undefined, confirm: undefined, toast: null };
+  rootRef = React.createRef(); idRef = React.createRef(); cfRef = React.createRef();
+
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      const reqs = this.state.reqs || this._reqs; if (!reqs || !reqs.some(r => r.st === 'granted')) return;
+      this.setState({ reqs: reqs.map(r => r.st !== 'granted' ? r : r.remain <= 1 ? { ...r, remain: 0, st: 'expired', why: 'finished', endAt: '06.11.2026, ' + nowHM() } : { ...r, remain: r.remain - 1 }) });
+    }, 1000);
+    const dm = this.props.demo;
+    if (dm === 'new' || dm === 'newError') this.setState({ nf: dm === 'new' ? { id: '402 118 775', reason: 'Mahsulotlar ro‘yxatida narxlar 0 ko‘rinmoqda — murojaat #5031', dur: '45' } : { id: '388 102 557', reason: 'Hisoblashlar soni keskin oshgan', dur: '30' }, idTouched: true });
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); clearTimeout(this.tb); clearTimeout(this.tr); }
+
+  nav = (...a) => this.props.onNavigate && this.props.onNavigate(...a);
+  showToast = toast => { clearTimeout(this.tt); this.setState({ toast }); this.tt = setTimeout(() => this.setState({ toast: null }), 5000); };
+  upd = (n, patch) => this.setState({ reqs: this._reqs.map(r => r.n === n ? { ...r, ...patch } : r) });
+  openNew = () => this.setState({ nw: true, det: null, nf: { id: '', reason: '', dur: '45' }, idTouched: false, rTouched: false, busy: false }, () => setTimeout(() => this.idRef.current && this.idRef.current.focus({ preventScroll: true }), 40));
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const isSuper = p.role !== 'SUPPORT', me = ME[isSuper ? 'SUPERADMIN' : 'SUPPORT'];
+    const cw = p.contentWidth ?? 1136, mobile = cw < 640;
+    const view = s.view ?? p.view ?? 'default';
+    const demo = p.demo || 'none';
+    const reqs = s.reqs || (view === 'empty' ? [] : REQS.map(r => ({ ...r })));
+    this._reqs = reqs;
+    const mine = isSuper ? reqs : reqs.filter(r => r.admin === me);
+    const groups = { active: mine.filter(r => r.st === 'granted'), pending: mine.filter(r => r.st === 'pending'), history: mine.filter(r => !['granted', 'pending'].includes(r.st)) };
+    const tab = s.tab ?? p.tab ?? 'active';
+    const list = groups[tab];
+
+    const tabs = TABS.map(([id, label, icon]) => {
+      const on = tab === id, count = groups[id].length, hl = id !== 'history' && count > 0;
+      return { domId: 'sfa-tab-' + id, label, icon, on, tabIndex: on ? 0 : -1, line: on ? 'var(--primary)' : 'transparent', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', iconFg: on ? 'var(--text-primary)' : 'var(--text-tertiary)', weight: on ? 600 : 500, hasCount: true, count,
+        cbg: hl ? (id === 'active' ? 'var(--success-bg)' : 'var(--warning-bg)') : 'var(--bg-subtle)', cborder: hl ? (id === 'active' ? 'var(--success-border)' : 'var(--warning-border)') : 'var(--border-default)', cfg: hl ? (id === 'active' ? 'var(--success-text)' : 'var(--warning-text)') : 'var(--text-secondary)',
+        onClick: () => this.setState({ tab: id }) };
+    });
+
+    const openCancel = r => this.setState({ confirm: r.n }, () => setTimeout(() => this.cfRef.current && this.cfRef.current.focus({ preventScroll: true }), 30));
+    const rowOf = r => {
+      const R = RQ[r.st], t = tone(R[1]), own = r.admin === me, warn = r.st === 'granted' && r.remain < 300;
+      const canView = r.st === 'granted' && own, canCancel = (r.st === 'granted' || r.st === 'pending') && (own || isSuper);
+      return {
+        n: r.n, num: '#' + r.n, idText: fmtId(r.id), reason: r.reason, dur: r.dur + ' daq.', status: R[0], icon: R[2], bg: t.bg, border: t.border, fg: t.fg, dot: t.dot,
+        sub: subOf(r), hasSub: !!subOf(r),
+        hasTimer: r.st === 'granted', timer: fmtT(r.remain || 0), tbg: warn ? 'var(--warning-bg)' : 'var(--success-bg)', tborder: warn ? 'var(--warning-border)' : 'var(--success-border)', tfg: warn ? 'var(--warning-text)' : 'var(--success-text)',
+        hasWait: r.st === 'pending', wait: r.wait || '', noTime: r.st !== 'granted' && r.st !== 'pending',
+        admin: short(r.admin), isMe: own, at: r.at,
+        canView, canCancel, noActions: !canView && !canCancel, hasActions: canView || canCancel,
+        open: () => this.setState({ det: r.n, nw: false }),
+        onKey: e => { if (e.target !== e.currentTarget) return; if (e.key === 'Enter') { e.preventDefault(); this.setState({ det: r.n }); } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const sib = e.key === 'ArrowDown' ? e.currentTarget.nextElementSibling : e.currentTarget.previousElementSibling; sib && sib.focus(); } },
+        view: () => this.nav('viewer', r.id),
+        cancel: () => openCancel(r),
+        menuOpen: s.menuN === r.n, menuBg: s.menuN === r.n ? 'var(--bg-active)' : 'transparent',
+        toggleMenu: () => this.setState({ menuN: s.menuN === r.n ? null : r.n }),
+        items: [
+          ...(canView ? [{ label: 'Ko‘rish', icon: 'eye', run: () => { this.setState({ menuN: null }); this.nav('viewer', r.id); } }] : []),
+          { label: 'Tafsilot', icon: 'panel-right-open', run: () => this.setState({ menuN: null, det: r.n }) },
+          { label: 'Sotuvchi kartasi', icon: 'user-round', run: () => { this.setState({ menuN: null }); this.nav('seller', r.id); } },
+          ...(canCancel ? [{ label: 'Bekor qilish', icon: 'circle-slash', danger: true, run: () => { this.setState({ menuN: null }); openCancel(r); } }] : []),
+        ].map(a => ({ ...a, fg: a.danger ? 'var(--danger-text)' : 'var(--text-primary)', iconFg: a.danger ? 'var(--danger-icon)' : 'var(--text-tertiary)', hover: a.danger ? 'var(--danger-bg)' : 'var(--bg-hover)' })),
+      };
+    };
+    const rows = list.map(rowOf);
+
+    // new request form
+    const nwOpen = s.nw === undefined ? demo === 'new' || demo === 'newError' : s.nw;
+    const digits = s.nf.id.replace(/\s/g, '');
+    let look = { has: false, text: '', sub: '', hasSub: false, icon: 'info', fg: 'var(--text-secondary)', border: 'var(--border-input)', invalid: false, role: 'status', weight: 500, ok: false };
+    if (digits) {
+      const bad = { has: true, icon: 'circle-alert', fg: 'var(--danger-text)', border: 'var(--danger-icon)', invalid: true, role: 'alert', weight: 600, ok: false };
+      if (/\D/.test(digits)) look = { ...bad, text: 'Faqat raqam kiriting — Telegram ID' };
+      else if (digits.length < 5) look = { ...look, has: s.idTouched, text: 'Telegram ID kamida 5 ta raqam', icon: 'info', ...(s.idTouched ? bad : {}), text: 'Telegram ID kamida 5 ta raqam' };
+      else {
+        const L = LOOK[digits];
+        const dup = reqs.find(r => r.id === digits && r.admin === me && (r.st === 'pending' || r.st === 'granted'));
+        if (!L) look = s.idTouched || digits.length >= 9 ? { ...bad, text: 'Bu Telegram ID bo‘yicha sotuvchi topilmadi', sub: 'Raqamni tekshiring yoki sotuvchilar ro‘yxatidan qidiring.', hasSub: true } : look;
+        else if (L[0] !== 'active') look = { ...bad, text: 'Sotuvchi akkaunti faol emas', sub: `Holat: ${STL[L[0]]}. Faol bo‘lmagan sotuvchiga so‘rov yuborib bo‘lmaydi.`, hasSub: true };
+        else if (dup) look = { ...bad, text: `Bu sotuvchiga ${dup.st === 'granted' ? 'faol ruxsatingiz' : 'javob kutilayotgan so‘rovingiz'} bor — #${dup.n}`, sub: '', hasSub: false };
+        else look = { has: true, text: `Sotuvchi topildi · Faol · ${CHN[L[1]]}`, sub: '', hasSub: false, icon: 'circle-check', fg: 'var(--success-text)', border: 'var(--success-icon)', invalid: false, role: 'status', weight: 500, ok: true };
+      }
+    } else if (s.idTouched) look = { ...look, has: true, text: 'Telegram ID’ni kiriting', icon: 'circle-alert', fg: 'var(--danger-text)', border: 'var(--danger-icon)', invalid: true, role: 'alert', weight: 600 };
+    const rLen = s.nf.reason.trim().length, rBad = rLen < 10;
+    const rInvalid = s.rTouched && rBad;
+    const wide = cw >= 860;
+
+    // detail
+    const detN = s.det === undefined ? DEMO_DET[demo] ?? null : s.det;
+    const dr = detN != null ? reqs.find(r => r.n === detN) : null;
+    let d = { box: {}, rows: [] };
+    if (dr) {
+      const R = RQ[dr.st], t = tone(R[1]), own = dr.admin === me, warn = dr.st === 'granted' && dr.remain < 300;
+      let box;
+      if (dr.st === 'pending') box = { ...tone('warning'), icon: 'clock', title: 'Sotuvchi javobini kutyapmiz', text: `So‘rov ${dr.at} da botga yuborildi. ${dr.exp} gacha javob bo‘lmasa, eskiradi.` };
+      else if (dr.st === 'granted' && own) box = { ...tone('success'), icon: 'lock-open', title: 'Ruxsat faol', text: `Sotuvchi ${dr.grantedAt.split(', ')[1]} da ruxsat berdi. Faqat ko‘rish, har ochilish auditga yoziladi.` };
+      else if (dr.st === 'granted') box = { ...tone('success'), icon: 'lock-open', title: 'Bu ruxsat boshqa administratorga berilgan', text: `Ma’lumotni faqat ${dr.admin} ko‘ra oladi. Sizga kerak bo‘lsa, alohida so‘rov yuboring.` };
+      else if (dr.st === 'denied') box = { ...tone('danger'), icon: 'circle-x', title: 'Sotuvchi rad etdi', text: `${dr.endAt} da botda «Rad etish» bosildi. Qayta so‘rash uchun yangi sabab bilan so‘rov yuboring.` };
+      else if (dr.why === 'blocked') box = { ...tone('warning'), icon: 'ban', title: 'Sotuvchi bloklangani sababli ruxsat tugadi', text: `${dr.endAt} da ${dr.by} sotuvchini blokladi. Bloklash barcha faol ruxsatlarni darhol yopadi.` };
+      else if (dr.st === 'cancelled' && dr.why === 'seller') box = { ...tone('neutral'), icon: 'circle-slash', title: 'Sotuvchi ruxsatni bekor qildi', text: `${dr.endAt} da sotuvchi botda ruxsatni yopdi.` };
+      else if (dr.st === 'cancelled') box = { ...tone('neutral'), icon: 'circle-slash', title: 'Bekor qilingan', text: `${dr.by} ${dr.endAt} da bekor qildi.` };
+      else if (dr.why === 'noanswer') box = { ...tone('neutral'), icon: 'timer-off', title: 'Muddati tugagan', text: 'Sotuvchi 24 soat ichida javob bermadi. So‘rov avtomatik eskirdi.' };
+      else box = { ...tone('neutral'), icon: 'timer-off', title: 'Muddati tugagan', text: `${dr.dur} daqiqalik ruxsat ${dr.endAt} da yopildi.` };
+      const rowsD = [
+        { k: 'Sotuvchi', v: fmtId(dr.id), font: 'var(--font-mono)' },
+        { k: 'Sabab', v: dr.reason },
+        { k: 'Muddat', v: dr.dur + ' daqiqa · faqat o‘qish' },
+        { k: 'Admin', v: dr.admin + (own ? ' (siz)' : '') },
+        { k: 'So‘ralgan', v: dr.at },
+      ];
+      if (dr.st === 'pending') rowsD.push({ k: 'Eskiradi', v: dr.exp });
+      if (dr.grantedAt) rowsD.push({ k: 'Ruxsat berildi', v: dr.grantedAt });
+      if (dr.endAt) rowsD.push({ k: dr.st === 'denied' ? 'Rad etildi' : 'Yopildi', v: dr.endAt });
+      if (dr.views != null) rowsD.push({ k: 'Ko‘rishlar', v: `${dr.views} marta · audit jurnalida` });
+      const canCancel = (dr.st === 'granted' || dr.st === 'pending') && (own || isSuper);
+      d = {
+        num: '#' + dr.n, status: R[0], icon: R[2], bg: t.bg, border: t.border, fg: t.fg, dot: t.dot,
+        box, hasTimer: dr.st === 'granted', timer: fmtT(dr.remain || 0), tborder: warn ? 'var(--warning-border)' : 'var(--success-border)', tfg: warn ? 'var(--warning-text)' : 'var(--success-text)',
+        isPending: dr.st === 'pending', dur: dr.dur, reason: dr.reason, time: dr.at.split(', ')[1],
+        rows: rowsD.map(r => ({ ...r, font: r.font || 'inherit' })),
+        canView: dr.st === 'granted' && own, canCancel, cancelLabel: dr.st === 'pending' ? 'So‘rovni bekor qilish' : 'Ruxsatni bekor qilish',
+        view: () => this.nav('viewer', dr.id), cancel: () => openCancel(dr), goSeller: () => this.nav('seller', dr.id),
+      };
+    }
+
+    const cfN = s.confirm === undefined ? (demo === 'cancel' ? 1042 : null) : s.confirm;
+    const cr = cfN != null ? reqs.find(r => r.n === cfN) : null;
+    const cf = cr ? (cr.st === 'granted'
+      ? { title: `Ruxsat #${cr.n} bekor qilinsinmi?`, text: `Sotuvchi ${fmtId(cr.id)} ma’lumotiga kirish darhol yopiladi. Sotuvchiga botda xabar yuboriladi, amal auditga yoziladi.`, btn: 'Ruxsatni bekor qilish' }
+      : { title: `So‘rov #${cr.n} bekor qilinsinmi?`, text: 'Sotuvchi botdagi so‘rovga endi javob bera olmaydi. Amal auditga yoziladi.', btn: 'So‘rovni bekor qilish' }) : {};
+
+    const loading = view === 'loading', isError = view === 'error';
+    const isEmpty = !loading && !isError && rows.length === 0;
+    const EMP = {
+      active: { icon: 'lock', title: 'Faol ruxsat yo‘q', text: 'Sotuvchi so‘rovingizni tasdiqlagach, ruxsat shu yerda taymer bilan ko‘rinadi.', hasBtn: true },
+      pending: { icon: 'clock', title: 'Javob kutilayotgan so‘rov yo‘q', text: 'Yuborilgan so‘rovlar sotuvchi javob bergunicha yoki 24 soat o‘tguncha shu yerda turadi.', hasBtn: true },
+      history: { icon: 'history', title: 'Tarix bo‘sh', text: 'Yopilgan, rad etilgan va eskirgan so‘rovlar shu yerda saqlanadi.', hasBtn: false },
+    };
+
+    return {
+      rootRef: this.rootRef, idRef: this.idRef, cfRef: this.cfRef, deskFlex: mobile ? 'none' : 'flex', mobileBar: mobile && view !== 'error', closeRowMenu: () => this.setState({ menuN: null }),
+      isSupport: !isSuper,
+      openNew: this.openNew,
+      stepCols: cw >= 900 ? 'repeat(4,minmax(0,1fr))' : mobile ? 'minmax(0,1fr)' : 'repeat(2,minmax(0,1fr))',
+      steps: [
+        ['send', 'Admin sabab bilan so‘rov yuboradi', 'Muddat 30, 45 yoki 60 daqiqa. Sotuvchi sababni aynan siz yozgandek ko‘radi.'],
+        ['smartphone', 'Sotuvchi botda javob beradi', '«Ruxsat berish» yoki «Rad etish». 24 soatda javob bo‘lmasa, so‘rov eskiradi.'],
+        ['eye', 'Admin faqat ko‘radi', 'Tahrirlash, nusxalash va eksport yo‘q. Har ko‘rish auditga yoziladi.'],
+        ['lock', 'Kirish yopiladi', 'Muddat tugaganda yoki admin, yoki sotuvchi bekor qilganda.'],
+      ].map(([icon, title, text], i) => ({ n: i + 1, icon, title, text, arrow: cw >= 900 && i < 3 })),
+      tabs, panelLabel: 'sfa-tab-' + tab,
+      tabKey: e => {
+        const i = TABS.findIndex(t => t[0] === tab); let n = null;
+        if (e.key === 'ArrowRight') n = (i + 1) % 3; else if (e.key === 'ArrowLeft') n = (i + 2) % 3; else if (e.key === 'Home') n = 0; else if (e.key === 'End') n = 2;
+        if (n == null) return; e.preventDefault(); this.setState({ tab: TABS[n][0] });
+        setTimeout(() => { const el = this.rootRef.current && this.rootRef.current.querySelector('#sfa-tab-' + TABS[n][0]); el && el.focus({ preventScroll: true }); }, 0);
+      },
+      isError, isEmpty, empty: EMP[tab], isLoading: loading,
+      showTable: !mobile && !isError && (!isEmpty || loading), showCards: mobile && !isError && !isEmpty && !loading,
+      tableLabel: { active: 'Faol ruxsatlar', pending: 'Kutilayotgan so‘rovlar', history: 'So‘rovlar tarixi' }[tab],
+      heads: [['#', 'left'], ['Sotuvchi', 'left'], ['Sabab', 'left'], ['Muddat', 'left'], ['Holat', 'left'], ['Qolgan vaqt', 'left'], ['Admin', 'left'], ['So‘ralgan vaqt', 'left'], ['Amallar', 'right']].map(([label, align]) => ({ label, align })),
+      skel: Array.from({ length: 5 }, (_, i) => ({ cells: Array.from({ length: 9 }, (_, j) => ({ w: ['50%', '80%', '70%', '45%', '60%', '55%', '65%', '75%', '50%'][(i + j) % 9] })) })),
+      rows: loading ? [] : rows, hasRows: !loading,
+      footText: tab === 'active' ? `${rows.length} ta faol ruxsat · oxirgi 5 daqiqada taymer sariq rangga o‘tadi` : tab === 'pending' ? `${rows.length} ta so‘rov javob kutmoqda · 24 soatda eskiradi` : `${rows.length} ta yopilgan so‘rov`,
+      stop: e => e.stopPropagation(),
+      retry: () => { this.setState({ view: 'loading' }); clearTimeout(this.tr); this.tr = setTimeout(() => this.setState({ view: 'default' }), 1100); },
+
+      newOpen: nwOpen, closeNew: () => { if (!s.busy) this.setState({ nw: false }); },
+      nwW: mobile ? '100%' : wide ? '920px' : '560px', nwCols: wide ? 'minmax(0,1fr) 380px' : 'minmax(0,1fr)',
+      pvBorderL: wide ? '1px solid var(--border-default)' : '0', pvBorderT: wide ? '0' : '1px solid var(--border-default)',
+      nf: s.nf, look,
+      onId: e => this.setState({ nf: { ...s.nf, id: e.target.value.replace(/[^\d\s]/g, m => m).slice(0, 14) } }),
+      onIdBlur: () => this.setState({ idTouched: true }),
+      onReason: e => this.setState({ nf: { ...s.nf, reason: e.target.value.slice(0, 300) } }),
+      onReasonBlur: () => this.setState({ rTouched: true }),
+      rInvalid, rBorder: rInvalid ? 'var(--danger-icon)' : 'var(--border-input)', rErr: rInvalid ? (rLen === 0 ? 'Sababni yozing.' : `Yana ${10 - rLen} ta belgi — kamida 10 ta belgi kerak.`) : '',
+      rCount: s.nf.reason.length, rCountFg: s.nf.reason.length >= 280 ? 'var(--warning-text)' : 'var(--text-tertiary)',
+      durOpts: ['30', '45', '60'].map(v => { const on = s.nf.dur === v; return { label: v + ' daqiqa', on, bg: on ? 'var(--bg-surface)' : 'transparent', shadow: on ? '0 1px 2px rgba(12,10,9,.12)' : 'none', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', weight: on ? 600 : 500, onClick: () => this.setState({ nf: { ...s.nf, dur: v } }) }; }),
+      tg: { dur: s.nf.dur, reason: s.nf.reason.trim() || '…', reasonFg: s.nf.reason.trim() ? 'inherit' : 'var(--text-tertiary)', time: nowHM(), lang: 'o‘zbek' },
+      busy: s.busy, sendIcon: s.busy ? 'loader-circle' : 'send', sendAnim: s.busy ? 'sfSpin .8s linear infinite' : 'none', sendLabel: s.busy ? 'Yuborilmoqda…' : 'So‘rov yuborish',
+      submitNew: e => {
+        e.preventDefault();
+        if (!look.ok || rBad) { this.setState({ idTouched: true, rTouched: true, nw: true }); return; }
+        this.setState({ busy: true, nw: true }); clearTimeout(this.tb);
+        this.tb = setTimeout(() => {
+          const at = '06.11.2026, ' + nowHM(), n = Math.max(...this._reqs.map(r => r.n), 1045) + 1;
+          this.setState({ busy: false, nw: false, tab: 'pending', reqs: [{ n, id: digits, reason: s.nf.reason.trim(), dur: +s.nf.dur, st: 'pending', admin: me, at, exp: at.replace('06.11', '07.11'), wait: '24 soat 0 daq' }, ...this._reqs] });
+          this.showToast({ icon: 'send', iconFg: 'var(--info-icon)', title: 'So‘rov yuborildi.', sub: 'Sotuvchi botda tasdiqlashi kerak.' });
+        }, 800);
+      },
+
+      detOpen: !!dr, d, detW: mobile ? '100%' : '520px', closeDet: () => this.setState({ det: null }),
+      simGrant: () => { this.upd(dr.n, { st: 'granted', grantedAt: '06.11.2026, ' + nowHM(), remain: dr.dur * 60, views: 0 }); this.setState({ tab: 'active' }); this.showToast({ icon: 'shield-check', iconFg: 'var(--success-icon)', title: 'Sotuvchi ruxsat berdi.', sub: `${dr.dur} daqiqa, faqat o‘qish.` }); },
+      simDeny: () => { this.upd(dr.n, { st: 'denied', endAt: '06.11.2026, ' + nowHM() }); this.showToast({ icon: 'circle-x', iconFg: 'var(--danger-icon)', title: 'Sotuvchi rad etdi.', sub: 'So‘rov tarixga o‘tdi.' }); },
+
+      confirmOpen: !!cr, cf, closeConfirm: () => this.setState({ confirm: null }),
+      doCancel: () => { const g = cr.st === 'granted'; this.upd(cr.n, { st: 'cancelled', why: 'admin', by: me, endAt: '06.11.2026, ' + nowHM() }); this.setState({ confirm: null }); this.showToast({ icon: 'circle-slash', iconFg: 'var(--text-inverse)', title: g ? 'Ruxsat bekor qilindi.' : 'So‘rov bekor qilindi.', sub: 'Auditga yozildi.' }); },
+
+      onRootKey: e => { if (e.key !== 'Escape') return; if (cr) { e.stopPropagation(); this.setState({ confirm: null }); } else if (nwOpen) { e.stopPropagation(); this.setState({ nw: false }); } else if (dr) { e.stopPropagation(); this.setState({ det: null }); } },
+      hasToast: !!s.toast, toast: s.toast || {}, closeToast: () => this.setState({ toast: null }),
+      toastLeft: mobile ? '12px' : 'auto', toastRight: mobile ? '12px' : '24px',
+    };
+  }
+}
+</script>
+</body>
+</html>

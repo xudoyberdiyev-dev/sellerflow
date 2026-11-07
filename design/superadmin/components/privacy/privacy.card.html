@@ -1,0 +1,35 @@
+<!-- @dsCard group="Components" viewport="700x720" name="Privacy" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} body{padding:0} .p{padding:20px;display:flex;flex-direction:column;gap:16px}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { ReadOnlyBanner, CountdownChip, PrivacyGuard, Redacted, TelegramPreview } = NS;
+const { useState } = React;
+
+function App(){ return <div>
+  <ReadOnlyBanner sellerName="Dilnoza Karimova" seconds={1421} onEnd={()=>{}} />
+  <div style={{height:4}} />
+  <ReadOnlyBanner sellerName="Bekzod Tursunov" seconds={242} onEnd={()=>{}} />
+  <div className="p">
+    <div className="r"><span className="l">CountdownChip</span><CountdownChip seconds={1421} /><CountdownChip seconds={3540} /><CountdownChip seconds={242} /><CountdownChip seconds={0} /><CountdownChip expiresAt={Date.now()+ 5*60*1000 + 8000} /></div>
+    <PrivacyGuard fields={['Tannarx','Foyda','Sotish narxi','Hisoblashlar']} onAction={()=>{}} />
+    <PrivacyGuard inline state="pending" onAction={()=>{}} />
+    <div className="r" style={{alignItems:'flex-start',gap:20}}>
+      <div className="c" style={{flex:1,minWidth:240}}>
+        <span className="l">Redacted — jadval katagida</span>
+        <div className="r"><span>Foyda:</span><Redacted label="Yashirin" /></div>
+        <div className="r"><span>Tannarx:</span><Redacted label="Yashirin" /></div>
+        <PrivacyGuard inline state="expired" onAction={()=>{}} />
+      </div>
+      <TelegramPreview time="14:32" text={'Kirish so‘rovi\n\nSellerFlow support xodimi Aziz R. hisobingizdagi tijoriy ma’lumotni ko‘rish uchun ruxsat so‘ramoqda.\n\nSabab: hisoblashdagi xatoni tekshirish\nMuddat: 30 daqiqa · faqat o‘qish'} keyboard={[[{text:'Ruxsat berish'},{text:'Rad etish'}]]} />
+    </div>
+  </div>
+ </div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfy] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfy] button{font-family:inherit;}
+[data-sfy] [class^="icon-"]{line-height:1;display:inline-flex;}
+</style>
+</helmet>
+<div data-sfy="" style="display:flex;flex-direction:column;gap:20px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;">
+
+  <div style="display:flex;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">
+      <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">Tizim holati</h1>
+      <p style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;">Bot, ma’lumotlar bazasi, backup va ilova holati. Faqat texnik ko‘rsatkichlar.</p>
+    </div>
+  </div>
+
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-busy="true" aria-label="Tizim holati tekshirilmoqda" style="display:flex;flex-direction:column;gap:16px;">
+      <div style="height:72px;border-radius:10px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+      <div style="display:grid;grid-template-columns:{{ skelCols }};gap:16px;">
+        <sc-for list="{{ skelCards }}" as="sk" hint-placeholder-count="5"><div style="height:220px;border-radius:10px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMain }}" hint-placeholder-val="{{ true }}">
+    <div role="status" aria-live="polite" style="display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;padding:16px 18px;border:1px solid {{ ov.border }};border-radius:10px;background:{{ ov.bg }};">
+      <span style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--bg-surface);border:1px solid {{ ov.border }};color:{{ ov.dot }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ ov.icon }}" aria-hidden="true" style="font-size:20px;"></i></span>
+      <div style="flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:2px;color:{{ ov.fg }};">
+        <span style="font-size:17px;line-height:24px;font-weight:600;">{{ ov.title }}</span>
+        <span style="font-size:13px;text-wrap:pretty;">{{ ov.sub }}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;">
+        <span style="display:flex;flex-direction:column;align-items:flex-end;font-size:12px;line-height:16px;color:var(--text-secondary);">
+          <span>Oxirgi tekshiruv: <span style="font-family:var(--font-mono);color:var(--text-primary);font-weight:600;">{{ checkedAt }}</span></span>
+          <span>{{ nextText }}</span>
+        </span>
+        <span style="display:flex;align-items:center;gap:8px;padding:0 4px;">
+          <button type="button" role="switch" id="sfy-ar" aria-checked="{{ auto }}" onClick="{{ toggleAuto }}" style="position:relative;width:36px;height:20px;flex-shrink:0;padding:0;border:0;border-radius:10px;background:{{ arTrack }};cursor:pointer;"><span aria-hidden="true" style="position:absolute;top:2px;left:{{ arLeft }};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(12,10,9,.3);transition:left .15s ease;"></span></button>
+          <label for="sfy-ar" style="font-size:13px;cursor:pointer;color:var(--text-primary);">Avto (30 s)</label>
+        </span>
+        <button type="button" onClick="{{ refresh }}" disabled="{{ busy }}" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:14px;animation:{{ spin }};"></i>{{ refreshLabel }}</button>
+      </div>
+    </div>
+
+    <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;padding:14px 16px;border:1px solid var(--danger-border);border-radius:8px;background:var(--danger-bg);color:var(--danger-text);">
+        <i class="icon-cloud-off" aria-hidden="true" style="font-size:18px;margin-top:1px;color:var(--danger-icon);"></i>
+        <span style="flex:1 1 260px;display:flex;flex-direction:column;gap:2px;"><strong style="font-weight:600;">Holat ma’lumotini olib bo‘lmadi</strong><span style="font-size:13px;text-wrap:pretty;">Monitoring xizmati javob bermadi. Pastda 14:32 dagi oxirgi ma’lum qiymatlar ko‘rsatilgan — ular eskirgan bo‘lishi mumkin.</span></span>
+        <span style="font-family:var(--font-mono);font-size:12px;">Xato ID: 51ab-e7c0</span>
+      </div>
+    </sc-if>
+
+    <div style="display:grid;grid-template-columns:{{ gridCols }};gap:16px;align-items:stretch;">
+      <sc-for list="{{ cards }}" as="c" hint-placeholder-count="5">
+        <section aria-labelledby="{{ c.hid }}" style="grid-column:{{ c.span }};display:flex;flex-direction:column;border:1px solid {{ c.border }};border-radius:10px;background:var(--bg-surface);min-width:0;opacity:{{ c.op }};">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 0;">
+            <span aria-hidden="true" style="width:32px;height:32px;flex-shrink:0;border-radius:8px;background:var(--bg-subtle);border:1px solid var(--border-default);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;"><i class="icon-{{ c.icon }}" style="font-size:16px;"></i></span>
+            <h2 id="{{ c.hid }}" style="margin:0;flex:1;min-width:0;font-size:15px;line-height:20px;font-weight:600;">{{ c.title }}</h2>
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ c.b.bg }};border:1px solid {{ c.b.border }};color:{{ c.b.fg }};white-space:nowrap;"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:{{ c.b.dot }};"></span>{{ c.b.label }}</span>
+          </div>
+          <div style="padding:14px 16px 12px;display:flex;flex-direction:column;gap:2px;">
+            <span style="font-size:12px;line-height:16px;color:var(--text-secondary);">{{ c.kLabel }}</span>
+            <span style="font-size:26px;line-height:34px;font-weight:600;letter-spacing:-.01em;color:{{ c.kFg }};overflow-wrap:anywhere;">{{ c.k }}</span>
+            <sc-if value="{{ c.hasKSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ c.kSub }}</span></sc-if>
+          </div>
+          <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ false }}">
+            <div role="note" style="margin:0 16px 12px;display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid {{ c.n.border }};border-radius:8px;background:{{ c.n.bg }};color:{{ c.n.fg }};font-size:13px;">
+              <i class="icon-{{ c.n.icon }}" aria-hidden="true" style="font-size:14px;margin-top:3px;color:{{ c.n.dot }};"></i>
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0;"><strong style="font-weight:600;">{{ c.n.title }}</strong><span style="text-wrap:pretty;overflow-wrap:anywhere;font-family:{{ c.n.font }};font-size:{{ c.n.size }};">{{ c.n.text }}</span></span>
+            </div>
+          </sc-if>
+          <dl style="margin:auto 0 0;padding:0 16px 6px;border-top:1px solid var(--border-default);">
+            <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid {{ r.line }};">
+                <dt style="margin:0;font-size:13px;color:var(--text-secondary);">{{ r.k }}</dt>
+                <dd style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;text-align:right;">
+                  <span style="font-weight:500;font-family:{{ r.font }};color:{{ r.fg }};">{{ r.v }}</span>
+                  <sc-if value="{{ r.hasChip }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;font-weight:600;padding:0 7px;border-radius:4px;background:{{ r.chip.bg }};border:1px solid {{ r.chip.border }};color:{{ r.chip.fg }};"><i class="icon-{{ r.chip.icon }}" aria-hidden="true" style="font-size:11px;"></i>{{ r.chip.label }}</span></sc-if>
+                </dd>
+              </div>
+            </sc-for>
+          </dl>
+        </section>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:{{ lowerCols }};gap:16px;align-items:start;">
+      <section aria-labelledby="sfy-ev" style="border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);min-width:0;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--border-default);">
+          <h2 id="sfy-ev" style="margin:0;font-size:15px;line-height:20px;font-weight:600;">Hodisalar</h2>
+          <span style="font-size:12px;color:var(--text-tertiary);">oxirgi 24 soat</span>
+          <div role="group" aria-label="Hodisa turi" style="margin-left:auto;display:flex;gap:2px;padding:2px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-subtle);flex-wrap:wrap;">
+            <sc-for list="{{ evTabs }}" as="et" hint-placeholder-count="4">
+              <button type="button" aria-pressed="{{ et.on }}" onClick="{{ et.pick }}" style="height:28px;display:flex;align-items:center;gap:6px;padding:0 10px;border:0;border-radius:4px;background:{{ et.bg }};box-shadow:{{ et.shadow }};color:{{ et.fg }};font-size:12px;font-weight:{{ et.weight }};cursor:pointer;">{{ et.label }}<span style="font-size:11px;color:var(--text-tertiary);">{{ et.count }}</span></button>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ hasEvents }}" hint-placeholder-val="{{ true }}">
+          <ol aria-label="Hodisalar vaqt chizig‘i" style="list-style:none;margin:0;padding:16px 16px 4px;">
+            <sc-for list="{{ events }}" as="ev" hint-placeholder-count="6">
+              <li style="display:grid;grid-template-columns:52px 28px minmax(0,1fr);column-gap:10px;">
+                <time style="padding-top:5px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);text-align:right;">{{ ev.time }}</time>
+                <span style="display:flex;flex-direction:column;align-items:center;">
+                  <span aria-hidden="true" style="width:28px;height:28px;flex-shrink:0;box-sizing:border-box;border-radius:50%;background:{{ ev.bg }};border:1px solid {{ ev.border }};color:{{ ev.dot }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ ev.icon }}" style="font-size:13px;"></i></span>
+                  <span aria-hidden="true" style="flex:1;width:2px;min-height:10px;background:var(--border-default);opacity:{{ ev.lineOp }};"></span>
+                </span>
+                <div style="padding:4px 0 16px;display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><span style="font-weight:600;">{{ ev.title }}</span><span style="font-size:11px;line-height:18px;font-weight:600;padding:0 6px;border-radius:4px;background:{{ ev.bg }};border:1px solid {{ ev.border }};color:{{ ev.fg }};">{{ ev.kind }}</span></span>
+                  <span style="font-size:13px;color:var(--text-secondary);text-wrap:pretty;overflow-wrap:anywhere;font-family:{{ ev.font }};">{{ ev.text }}</span>
+                </div>
+              </li>
+            </sc-for>
+          </ol>
+        </sc-if>
+        <sc-if value="{{ noEvents }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:36px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">
+            <span style="width:40px;height:40px;border-radius:10px;background:var(--success-bg);color:var(--success-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-circle-check" aria-hidden="true" style="font-size:18px;"></i></span>
+            <span style="font-weight:600;">Bu turdagi hodisa bo‘lmadi</span>
+            <span style="font-size:13px;color:var(--text-secondary);">Oxirgi 24 soatda qayd etilmagan.</span>
+          </div>
+        </sc-if>
+      </section>
+
+      <section aria-labelledby="sfy-op" style="border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);min-width:0;">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border-default);display:flex;align-items:center;gap:8px;">
+          <i class="icon-clipboard-check" aria-hidden="true" style="font-size:16px;color:var(--text-tertiary);"></i>
+          <h2 id="sfy-op" style="margin:0;flex:1;font-size:15px;line-height:20px;font-weight:600;">Operator eslatmalari</h2>
+        </div>
+        <ul style="list-style:none;margin:0;padding:6px 0;">
+          <sc-for list="{{ notes }}" as="nt" hint-placeholder-count="3">
+            <li style="border-bottom:1px solid {{ nt.line }};">
+              <button type="button" aria-expanded="{{ nt.open }}" onClick="{{ nt.toggle }}" style="width:100%;display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border:0;background:transparent;color:var(--text-primary);text-align:left;cursor:pointer;" style-hover="background:var(--bg-hover);">
+                <span aria-hidden="true" style="width:28px;height:28px;flex-shrink:0;border-radius:8px;background:{{ nt.t.bg }};border:1px solid {{ nt.t.border }};color:{{ nt.t.dot }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ nt.icon }}" style="font-size:14px;"></i></span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-weight:600;text-wrap:pretty;">{{ nt.title }}</span>
+                  <span style="font-size:12px;line-height:16px;color:{{ nt.metaFg }};">{{ nt.meta }}</span>
+                </span>
+                <i class="icon-chevron-down" aria-hidden="true" style="font-size:16px;margin-top:6px;color:var(--text-tertiary);transform:{{ nt.rot }};"></i>
+              </button>
+              <sc-if value="{{ nt.open }}" hint-placeholder-val="{{ false }}">
+                <ol style="margin:0;padding:0 16px 14px 54px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text-secondary);">
+                  <sc-for list="{{ nt.steps }}" as="st" hint-placeholder-count="3"><li style="text-wrap:pretty;">{{ st }}</li></sc-for>
+                </ol>
+              </sc-if>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1200},&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ok&quot;,&quot;partial&quot;,&quot;critical&quot;,&quot;botOff&quot;],&quot;default&quot;:&quot;ok&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;error&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;}}">
+const pad = n => String(n).padStart(2, '0');
+const nf = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+const tone = t => ({ bg: `var(--${t}-bg)`, border: `var(--${t}-border)`, fg: `var(--${t}-text)`, dot: `var(--${t}-icon)` });
+const ago = s => s < 60 ? `${s} soniya oldin` : s < 3600 ? `${Math.floor(s / 60)} daqiqa oldin` : `${Math.floor(s / 3600)} soat oldin`;
+const clock = d => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const SC = {
+  ok: { bot: 'ok', db: 'up', ms: 14, p95: 38, backup: 'ok', drill: '18.10.2026', drillDays: 20, upd: 18402, lastErr: { at: '05.11.2026, 22:14', text: 'TelegramRetryAfter: 429, 3 s kutildi' }, drafts: 37, expired: 9 },
+  partial: { bot: 'warn', db: 'up', ms: 41, p95: 220, backup: 'failed', drill: '22.09.2026', drillDays: 46, upd: 16120, lastErr: { at: '06.11.2026, 14:21', text: 'NetworkError: Telegram API javob bermadi (timeout 10 s)' }, drafts: 52, expired: 14 },
+  critical: { bot: 'warn', db: 'down', ms: null, p95: null, backup: 'ok', drill: '18.10.2026', drillDays: 20, upd: 9840, lastErr: { at: '06.11.2026, 14:46', text: 'OperationalError: could not connect to server: Connection refused' }, drafts: null, expired: null },
+  botOff: { bot: 'off', db: 'up', ms: 12, p95: 31, backup: 'ok', drill: '18.10.2026', drillDays: 20, upd: 0, lastErr: null, drafts: 0, expired: 0 },
+};
+const EVENTS = {
+  ok: [
+    ['14:47', 'security', 'Admin vaqtincha bloklandi', 'n.rashidova@sellerflow.uz · 5 ta noto‘g‘ri urinish, 15 daqiqaga', 'warning', 'user-x'],
+    ['03:04', 'backup', 'Backup muvaffaqiyatli', '412 MB · 3 daq 51 s · tashqi nusxa yuklandi', 'success', 'database-backup'],
+    ['22:14', 'bot', 'Bot: so‘rovlar cheklovi', 'TelegramRetryAfter: 429 — 3 soniya kutildi, qayta yuborildi', 'neutral', 'bot'],
+  ],
+  partial: [
+    ['14:47', 'security', 'Admin vaqtincha bloklandi', 'n.rashidova@sellerflow.uz · 5 ta noto‘g‘ri urinish, 15 daqiqaga', 'warning', 'user-x'],
+    ['14:21', 'bot', 'Bot xatosi takrorlanmoqda', 'NetworkError: Telegram API javob bermadi (timeout 10 s) · 23 marta / 30 daqiqa', 'danger', 'bot'],
+    ['13:58', 'bot', 'Bot javob vaqti oshdi', 'p95: 4,2 s (odatda 0,6 s)', 'warning', 'bot'],
+    ['03:00', 'backup', 'Backup bajarilmadi', 'pg_dump: disk to‘lgan (No space left on device) · keyingi urinish 07.11.2026, 03:00', 'danger', 'database-backup'],
+    ['22:14', 'bot', 'Bot: so‘rovlar cheklovi', 'TelegramRetryAfter: 429 — 3 soniya kutildi', 'neutral', 'bot'],
+  ],
+  critical: [
+    ['14:46', 'bot', 'Ma’lumotlar bazasiga ulanib bo‘lmadi', 'OperationalError: could not connect to server: Connection refused', 'danger', 'database-zap'],
+    ['14:46', 'bot', 'Bot so‘rovlari navbatga olinmoqda', 'Navbatda 312 ta update · javoblar kechikmoqda', 'warning', 'bot'],
+    ['03:04', 'backup', 'Backup muvaffaqiyatli', '412 MB · 3 daq 51 s', 'success', 'database-backup'],
+  ],
+  botOff: [
+    ['03:04', 'backup', 'Backup muvaffaqiyatli', '41 MB · 22 s · tashqi nusxa yuklandi', 'success', 'database-backup'],
+    ['09:10', 'bot', 'Bot ishga tushirilmadi', 'BOT_TOKEN berilmagan — bot o‘chiq rejimda', 'neutral', 'bot-off'],
+  ],
+};
+const KIND = { bot: 'Bot', backup: 'Backup', security: 'Xavfsizlik' };
+
+class Component extends DCLogic {
+  state = { tick: 0, auto: true, next: 30, lastOk: 12, checked: null, busy: false, evTab: 'all', open: { restore: true }, view: null };
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      const s = this.state, sc = this._sc;
+      let { next, lastOk } = s;
+      lastOk = sc === 'critical' ? lastOk + 1 : sc === 'botOff' ? lastOk : (lastOk >= 18 ? 2 : lastOk + 1);
+      if (s.auto && !s.busy && this._view === 'default') { next -= 1; if (next <= 0) { this.check(); next = 30; } }
+      this.setState({ tick: s.tick + 1, next, lastOk });
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tb); }
+  check = () => { this.setState({ busy: true }); clearTimeout(this.tb); this.tb = setTimeout(() => this.setState({ busy: false, checked: clock(new Date()), next: 30, view: this.state.view === 'error' ? 'default' : this.state.view, lastOk: this._sc === 'critical' ? this.state.lastOk : 1 }), 700); };
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const scKey = SC[p.scenario] ? p.scenario : 'ok', sc = SC[scKey];
+    const view = s.view ?? p.view ?? 'default';
+    this._sc = scKey; this._view = view;
+    const cw = p.contentWidth ?? 1136, wide = cw >= 1040, mid = cw >= 640;
+    const err = view === 'error';
+    const now = new Date();
+    const lastOk = scKey === 'critical' ? 240 + s.lastOk : s.lastOk;
+
+    const B = (t, label) => ({ ...tone(t), label });
+    const unk = { ...tone('neutral'), label: 'Noma’lum' };
+    const cards = [];
+    // bot
+    const botB = sc.bot === 'ok' ? B('success', 'Ishlayapti') : sc.bot === 'warn' ? B('warning', 'Muammo bor') : B('neutral', 'O‘chiq');
+    cards.push({ id: 'bot', icon: sc.bot === 'off' ? 'bot-off' : 'bot', title: 'Telegram bot', b: err ? unk : botB,
+      kLabel: 'Oxirgi muvaffaqiyatli so‘rov', k: sc.bot === 'off' ? '—' : ago(lastOk), kFg: sc.bot === 'off' ? 'var(--text-tertiary)' : scKey === 'critical' ? 'var(--warning-text)' : 'var(--text-primary)', kSub: sc.bot === 'off' ? 'Bot ishga tushirilmagan' : 'long polling · @SellerFlowBot',
+      n: sc.bot === 'off' ? { ...tone('neutral'), icon: 'info', title: 'Bot tokeni berilmagan', text: 'Bu xato emas: bot o‘chiq rejimda. Yoqish uchun serverda BOT_TOKEN ni sozlang va ilovani qayta ishga tushiring.', font: 'var(--font-sans)', size: '13px' }
+        : sc.lastErr ? { ...tone(sc.bot === 'warn' ? 'danger' : 'neutral'), icon: 'circle-alert', title: `Oxirgi xato · ${sc.lastErr.at}`, text: sc.lastErr.text, font: 'var(--font-mono)', size: '12px' } : null,
+      rows: [
+        { k: 'Qayta ishlangan update’lar (24 soat)', v: sc.bot === 'off' ? '0' : nf(sc.upd) },
+        { k: 'Navbatda', v: sc.bot === 'off' ? '—' : scKey === 'critical' ? '312' : scKey === 'partial' ? '18' : '0', fg: scKey === 'critical' ? 'var(--warning-text)' : null },
+        { k: 'O‘rtacha javob vaqti', v: sc.bot === 'off' ? '—' : scKey === 'ok' ? '0,6 s' : '4,2 s', fg: scKey === 'ok' ? null : 'var(--warning-text)' },
+      ] });
+    // db
+    cards.push({ id: 'db', icon: 'database', title: 'Ma’lumotlar bazasi', b: err ? unk : sc.db === 'up' ? B('success', 'UP') : B('danger', 'DOWN'),
+      kLabel: 'Javob vaqti', k: sc.ms == null ? '—' : sc.ms + ' ms', kFg: sc.ms == null ? 'var(--danger-text)' : sc.ms > 30 ? 'var(--warning-text)' : 'var(--text-primary)', kSub: sc.db === 'down' ? '14:46 dan beri ulanish yo‘q' : 'oxirgi tekshiruv',
+      n: sc.db === 'down' ? { ...tone('danger'), icon: 'circle-x', title: 'Ulanib bo‘lmadi', text: 'Connection refused · 5432-port', font: 'var(--font-mono)', size: '12px' } : null,
+      rows: [{ k: 'p95 (1 soat)', v: sc.p95 == null ? '—' : sc.p95 + ' ms', fg: sc.p95 > 150 ? 'var(--warning-text)' : null }, { k: 'Ulanishlar', v: sc.db === 'down' ? '0 / 100' : '12 / 100' }] });
+    // backup
+    const drillOld = sc.drillDays > 30;
+    cards.push({ id: 'backup', icon: 'database-backup', title: 'Backup', b: err ? unk : sc.backup === 'failed' ? B('danger', 'Bajarilmadi') : drillOld ? B('warning', 'E’tibor kerak') : B('success', 'Joyida'),
+      kLabel: 'Oxirgi muvaffaqiyatli backup', k: sc.backup === 'failed' ? '05.11.2026, 03:04' : '06.11.2026, 03:04', kFg: sc.backup === 'failed' ? 'var(--danger-text)' : 'var(--text-primary)', kSub: scKey === 'botOff' ? '41 MB · tashqi nusxa bor' : '412 MB · tashqi nusxa bor',
+      n: sc.backup === 'failed' ? { ...tone('danger'), icon: 'circle-x', title: 'Bugungi backup bajarilmadi · 03:00', text: 'pg_dump: No space left on device', font: 'var(--font-mono)', size: '12px' } : null,
+      rows: [
+        { k: 'Keyingisi', v: '07.11.2026, 03:00' },
+        { k: 'Saqlanmoqda', v: sc.backup === 'failed' ? '13 ta (14 kun)' : '14 ta (14 kun)' },
+        { k: 'Oxirgi tiklash sinovi', v: sc.drill, chip: drillOld ? { ...tone('warning'), icon: 'triangle-alert', label: 'Tiklash sinovini o‘tkazing' } : { ...tone('success'), icon: 'check', label: `${sc.drillDays} kun oldin` } },
+      ] });
+    // app
+    cards.push({ id: 'app', icon: 'server', title: 'Ilova', b: err ? unk : B('success', 'Ishlayapti'),
+      kLabel: 'Server vaqti · Asia/Tashkent', k: clock(now), kFg: 'var(--text-primary)', kSub: '06.11.2026 · UTC+05:00',
+      rows: [{ k: 'Versiya', v: '1.4.2', font: 'var(--font-mono)' }, { k: 'Calculation Engine', v: '1.0.0', font: 'var(--font-mono)' }, { k: 'Ishlash vaqti (uptime)', v: '12 kun 4 soat' }] });
+    // drafts
+    cards.push({ id: 'drafts', icon: 'file-pen-line', title: 'Qoralamalar', b: err ? unk : sc.drafts == null ? B('neutral', 'Noma’lum') : B('success', 'Normal'),
+      kLabel: 'Faol qoralamalar', k: sc.drafts == null ? '—' : nf(sc.drafts), kFg: sc.drafts == null ? 'var(--text-tertiary)' : 'var(--text-primary)', kSub: sc.drafts == null ? 'bazaga ulanib bo‘lmadi' : 'sotuvchilar to‘ldirayotgan hisoblashlar',
+      rows: [{ k: '24 soatda muddati tugagan', v: sc.expired == null ? '—' : nf(sc.expired) }, { k: 'Qoralama muddati', v: '24 soat' }] });
+
+    const span = { bot: wide ? 'span 4' : mid ? 'span 2' : 'span 1', db: wide ? 'span 2' : 'span 1', backup: wide ? 'span 2' : 'span 1', app: wide ? 'span 2' : 'span 1', drafts: wide ? 'span 2' : mid ? 'span 2' : 'span 1' };
+    const cardsOut = cards.map(c => {
+      const alert = !err && (c.b.label === 'DOWN' || c.b.label === 'Bajarilmadi');
+      return { ...c, hid: 'sfy-' + c.id, span: span[c.id], border: alert ? 'var(--danger-border)' : c.b.label === 'Muammo bor' || c.b.label === 'E’tibor kerak' ? 'var(--warning-border)' : 'var(--border-default)', op: err ? .55 : 1,
+        hasKSub: !!c.kSub, hasNote: !!c.n && !err, n: c.n || {},
+        rows: c.rows.map((r, i) => ({ ...r, font: r.font || 'var(--font-sans)', fg: err ? 'var(--text-tertiary)' : r.fg || 'var(--text-primary)', hasChip: !!r.chip && !err, chip: r.chip || {}, line: i === c.rows.length - 1 ? 'transparent' : 'var(--border-default)' })) };
+    });
+
+    let ov;
+    if (err) ov = { ...tone('neutral'), icon: 'circle-help', title: 'Holatni aniqlab bo‘lmadi', sub: 'Monitoring ma’lumoti kelmadi. Oxirgi ma’lum holat: barcha tizimlar ishlayapti (14:32).' };
+    else if (scKey === 'critical') ov = { ...tone('danger'), icon: 'octagon-alert', title: 'Jiddiy nosozlik', sub: 'Ma’lumotlar bazasi javob bermayapti. Bot so‘rovlarni navbatga olmoqda, sotuvchilar hisoblay olmaydi.' };
+    else if (scKey === 'partial') ov = { ...tone('warning'), icon: 'triangle-alert', title: 'Qisman muammo', sub: 'Bot xatolari takrorlanmoqda, bugungi backup bajarilmadi, tiklash sinovi 46 kun oldin o‘tkazilgan.' };
+    else ov = { ...tone('success'), icon: 'circle-check', title: 'Barcha tizimlar ishlayapti', sub: scKey === 'botOff' ? 'Telegram bot o‘chiq: token berilmagan. Bu xato emas — sozlash kutilmoqda.' : 'Bot, ma’lumotlar bazasi, backup va ilova normal ishlamoqda.' };
+
+    const evAll = (EVENTS[scKey] || []).map(([time, cat, title, text, t, icon]) => ({ time, cat, title, text, t, icon }));
+    const evTab = s.evTab;
+    const evs = evAll.filter(e => evTab === 'all' || e.cat === evTab);
+    const EVT = [['all', 'Hammasi'], ['bot', 'Bot'], ['backup', 'Backup'], ['security', 'Xavfsizlik']];
+
+    const NOTES = [
+      { id: 'offsite', icon: 'hard-drive-upload', title: 'Backupni server tashqarisiga nusxalash', meta: sc.backup === 'failed' ? 'Bugun bajarilmadi — diskni tekshiring' : 'Har kuni avtomatik · oxirgisi 06.11.2026, 03:06', t: sc.backup === 'failed' ? 'danger' : 'success',
+        steps: ['Har kungi backup avtomatik ravishda tashqi xotiraga (S3) yuklanadi.', 'Haftada bir marta tashqi nusxa hajmi va sanasini shu yerdagi qiymat bilan solishtiring.', 'Server diski 80% dan oshsa, eski lokal backuplarni tozalang.'] },
+      { id: 'restore', icon: 'history', title: 'Oylik tiklash sinovi (restore drill)', meta: drillOld ? `Oxirgisi ${sc.drill} — ${sc.drillDays} kun oldin, muddati o‘tgan` : `Oxirgisi ${sc.drill} · keyingisi 17.11.2026 gacha`, t: drillOld ? 'warning' : 'neutral',
+        steps: ['Oxirgi backupni alohida test serverga tiklang.', 'Sotuvchilar, mahsulotlar va audit jadvallaridagi yozuvlar sonini solishtiring.', 'Natija va vaqtni audit jurnaliga izoh sifatida yozing.'] },
+      { id: 'token', icon: 'key-round', title: 'Bot tokeni oshkor bo‘lsa', meta: 'Darhol, 10 daqiqa ichida', t: 'danger',
+        steps: ['@BotFather’da /revoke orqali eski tokenni bekor qiling.', 'Yangi tokenni serverdagi BOT_TOKEN ga yozing va ilovani qayta ishga tushiring.', 'Audit jurnalida oxirgi 24 soatdagi shubhali amallarni tekshiring.', 'Hodisani jamoaga xabar qiling va sababini yozib qo‘ying.'] },
+    ];
+
+    return {
+      isLoading: view === 'loading', isMain: view !== 'loading', isError: err,
+      skelCols: wide ? 'repeat(3,minmax(0,1fr))' : mid ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)', skelCards: [1, 2, 3, 4, 5],
+      ov, checkedAt: err ? '14:32:05' : s.checked || clock(new Date(now.getTime() - (30 - s.next) * 1000)),
+      nextText: s.busy ? 'Tekshirilmoqda…' : s.auto ? `Keyingi yangilanish: ${s.next} s` : 'Avtomatik yangilanish o‘chiq',
+      auto: s.auto, toggleAuto: () => this.setState({ auto: !s.auto, next: 30 }), arTrack: s.auto ? 'var(--primary)' : 'var(--border-strong)', arLeft: s.auto ? '18px' : '2px',
+      refresh: this.check, busy: s.busy, spin: s.busy ? 'sfSpin .8s linear infinite' : 'none', refreshLabel: s.busy ? 'Tekshirilmoqda…' : 'Hozir tekshirish',
+      gridCols: wide ? 'repeat(6,minmax(0,1fr))' : mid ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)', cards: cardsOut,
+      lowerCols: wide ? 'minmax(0,1.5fr) minmax(0,1fr)' : 'minmax(0,1fr)',
+      evTabs: EVT.map(([id, label]) => { const on = evTab === id; return { label, on, count: id === 'all' ? evAll.length : evAll.filter(e => e.cat === id).length, bg: on ? 'var(--bg-surface)' : 'transparent', shadow: on ? '0 1px 2px rgba(12,10,9,.12)' : 'none', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', weight: on ? 600 : 500, pick: () => this.setState({ evTab: id }) }; }),
+      hasEvents: evs.length > 0, noEvents: evs.length === 0,
+      events: evs.map((e, i) => { const t = tone(e.t); return { ...e, kind: KIND[e.cat], bg: t.bg, border: t.border, fg: t.fg, dot: t.dot, lineOp: i === evs.length - 1 ? 0 : 1, font: e.text.includes(':') && /[A-Z][a-z]+Error|pg_dump|Telegram[A-Z]/.test(e.text) ? 'var(--font-mono)' : 'var(--font-sans)' }; }),
+      notes: NOTES.map((n, i) => { const open = !!s.open[n.id], t = tone(n.t); return { ...n, t, open, rot: open ? 'rotate(180deg)' : 'none', metaFg: n.t === 'warning' || n.t === 'danger' && n.id !== 'token' ? t.fg : 'var(--text-secondary)', line: i === NOTES.length - 1 ? 'transparent' : 'var(--border-default)', toggle: () => this.setState({ open: { ...s.open, [n.id]: !open } }) }; }),
+    };
+  }
+}
+</script>
+</body>
+</html>

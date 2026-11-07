@@ -1,0 +1,32 @@
+<!-- @dsCard group="Components" viewport="900x560" name="Data table" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} </style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { DataTable, StatusBadge, ChannelTag, Avatar, Input, Button, Redacted } = NS;
+const { useState } = React;
+
+const names=['Dilnoza Karimova','Bekzod Tursunov','Madina Yusupova','Javohir Aliyev','Shahlo Nazarova','Otabek Ergashev','Nilufar Saidova','Sardor Qodirov','Gulnora Ismoilova','Rustam Xolmatov','Kamola Abdullayeva','Jasur Mirzayev'];
+const st=['Faol','Faol','Ro‘yxatdan o‘tmoqda','Bloklangan','Faol','O‘chirish so‘ralgan','Faol','Yopilgan','Faol','Faol','Ro‘yxatdan o‘tmoqda','Faol'];
+const chs=['uzum','wb','instagram','ozon','telegram','uzum','offline','other','wb','uzum','instagram','ozon'];
+const rows=names.map((n,i)=>({id:i+1,name:n,tg:String(482019377+i*7310291).slice(0,9),status:st[i],channel:chs[i],calc:[214,96,3,41,180,12,77,0,133,58,1,92][i],last:['05.11.2026 14:32','05.11.2026 11:08','04.11.2026 19:47','28.10.2026 08:15','05.11.2026 09:51','01.11.2026 16:20','03.11.2026 12:02','12.09.2026 10:00','05.11.2026 13:13','02.11.2026 18:40','05.11.2026 08:05','04.11.2026 21:30'][i]}));
+const columns=[
+ {key:'name',header:'Sotuvchi',sortable:true,hideable:false,render:r=><div className="r" style={{gap:10,flexWrap:'nowrap'}}><Avatar name={r.name} size={28} /><div className="sf-cell-stack"><span>{r.name}</span><span className="sf-id" style={{fontSize:12}}>{r.tg}</span></div></div>},
+ {key:'status',header:'Holat',sortable:true,render:r=><StatusBadge status={r.status} />},
+ {key:'channel',header:'Asosiy kanal',render:r=><ChannelTag channel={r.channel} />},
+ {key:'calc',header:'Hisoblashlar soni',sortable:true,align:'right'},
+ {key:'profit',header:'Foyda',hideable:true,render:()=><Redacted label="Yashirin" />},
+ {key:'last',header:'Oxirgi faollik',sortable:true},
+];
+function App(){ return <DataTable caption="Sotuvchilar" columns={columns} rows={rows} pageSize={8} maxHeight={380}
+  toolbar={<><Input size="sm" icon="search" placeholder="Ism yoki Telegram ID" style={{width:240}} /><Button size="sm" icon="filter">Filtr</Button></>}
+  bulkActions={()=> <><Button size="sm" icon="download">Eksport</Button><Button size="sm" variant="danger" icon="ban">Bloklash</Button></>}
+  rowActions={()=>[{label:'Tafsilotlarni ochish',icon:'panel-right-open'},{label:'Kirish so‘rash',icon:'send'},{label:'Telegram ID nusxalash',icon:'copy'},{separator:true},{label:'Bloklash',icon:'ban',danger:true}]} />; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

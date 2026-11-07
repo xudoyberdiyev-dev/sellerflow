@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfs] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfs] button,[data-sfs] input{font-family:inherit;}
+[data-sfs] [class^="icon-"]{line-height:1;display:inline-flex;}
+</style>
+</helmet>
+<div data-sfs="" style="display:flex;flex-direction:column;gap:24px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;">
+
+  <div style="display:flex;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">
+      <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">Qo‘llab-quvvatlash</h1>
+      <p style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;">Botdagi /help xabarida sotuvchilarga ko‘rinadigan kontakt tugmasi.</p>
+    </div>
+    <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:var(--bg-subtle);border:1px solid var(--border-default);color:var(--text-secondary);"><i class="icon-shield" aria-hidden="true" style="font-size:12px;"></i>Faqat SUPERADMIN</span>
+  </div>
+
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-busy="true" aria-label="Sozlamalar yuklanmoqda" style="display:grid;grid-template-columns:{{ cols }};gap:24px;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);">
+        <div style="width:40%;height:14px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        <div style="height:40px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        <div style="width:30%;height:14px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        <div style="height:40px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        <div style="width:30%;height:14px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        <div style="height:40px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+      </div>
+      <div style="height:620px;max-width:360px;width:100%;justify-self:center;border-radius:36px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="padding:56px 16px;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+      <span style="width:48px;height:48px;border-radius:12px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-cloud-off" aria-hidden="true" style="font-size:22px;"></i></span>
+      <h2 style="margin:0;font:var(--type-h3);">Sozlamalarni yuklab bo‘lmadi</h2>
+      <p style="margin:0;max-width:420px;color:var(--text-secondary);text-wrap:pretty;">Botdagi joriy kontakt o‘zgarmagan. Birozdan keyin qayta urinib ko‘ring.</p>
+      <button type="button" onClick="{{ retry }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:16px;"></i>Qayta urinish</button>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">Xato ID: 4e0c-91aa · 06.11.2026, 14:52</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMain }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;grid-template-columns:{{ cols }};gap:24px;align-items:start;">
+      <form onSubmit="{{ save }}" noValidate="{{ true }}" aria-labelledby="sfs-ft" style="display:flex;flex-direction:column;border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);min-width:0;">
+        <div style="padding:20px 24px 4px;">
+          <h2 id="sfs-ft" style="margin:0;font-size:16px;line-height:22px;font-weight:600;">Kontakt tugmasi</h2>
+        </div>
+
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div role="note" style="margin:12px 24px 0;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--info-border);border-radius:8px;background:var(--info-bg);color:var(--info-text);font-size:13px;"><i class="icon-info" aria-hidden="true" style="font-size:15px;margin-top:2px;color:var(--info-icon);"></i><span style="text-wrap:pretty;">Kontakt hali sozlanmagan. Hozir botda /help xabarida faqat savollar ro‘yxati ko‘rinadi.</span></div>
+        </sc-if>
+
+        <div style="padding:16px 24px 24px;display:flex;flex-direction:column;gap:20px;">
+          <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-subtle);">
+            <button type="button" role="switch" id="sfs-sw" aria-checked="{{ f.enabled }}" aria-describedby="sfs-swd" onClick="{{ toggle }}" style="position:relative;width:40px;height:24px;flex-shrink:0;margin-top:1px;padding:0;border:0;border-radius:12px;background:{{ sw.track }};cursor:pointer;transition:background .15s ease;"><span aria-hidden="true" style="position:absolute;top:3px;left:{{ sw.left }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(12,10,9,.3);transition:left .15s ease;"></span></button>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+              <label for="sfs-sw" style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Kontakt yoqilgan<span style="font-size:12px;line-height:18px;font-weight:600;padding:0 7px;border-radius:4px;background:{{ sw.bbg }};border:1px solid {{ sw.bborder }};color:{{ sw.bfg }};">{{ sw.label }}</span></label>
+              <span id="sfs-swd" style="font-size:13px;color:var(--text-secondary);text-wrap:pretty;">O‘chiq bo‘lsa, botda hech qanday havola ko‘rsatilmaydi.</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:20px;opacity:{{ fieldsOp }};">
+            <label style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:13px;font-weight:500;">Tugma matni <span style="color:var(--danger-text);">*</span></span>
+              <input ref="{{ labelRef }}" value="{{ f.label }}" onChange="{{ onLabel }}" onBlur="{{ onLabelBlur }}" maxLength="80" placeholder="Masalan: Qo‘llab-quvvatlash" aria-invalid="{{ lb.invalid }}" aria-describedby="sfs-lerr" style="height:40px;padding:0 12px;border:1px solid {{ lb.border }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;outline:none;" style-focus="border-color:var(--border-focus);">
+              <span style="display:flex;justify-content:space-between;gap:8px;font-size:12px;line-height:16px;">
+                <span id="sfs-lerr" role="alert" style="color:var(--danger-text);">{{ lb.err }}</span>
+                <span style="color:{{ lb.countFg }};">{{ lb.count }}/80</span>
+              </span>
+            </label>
+
+            <label style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:13px;font-weight:500;">Havola <span style="color:var(--danger-text);">*</span></span>
+              <span style="position:relative;display:flex;">
+                <i class="icon-{{ lk.icon }}" aria-hidden="true" style="position:absolute;left:12px;top:12px;font-size:16px;color:var(--text-tertiary);"></i>
+                <input ref="{{ linkRef }}" value="{{ f.link }}" onChange="{{ onLink }}" onBlur="{{ onLinkBlur }}" autoComplete="off" spellCheck="false" placeholder="@username yoki https://…" aria-invalid="{{ lk.invalid }}" aria-describedby="sfs-lhint sfs-lres" style="flex:1;min-width:0;height:40px;padding:0 12px 0 36px;border:1px solid {{ lk.border }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none;" style-focus="border-color:var(--border-focus);">
+              </span>
+              <span id="sfs-lhint" style="font-size:12px;line-height:16px;color:var(--text-tertiary);">Telegram @username yoki https:// bilan boshlanadigan to‘liq manzil.</span>
+              <span id="sfs-lres" role="{{ lk.role }}" style="display:flex;align-items:flex-start;gap:6px;min-height:18px;font-size:13px;line-height:18px;color:{{ lk.fg }};">
+                <sc-if value="{{ lk.has }}" hint-placeholder-val="{{ true }}"><i class="icon-{{ lk.resIcon }}" aria-hidden="true" style="font-size:14px;margin-top:2px;"></i><span style="font-family:{{ lk.font }};overflow-wrap:anywhere;">{{ lk.text }}</span></sc-if>
+              </span>
+            </label>
+          </div>
+
+          <sc-if value="{{ saveErr }}" hint-placeholder-val="{{ false }}">
+            <div role="alert" style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--danger-border);border-radius:8px;background:var(--danger-bg);color:var(--danger-text);font-size:13px;"><i class="icon-circle-alert" aria-hidden="true" style="font-size:15px;margin-top:2px;color:var(--danger-icon);"></i><span style="flex:1;text-wrap:pretty;">Saqlab bo‘lmadi: server javob bermadi. O‘zgarishlar yo‘qolmadi — qayta urinib ko‘ring.</span></div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;padding:12px 24px;border-top:1px solid var(--border-default);background:var(--bg-subtle);border-radius:0 0 10px 10px;">
+          <span style="flex:1 1 240px;display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:16px;color:var(--text-secondary);">
+            <i class="icon-{{ meta.icon }}" aria-hidden="true" style="font-size:13px;margin-top:1px;color:{{ meta.iconFg }};"></i>
+            <span style="text-wrap:pretty;">{{ meta.text }}</span>
+          </span>
+          <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ reset }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Bekor qilish</button>
+          </sc-if>
+          <button type="submit" disabled="{{ saveDisabled }}" aria-disabled="{{ saveDisabled }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:{{ saveBg }};color:{{ saveFg }};font-size:14px;font-weight:500;cursor:{{ saveCursor }};" style-hover="background:{{ saveHover }};"><i class="icon-{{ saveIcon }}" aria-hidden="true" style="font-size:16px;animation:{{ saveAnim }};"></i>{{ saveLabel }}</button>
+        </div>
+      </form>
+
+      <section aria-labelledby="sfs-pt" style="display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;">
+        <div style="width:100%;max-width:360px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h2 id="sfs-pt" style="margin:0;font-size:13px;font-weight:600;">Botdagi ko‘rinish</h2>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:18px;font-weight:600;padding:0 7px;border-radius:9px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success-text);"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:var(--success-icon);"></span>Jonli preview</span>
+          <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;font-size:12px;color:var(--warning-text);">Saqlanmagan</span></sc-if>
+        </div>
+
+        <div role="img" aria-label="{{ pvAria }}" style="width:100%;max-width:360px;box-sizing:border-box;padding:10px;border-radius:44px;background:#1c1917;box-shadow:0 24px 48px rgba(12,10,9,.18);">
+          <div style="position:relative;height:640px;border-radius:34px;overflow:hidden;background:var(--bg-muted);display:flex;flex-direction:column;">
+            <div style="height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600;background:var(--bg-surface);">
+              <span>14:32</span>
+              <span aria-hidden="true" style="position:absolute;left:50%;top:10px;transform:translateX(-50%);width:96px;height:24px;border-radius:12px;background:#1c1917;"></span>
+              <span style="display:flex;gap:5px;align-items:center;"><i class="icon-signal" style="font-size:13px;"></i><i class="icon-wifi" style="font-size:13px;"></i><i class="icon-battery-full" style="font-size:15px;"></i></span>
+            </div>
+            <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:6px 12px 10px;background:var(--bg-surface);border-bottom:1px solid var(--border-default);">
+              <i class="icon-chevron-left" style="font-size:20px;color:var(--text-link);"></i>
+              <img src="../../assets/logo-mark.svg" alt="" width="34" height="34" style="display:block;border-radius:50%;">
+              <span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:15px;font-weight:600;line-height:19px;">SellerFlow Bot</span><span style="font-size:12px;line-height:15px;color:var(--text-tertiary);">bot</span></span>
+            </div>
+            <div style="flex:1;min-height:0;overflow:hidden;padding:14px 10px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;">
+              <span style="align-self:center;font-size:11px;line-height:18px;padding:0 8px;border-radius:9px;background:rgba(12,10,9,.18);color:#fff;font-weight:500;">Bugun</span>
+              <div style="align-self:flex-end;background:var(--primary);color:var(--primary-fg);border-radius:14px 14px 4px 14px;padding:6px 10px;font-size:14px;line-height:20px;display:flex;gap:8px;align-items:flex-end;">/help<span style="font-size:11px;line-height:14px;opacity:.85;">14:32</span></div>
+              <div style="align-self:flex-start;max-width:92%;box-sizing:border-box;background:var(--bg-surface);border-radius:14px 14px 14px 4px;padding:8px 12px 6px;box-shadow:0 1px 1px rgba(12,10,9,.08);font-size:14px;line-height:20px;display:flex;flex-direction:column;gap:4px;">
+                <span style="font-weight:700;">❓ Yordam</span>
+                <span style="text-wrap:pretty;">Savolingizni tanlang. Javob topilmasa, quyidagi tugma orqali bizga yozing.</span>
+                <span style="align-self:flex-end;font-size:11px;line-height:14px;color:var(--text-tertiary);">14:32</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;max-width:92%;width:92%;">
+                <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="5">
+                  <span style="min-height:36px;display:flex;align-items:center;justify-content:center;padding:4px 10px;box-sizing:border-box;border-radius:8px;background:var(--bg-surface);font-size:13px;line-height:17px;font-weight:500;text-align:center;box-shadow:0 1px 1px rgba(12,10,9,.08);">{{ q }}</span>
+                </sc-for>
+                <sc-if value="{{ pv.show }}" hint-placeholder-val="{{ true }}">
+                  <span style="position:relative;min-height:36px;display:flex;align-items:center;justify-content:center;padding:4px 26px;box-sizing:border-box;border-radius:8px;background:var(--bg-surface);font-size:13px;line-height:17px;font-weight:600;color:var(--text-link);text-align:center;box-shadow:0 1px 1px rgba(12,10,9,.08);outline:{{ pv.outline }};outline-offset:1px;overflow-wrap:anywhere;">{{ pv.label }}<i class="icon-arrow-up-right" style="position:absolute;right:6px;top:5px;font-size:12px;"></i></span>
+                </sc-if>
+              </div>
+            </div>
+            <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:8px 10px 18px;background:var(--bg-surface);border-top:1px solid var(--border-default);">
+              <i class="icon-paperclip" style="font-size:18px;color:var(--text-tertiary);"></i>
+              <span style="flex:1;height:34px;display:flex;align-items:center;padding:0 12px;border-radius:17px;border:1px solid var(--border-default);font-size:14px;color:var(--text-tertiary);">Xabar</span>
+              <i class="icon-mic" style="font-size:18px;color:var(--text-tertiary);"></i>
+            </div>
+          </div>
+        </div>
+
+        <div style="width:100%;max-width:360px;display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:16px;color:{{ pv.capFg }};">
+          <i class="icon-{{ pv.capIcon }}" aria-hidden="true" style="font-size:13px;margin-top:1px;"></i>
+          <span style="overflow-wrap:anywhere;">{{ pv.cap }}<sc-if value="{{ pv.hasUrl }}" hint-placeholder-val="{{ true }}"> <span style="font-family:var(--font-mono);color:var(--text-primary);">{{ pv.url }}</span></sc-if></span>
+        </div>
+      </section>
+    </div>
+
+    <section aria-labelledby="sfs-soon" style="display:flex;flex-direction:column;gap:12px;">
+      <h2 id="sfs-soon" style="margin:0;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);">Keyingi bosqich</h2>
+      <div style="display:grid;grid-template-columns:{{ soonCols }};gap:16px;">
+        <div aria-disabled="true" style="display:flex;flex-direction:column;gap:14px;padding:20px 24px;border:1px dashed var(--border-strong);border-radius:10px;background:var(--bg-subtle);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <i class="icon-message-circle-question" aria-hidden="true" style="font-size:18px;color:var(--text-tertiary);"></i>
+            <h3 style="margin:0;font-size:15px;line-height:20px;font-weight:600;color:var(--text-secondary);">FAQ matnlarini tahrirlash</h3>
+            <span style="margin-left:auto;font-size:11px;line-height:18px;font-weight:600;padding:0 7px;border-radius:4px;background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-text);">Tez kunda</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Savollar, javoblar va ularning tartibini shu yerdan o‘zgartirish.</p>
+          <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+            <sc-for list="{{ faqSoon }}" as="q" hint-placeholder-count="3">
+              <li style="height:36px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);font-size:13px;color:var(--text-tertiary);"><i class="icon-grip-vertical" aria-hidden="true" style="font-size:14px;"></i><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ q }}</span><i class="icon-pencil" aria-hidden="true" style="font-size:13px;"></i></li>
+            </sc-for>
+          </ul>
+        </div>
+        <div aria-disabled="true" style="display:flex;flex-direction:column;gap:14px;padding:20px 24px;border:1px dashed var(--border-strong);border-radius:10px;background:var(--bg-subtle);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <i class="icon-clock" aria-hidden="true" style="font-size:18px;color:var(--text-tertiary);"></i>
+            <h3 style="margin:0;font-size:15px;line-height:20px;font-weight:600;color:var(--text-secondary);">Javob berish vaqti (SLA)</h3>
+            <span style="margin-left:auto;font-size:11px;line-height:18px;font-weight:600;padding:0 7px;border-radius:4px;background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-text);">Tez kunda</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Sotuvchiga botda «Odatda N soat ichida javob beramiz» deb ko‘rsatish.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <span style="height:36px;flex:1 1 120px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);font-size:13px;color:var(--text-tertiary);">2 soat<i class="icon-chevron-down" aria-hidden="true" style="font-size:14px;"></i></span>
+            <span style="height:36px;flex:1 1 160px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);font-size:13px;color:var(--text-tertiary);">Ish vaqti: 09:00–18:00<i class="icon-chevron-down" aria-hidden="true" style="font-size:14px;"></i></span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:fixed;left:{{ toastLeft }};right:{{ toastRight }};bottom:20px;z-index:75;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;max-width:460px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.28);font-size:14px;">
+      <i class="icon-circle-check" aria-hidden="true" style="font-size:16px;color:var(--success-icon);"></i>
+      <span style="flex:1;min-width:0;"><strong style="font-weight:600;">Saqlandi.</strong> {{ toast }}</span>
+      <button type="button" aria-label="Xabarni yopish" onClick="{{ closeToast }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-inverse);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1100},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;empty&quot;,&quot;error&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;dirty&quot;,&quot;disabled&quot;,&quot;invalid&quot;,&quot;badUser&quot;,&quot;saveError&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;}}">
+const pad = n => String(n).padStart(2, '0');
+const nowHM = () => { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const ME = 'd.aliyev@sellerflow.uz';
+const FAQS = ['Foyda qanday hisoblanadi?', 'Komissiyani qayerdan bilaman?', 'Tavsiya narxi nima?', 'Ma’lumotlarim xavfsizmi?', 'Akkauntni qanday o‘chiraman?'];
+const SAVED = {
+  none: { enabled: true, label: 'Qo‘llab-quvvatlash', link: '@sellerflow_support', by: 's.toshev@sellerflow.uz', at: '02.11.2026, 10:14' },
+  disabled: { enabled: false, label: 'Qo‘llab-quvvatlash', link: '@sellerflow_support', by: ME, at: '05.11.2026, 19:40' },
+  empty: { enabled: false, label: '', link: '', by: null, at: null },
+};
+const DEMO_F = {
+  dirty: { label: 'Operator bilan bog‘lanish', link: 'https://sellerflow.uz/yordam' },
+  invalid: { link: 'sellerflow.uz/yordam' },
+  badUser: { link: '@sf' },
+  saveError: { label: 'Operator bilan bog‘lanish' },
+};
+const checkLink = v => {
+  v = v.trim();
+  if (!v) return { ok: false, err: 'Havolani kiriting.' };
+  if (v[0] === '@') {
+    const u = v.slice(1);
+    if (!/^[A-Za-z][A-Za-z0-9_]{4,31}$/.test(u) || /_$/.test(u)) return { ok: false, err: 'Username 5–32 belgi: lotin harflari, raqam va «_», harf bilan boshlanadi.' };
+    return { ok: true, url: 'https://t.me/' + u, user: true };
+  }
+  if (/^https:\/\/[^\s/?#]+\.[^\s/?#]{2,}(\/\S*)?$/i.test(v)) return { ok: true, url: v };
+  return { ok: false, err: 'Havola https:// bilan boshlanishi yoki @username bo‘lishi kerak' };
+};
+
+class Component extends DCLogic {
+  state = { saved: null, f: null, touched: null, busy: false, saveErr: null, toast: null, view: null };
+  labelRef = React.createRef(); linkRef = React.createRef();
+  componentWillUnmount() { clearTimeout(this.tt); clearTimeout(this.tb); clearTimeout(this.tr); }
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const demo = p.demo || 'none';
+    const view = s.view ?? p.view ?? 'default';
+    const cw = p.contentWidth ?? 1136, mobile = cw < 640;
+    const saved = s.saved || SAVED[view === 'empty' ? 'empty' : demo === 'disabled' ? 'disabled' : 'none'];
+    const f = s.f || { enabled: saved.enabled, label: saved.label, link: saved.link, ...(DEMO_F[demo] || {}) };
+    const touched = s.touched || (DEMO_F[demo] ? { label: true, link: true } : { label: false, link: false });
+    const saveErr = s.saveErr ?? demo === 'saveError';
+    const set = patch => this.setState({ f: { ...f, ...patch }, saveErr: false });
+
+    const lTrim = f.label.trim();
+    const lbBad = f.enabled && !lTrim;
+    const lb = { invalid: touched.label && lbBad, err: touched.label && lbBad ? 'Tugma matnini kiriting.' : '', count: f.label.length, countFg: f.label.length >= 72 ? 'var(--warning-text)' : 'var(--text-tertiary)' };
+    lb.border = lb.invalid ? 'var(--danger-icon)' : 'var(--border-input)';
+    const L = checkLink(f.link);
+    const lkBad = f.enabled && !L.ok, showErr = touched.link && lkBad && f.link.trim() !== '' || (touched.link && lkBad);
+    let lk;
+    if (showErr) lk = { has: true, invalid: true, role: 'alert', resIcon: 'circle-alert', text: L.err, fg: 'var(--danger-text)', font: 'inherit', border: 'var(--danger-icon)' };
+    else if (L.ok && L.user) lk = { has: true, invalid: false, role: 'status', resIcon: 'corner-down-right', text: '→ ' + L.url, fg: 'var(--success-text)', font: 'var(--font-mono)', border: 'var(--border-input)' };
+    else lk = { has: false, invalid: false, role: 'status', resIcon: 'info', text: '', fg: 'var(--text-secondary)', font: 'inherit', border: 'var(--border-input)' };
+    lk.icon = f.link.trim().startsWith('@') ? 'at-sign' : 'link';
+
+    const dirty = f.enabled !== saved.enabled || f.label !== saved.label || f.link !== saved.link;
+    const valid = !lbBad && !lkBad;
+    const saveDisabled = !dirty || s.busy;
+
+    const showBtn = f.enabled && !!lTrim;
+    const url = L.ok ? L.url : '';
+    const pv = {
+      show: showBtn, label: lTrim || 'Qo‘llab-quvvatlash',
+      outline: showBtn && dirty ? '2px dashed var(--warning-icon)' : 'none',
+      hasUrl: showBtn && !!url, url,
+      cap: !f.enabled ? 'Kontakt o‘chiq — botda havola ko‘rsatilmaydi.' : !showBtn ? 'Tugma matni bo‘sh — tugma ko‘rsatilmaydi.' : url ? 'Bosilganda ochiladi:' : 'Havola noto‘g‘ri — saqlab bo‘lmaydi.',
+      capIcon: !f.enabled ? 'eye-off' : url ? 'arrow-up-right' : 'circle-alert',
+      capFg: !f.enabled || url ? 'var(--text-secondary)' : 'var(--danger-text)',
+    };
+
+    const meta = saved.by
+      ? { icon: 'history', iconFg: 'var(--text-tertiary)', text: `Oxirgi o‘zgarish: ${saved.by} · ${saved.at}` }
+      : { icon: 'history', iconFg: 'var(--text-tertiary)', text: 'Hali o‘zgarish kiritilmagan.' };
+
+    return {
+      labelRef: this.labelRef, linkRef: this.linkRef,
+      isLoading: view === 'loading', isError: view === 'error', isMain: view === 'default' || view === 'empty', isEmpty: view === 'empty' && !s.saved,
+      retry: () => { this.setState({ view: 'loading' }); clearTimeout(this.tr); this.tr = setTimeout(() => this.setState({ view: 'default' }), 1100); },
+      cols: cw >= 900 ? 'minmax(0,1fr) minmax(320px,380px)' : 'minmax(0,1fr)',
+      soonCols: cw >= 760 ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)',
+      f, sw: f.enabled
+        ? { track: 'var(--primary)', left: '19px', label: 'Yoqilgan', bbg: 'var(--success-bg)', bborder: 'var(--success-border)', bfg: 'var(--success-text)' }
+        : { track: 'var(--border-strong)', left: '3px', label: 'O‘chiq', bbg: 'var(--neutral-bg)', bborder: 'var(--neutral-border)', bfg: 'var(--neutral-text)' },
+      toggle: () => set({ enabled: !f.enabled }),
+      fieldsOp: f.enabled ? 1 : .6,
+      onLabel: e => set({ label: e.target.value.slice(0, 80) }),
+      onLabelBlur: () => this.setState({ touched: { ...touched, label: true } }),
+      onLink: e => set({ link: e.target.value }),
+      onLinkBlur: () => this.setState({ touched: { ...touched, link: true } }),
+      lb, lk, dirty, saveErr,
+      reset: () => this.setState({ f: { enabled: saved.enabled, label: saved.label, link: saved.link }, touched: { label: false, link: false }, saveErr: false }),
+      saveDisabled, saveBg: saveDisabled ? 'var(--bg-muted)' : 'var(--primary)', saveFg: saveDisabled ? 'var(--text-tertiary)' : 'var(--primary-fg)', saveHover: saveDisabled ? 'var(--bg-muted)' : 'var(--primary-hover)', saveCursor: saveDisabled ? 'not-allowed' : 'pointer',
+      saveIcon: s.busy ? 'loader-circle' : 'save', saveAnim: s.busy ? 'sfSpin .8s linear infinite' : 'none', saveLabel: s.busy ? 'Saqlanmoqda…' : 'Saqlash',
+      save: e => {
+        e.preventDefault();
+        if (saveDisabled) return;
+        if (!valid) { this.setState({ touched: { label: true, link: true }, f }); const r = lbBad ? this.labelRef : this.linkRef; r.current && r.current.focus(); return; }
+        this.setState({ busy: true, f }); clearTimeout(this.tb);
+        this.tb = setTimeout(() => {
+          if (demo === 'saveError' && !this._failedOnce) { this._failedOnce = true; this.setState({ busy: false, saveErr: true }); return; }
+          const at = '06.11.2026, ' + nowHM();
+          const linkN = f.link.trim(), labelN = f.label.trim();
+          this.setState({ busy: false, saveErr: false, saved: { enabled: f.enabled, label: labelN, link: linkN, by: ME, at }, f: { enabled: f.enabled, label: labelN, link: linkN }, touched: { label: false, link: false } });
+          clearTimeout(this.tt); this.setState({ toast: f.enabled ? 'Botda yangi kontakt tugmasi ko‘rinadi. Auditga yozildi.' : 'Botda kontakt havolasi yashirildi. Auditga yozildi.' });
+          this.tt = setTimeout(() => this.setState({ toast: null }), 5000);
+        }, 800);
+      },
+      meta, faqs: FAQS, faqSoon: FAQS.slice(0, 3), pv,
+      pvAria: `Telegram bot preview: /help xabari, ${FAQS.length} ta savol tugmasi` + (showBtn ? `, kontakt tugmasi «${lTrim}»` : ', kontakt tugmasi yo‘q'),
+      hasToast: !!s.toast, toast: s.toast || '', closeToast: () => this.setState({ toast: null }),
+      toastLeft: mobile ? '12px' : 'auto', toastRight: mobile ? '12px' : '24px',
+    };
+  }
+}
+</script>
+</body>
+</html>

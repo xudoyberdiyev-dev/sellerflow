@@ -1,0 +1,36 @@
+<!-- @dsCard group="Components" viewport="700x720" name="Feedback" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px} .box{border:1px solid var(--border-default);border-radius:8px}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { EmptyState, Skeleton, SkeletonText, InlineAlert, Banner, Toast, Button } = NS;
+const { useState } = React;
+
+function App(){ return <div className="c" style={{gap:14}}>
+  <div style={{margin:'-20px -20px 0'}}><Banner tone="info" action={<Button size="sm" variant="secondary">Batafsil</Button>}><strong>Rejali texnik ishlar:</strong> 07.11.2026 23:00–23:30. Bot ishlashda davom etadi.</Banner></div>
+  <div className="g2">
+    <InlineAlert tone="warning" title="2FA yoqilmagan">Hisobingizni himoyalash uchun 2FA’ni yoqing.</InlineAlert>
+    <InlineAlert tone="danger" title="Saqlab bo‘lmadi" onClose={()=>{}}>Server javob bermadi. Internetni tekshirib, qayta urinib ko‘ring.</InlineAlert>
+    <InlineAlert tone="success" title="Admin qo‘shildi">Taklifnoma email orqali yuborildi.</InlineAlert>
+    <InlineAlert tone="privacy" title="Faqat o‘qish rejimi">Bu sahifadagi ma’lumotni o‘zgartirib bo‘lmaydi.</InlineAlert>
+  </div>
+  <div className="g2">
+    <div className="box"><EmptyState kind="search" title="Hech narsa topilmadi" description="«Karimov» bo‘yicha sotuvchi yo‘q. Filtrlarni tozalab ko‘ring." actions={<Button size="sm">Filtrlarni tozalash</Button>} /></div>
+    <div className="box"><EmptyState kind="forbidden" code="403" title="Bu bo‘limga ruxsat yo‘q" description="Adminlarni faqat SUPERADMIN boshqaradi." actions={<Button size="sm" icon="arrow-left">Bosh sahifaga qaytish</Button>} /></div>
+  </div>
+  <div className="g2">
+    <div className="box" style={{padding:16}}><div className="c" style={{gap:12}}><div className="r"><Skeleton circle height={32} /><div style={{flex:1}}><SkeletonText lines={2} /></div></div><Skeleton height={80} radius={6} /></div></div>
+    <div className="c" style={{gap:8}}>
+      <Toast tone="success" title="Sotuvchi bloklandi" description="Dilnoza Karimova · 482019377" audit onClose={()=>{}} />
+      <Toast tone="danger" title="So‘rov yuborilmadi" description="Sotuvchi botni bloklagan. Boshqa kanal orqali bog‘laning." onClose={()=>{}} />
+    </div>
+  </div>
+</div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

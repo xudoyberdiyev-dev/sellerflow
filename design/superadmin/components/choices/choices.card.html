@@ -1,0 +1,38 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Choices & date range" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Checkbox, Radio, Switch, SegmentedControl, DateRangePicker } = NS;
+const { useState } = React;
+
+function App(){ const [a,setA]=useState(true); const [r,setR]=useState('30'); const [s,setS]=useState(true); const [seg,setSeg]=useState('day'); const [range,setRange]=useState(undefined);
+ return <div className="c" style={{gap:20}}>
+  <div className="g3">
+    <div className="c"><span className="l">Checkbox</span>
+      <Checkbox checked={a} onChange={e=>setA(e.target.checked)} label="Faqat faol" />
+      <Checkbox checked={false} onChange={()=>{}} label="Bloklanganlar" />
+      <Checkbox indeterminate checked={false} onChange={()=>{}} label="Qisman tanlangan" />
+      <Checkbox checked onChange={()=>{}} disabled label="Disabled" />
+      <Checkbox checked={false} onChange={()=>{}} invalid label="Shartlarga roziman" /></div>
+    <div className="c"><span className="l">Radio · ruxsat muddati</span>
+      {['30','45','60'].map(v=><Radio key={v} name="dur" value={v} checked={r===v} onChange={()=>setR(v)} label={v+' daqiqa'} />)}
+      <Radio name="x" checked={false} onChange={()=>{}} disabled label="90 daqiqa (mumkin emas)" /></div>
+    <div className="c"><span className="l">Switch</span>
+      <Switch checked={s} onChange={e=>setS(e.target.checked)} label="2FA majburiy" description="Barcha adminlar uchun" />
+      <Switch checked={false} onChange={()=>{}} label="Email xabarnomalar" />
+      <Switch checked onChange={()=>{}} disabled label="Audit jurnali (doim yoqiq)" /></div>
+  </div>
+  <div className="c"><span className="l">Segmented control</span>
+    <SegmentedControl label="Guruhlash" value={seg} onChange={setSeg} options={[{value:'day',label:'Kun'},{value:'week',label:'Hafta'},{value:'month',label:'Oy'},{value:'q',label:'Chorak',disabled:true}]} /></div>
+  <div className="c"><span className="l">Date range picker — «Oraliq» kalendarni ochadi</span>
+    <DateRangePicker value={range} onChange={setRange} today={new Date(2026,10,5)} /></div>
+</div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

@@ -1,0 +1,20 @@
+<!-- @dsCard group="Components" viewport="700x130" name="Logo & Icon" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} </style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Logo, Icon } = NS;
+const { useState } = React;
+
+function App(){ return <div className="r" style={{gap:32}}>
+  <Logo /><Logo variant="mark" /><Logo size={22} />
+  <div className="r" style={{gap:14,color:'var(--text-secondary)'}}>{['lock','shield-check','users','key-round','scroll-text','eye','ban'].map(n=><Icon key={n} name={n} size={18} />)}</div>
+</div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

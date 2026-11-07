@@ -1,0 +1,31 @@
+<!-- @dsCard group="Components" viewport="700x380" name="Card & KPI" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Card, StatCard, Button, Sparkline, StatusBadge } = NS;
+const { useState } = React;
+
+function App(){ return <div className="c" style={{gap:12}}>
+  <div className="g3">
+    <StatCard label="Faol sotuvchilar" icon="users" value="1 284" delta={12.4} trend={[8,9,9,11,10,12,13,14]} />
+    <StatCard label="Bloklangan" icon="ban" value="12" delta={-25} invertDelta trend={[16,15,15,14,13,13,12,12]} />
+    <StatCard loading />
+  </div>
+  <div className="g3" style={{gridTemplateColumns:'2fr 1fr'}}>
+    <Card title="Kirish so‘rovlari" description="Oxirgi 7 kun" actions={<Button size="sm" iconRight="arrow-right" variant="ghost">Hammasi</Button>}>
+      <div className="c" style={{gap:10}}>
+        {[['Dilnoza Karimova','Ruxsat berilgan'],['Bekzod Tursunov','Kutilmoqda'],['Javohir Aliyev','Rad etilgan']].map(([n,s])=><div key={n} className="r" style={{justifyContent:'space-between'}}><span>{n}</span><StatusBadge status={s} /></div>)}
+      </div>
+    </Card>
+    <Card interactive title="Yangi ro‘yxatdan o‘tganlar"><div style={{font:'600 24px/32px var(--font-sans)'}} className="sf-num">86</div><div style={{font:'var(--type-small)',color:'var(--text-secondary)'}}>bugun 09:00 dan beri</div></Card>
+  </div>
+</div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

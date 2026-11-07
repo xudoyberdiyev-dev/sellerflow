@@ -59,6 +59,17 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [ ] **LOW (CI):** Docker image build, admin-ui lint, `npm audit --omit=dev`, OWASP dependency-check yoki `mvn versions` hisobot, shellcheck.
 - [ ] **LOW (UI):** grant muddati tugaganda ma'lumot ekrandan tozalansin; formalarda busy holat (ikki marta yuborish yo'q); `index.html` uchun `Cache-Control: no-cache`; `vite` va `react-router` yangilansin; mobil menyuda Profil; `useLoad` da AbortController.
 
+## 6½-bosqich — Yangi Superadmin dizaynini kodga ko'chirish
+Reja va qarorlar: `design/superadmin/INTEGRATION.md`. Manba: `design/superadmin/` (Claude Design eksporti, 2026-11-07).
+Audit bandlari (1–6-bosqich) tugagach boshlanadi.
+- [ ] **D-1:** tokenlar, components.css, self-host shriftlar (`@fontsource`), qorong'i mavzu.
+- [ ] **D-2:** `design/superadmin/components/**` primitivlarini `admin-ui/src/components/` ga TSX qilib ko'chirish; `format.ts`.
+- [ ] **D-3:** App shell — Sidebar, Topbar, CommandPalette (⌘K), ToastStack, ConfirmDialog (sabab majburiy → API).
+- [ ] **D-4:** Auth ekranlari — login, 2FA stepper, OTP, lockout, majburiy parol almashtirish, sessiya tugashi.
+- [ ] **D-5:** dizayn uchun backend endpointlari (INTEGRATION.md 5-band) — har biriga test.
+- [ ] **D-6:** sahifalar — Dashboard, Tizim holati, Sotuvchilar (+drawer), Sotuvchi kartasi (PrivacyGuard → so'rov → ReadOnly → re-lock), Kirish so'rovlari, Qo'llab-quvvatlash, Audit, Administratorlar, Profil.
+- [ ] **D-7:** holatlar (skeleton/bo'sh/xato/403), mobil va planshet, qorong'i, fokus tartibi, Playwright skrinshot-tekshiruvi; eski UI kodi olib tashlanadi.
+
 ## 7-bosqich — Yakun
 - [ ] Barcha bandlar qayta ko'rib chiqiladi; qolgan LOW topilmalar ro'yxati shu faylga «Qoldirilganlar» sifatida sababi bilan yoziladi.
 - [ ] Yakuniy hisobot: `docs/AUDIT_FIX_REPORT.md` (nima tuzatildi, qaysi commit, qaysi test, nima qoldi va nega).
@@ -72,3 +83,4 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 | Sana | Bajarilgan bandlar | Commitlar | Izoh |
 |---|---|---|---|
 | 2026-11-07 00:10 | Reja tuzildi; `.env.example` dagi sirlar olib tashlandi (292cd7b) | — | Avtomatik ish 2026-11-07 11:30 dan boshlanadi |
+| 2026-11-07 11:10 | Superadmin dizayni repoga qo'shildi (`design/superadmin/`), 6½-bosqich rejaga kiritildi | — | Dizayn audit tugagach ko'chiriladi |

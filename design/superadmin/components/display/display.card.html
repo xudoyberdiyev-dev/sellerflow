@@ -1,0 +1,28 @@
+<!-- @dsCard group="Components" viewport="700x360" name="Badge, Tag, Avatar, Tooltip, Kbd" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} </style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Badge, StatusBadge, Tag, ChannelTag, CHANNELS, Avatar, Tooltip, Kbd, IconButton, Button } = NS;
+const { useState } = React;
+
+function App(){ const [tags,setTags]=useState(['Holat: Faol','Kanal: Uzum Market']);
+ return <div className="c" style={{gap:18}}>
+  <div className="c"><span className="l">StatusBadge — akkaunt</span><div className="r">{['Faol','Ro‘yxatdan o‘tmoqda','Bloklangan','O‘chirish so‘ralgan','Yopilgan'].map(s=><StatusBadge key={s} status={s} />)}</div></div>
+  <div className="c"><span className="l">StatusBadge — kirish so‘rovi</span><div className="r">{['Kutilmoqda','Ruxsat berilgan','Rad etilgan','Bekor qilingan','Muddati tugagan'].map(s=><StatusBadge key={s} status={s} />)}<Badge tone="privacy" icon="lock">Himoyalangan</Badge><Badge tone="brand" dot={false}>Free (Beta)</Badge></div></div>
+  <div className="c"><span className="l">ChannelTag · Tag (olib tashlanadigan)</span><div className="r">{CHANNELS.map(c=><ChannelTag key={c.id} channel={c.id} />)}</div>
+    <div className="r">{tags.map(t=><Tag key={t} onRemove={()=>setTags(tags.filter(x=>x!==t))}>{t}</Tag>)}</div></div>
+  <div className="r" style={{gap:32,alignItems:'flex-end'}}>
+    <div className="c"><span className="l">Avatar 24 / 32 / 40</span><div className="r">{[['Dilnoza Karimova',24],['Bekzod Tursunov',32],['Madina Yusupova',40],['Aziz Rahimov',32],['Shahlo Nazarova',32]].map(([n,s])=><Avatar key={n} name={n} size={s} />)}</div></div>
+    <div className="c" style={{paddingTop:34}}><span className="l">Tooltip + Kbd</span><div className="r"><Tooltip content="Qidirish" shortcut="⌘K" defaultOpen><IconButton icon="search" label="Qidirish" variant="secondary" /></Tooltip>
+      <span className="r" style={{gap:2}}><Kbd>Ctrl</Kbd><Kbd>K</Kbd></span><Kbd>Esc</Kbd><Kbd>↵</Kbd></div></div>
+  </div>
+</div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

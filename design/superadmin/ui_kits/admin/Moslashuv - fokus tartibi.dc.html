@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<style>html,body{margin:0;background:#f5f5f4;} a{color:#1c1917;} a:hover{color:#57534e;}</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:40px;font-family:Inter,system-ui,sans-serif;color:#1c1917;">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:980px;">
+    <span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#57534e;">SellerFlow Admin · Accessibility</span>
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.02em;">Klaviatura fokus tartibi</h1>
+    <p style="margin:0;font-size:15px;line-height:24px;color:#57534e;text-wrap:pretty;">Raqamlar haqiqiy DOM’dan avtomatik olinadi — Tab tugmasi aynan shu tartibda yuradi. 1-qadam har doim yashirin «Asosiy kontentga o‘tish» havolasi: u faqat Tab bosilganda chiqadi va sidebar’ni chetlab o‘tadi. Tablar, radio guruhlar va jadval qatorlari ichida strelkalar ishlaydi (roving tabindex), shuning uchun ular bitta qadam hisoblanadi.</p>
+  </div>
+
+  <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;font-size:13px;color:#44403c;">
+    <span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:22px;height:22px;border-radius:11px;background:#18734b;color:#fff;font:700 11px/22px 'JetBrains Mono',monospace;text-align:center;">1</span>Navigatsiya (skip-link, sidebar, yuqori panel)</span>
+    <span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:22px;height:22px;border-radius:11px;background:#5f5283;color:#fff;font:700 11px/22px 'JetBrains Mono',monospace;text-align:center;">9</span>Sahifa kontenti</span>
+    <span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:22px;height:22px;border-radius:11px;background:#fff;color:#57534e;border:1.5px dashed #57534e;box-sizing:border-box;font:700 11px/19px 'JetBrains Mono',monospace;text-align:center;">1</span>Hozir ekranda emas (yashirin yoki skroll ostida)</span>
+    <button type="button" onClick="{{ recompute }}" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid #a8a29e;border-radius:6px;background:#fff;color:#1c1917;font-size:13px;font-weight:500;cursor:pointer;">Qayta hisoblash</button>
+  </div>
+
+  <sc-for list="{{ boards }}" as="b" hint-placeholder-count="5">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">{{ b.id }}</span><span style="font-size:16px;font-weight:600;">{{ b.label }}</span><span style="font-size:13px;color:#57534e;">{{ b.countText }}</span></div>
+      <div style="display:flex;gap:24px;align-items:flex-start;">
+        <div id="{{ b.domId }}" style="position:relative;width:1440px;height:1000px;flex-shrink:0;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);">
+          <dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="{{ b.page }}" seller-tab="{{ b.sellerTab }}" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import>
+          <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;z-index:500;">
+            <sc-for list="{{ b.marks }}" as="m" hint-placeholder-count="0">
+              <span style="position:absolute;left:{{ m.x }};top:{{ m.y }};min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:11px;background:{{ m.bg }};color:{{ m.fg }};border:{{ m.border }};font:700 11px/20px 'JetBrains Mono',monospace;text-align:center;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(12,10,9,.3);">{{ m.n }}</span>
+              <span style="position:absolute;left:{{ m.rx }};top:{{ m.ry }};width:{{ m.rw }};height:{{ m.rh }};border:1.5px solid {{ m.ring }};border-radius:6px;box-sizing:border-box;opacity:.55;"></span>
+            </sc-for>
+          </div>
+        </div>
+        <ol style="margin:0;padding:16px 16px 16px 16px;list-style:none;width:380px;box-sizing:border-box;max-height:1000px;overflow:auto;border:1px solid #d6d3d1;border-radius:12px;background:#fff;display:flex;flex-direction:column;gap:2px;font-size:13px;">
+          <li style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#57534e;padding:0 4px 8px;">Tab tartibi</li>
+          <sc-for list="{{ b.list }}" as="it" hint-placeholder-count="12">
+            <li style="display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;align-items:center;padding:5px 4px;border-radius:6px;background:{{ it.rowBg }};">
+              <span style="min-width:22px;height:22px;padding:0 4px;box-sizing:border-box;border-radius:11px;background:{{ it.bg }};color:{{ it.fg }};border:{{ it.border }};font:700 11px/20px 'JetBrains Mono',monospace;text-align:center;">{{ it.n }}</span>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1c1917;">{{ it.label }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#78716c;">{{ it.kind }}</span>
+            </li>
+          </sc-for>
+          <sc-if value="{{ b.hasMore }}" hint-placeholder-val="{{ false }}"><li style="padding:8px 4px 0;font-size:12px;color:#57534e;">{{ b.moreText }}</li></sc-if>
+        </ol>
+      </div>
+    </div>
+  </sc-for>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const BOARDS = [
+  ['14a', 'Boshqaruv paneli', 'dashboard', ''],
+  ['14b', 'Sotuvchilar', 'sellers', ''],
+  ['14c', 'Sotuvchi kartasi · Tijoriy ma’lumot', 'seller', 'commercial'],
+  ['14d', 'Kirish so‘rovlari', 'access', ''],
+  ['14e', 'Read-only ko‘ruvchi', 'viewer', ''],
+];
+const SEL = 'a[href],button,input,textarea,select,[tabindex]';
+const KIND = el => { const r = el.getAttribute('role'); if (r) return r; const t = el.tagName.toLowerCase(); return t === 'a' ? 'link' : t === 'input' ? (el.type === 'checkbox' ? 'checkbox' : 'input') : t === 'tr' ? 'row' : t; };
+const nameOf = el => {
+  const a = el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || (el.textContent || '').replace(/\s+/g, ' ').trim();
+  return (a || '(nomsiz)').slice(0, 44);
+};
+
+class Component extends DCLogic {
+  state = { data: {} };
+  componentDidMount() { this.timers = [1500, 3500, 6500, 10000].map(t => setTimeout(this.recompute, t)); }
+  componentWillUnmount() { (this.timers || []).forEach(clearTimeout); }
+  recompute = () => {
+    const data = {};
+    BOARDS.forEach(([id]) => {
+      const box = document.getElementById('fa-' + id); if (!box) return;
+      const br = box.getBoundingClientRect(), sc = br.width / box.offsetWidth || 1;
+      const els = [...box.querySelectorAll(SEL)].filter(el => {
+        if (el.closest('[aria-hidden="true"]')) return false;
+        if (el.disabled) return false;
+        const ti = el.getAttribute('tabindex'); if (ti != null && +ti < 0) return false;
+        if (el.tagName === 'INPUT' && el.type === 'hidden') return false;
+        if (!el.getClientRects().length) return false;
+        const cs = getComputedStyle(el); if (cs.visibility === 'hidden') return false;
+        return true;
+      });
+      const pos = els.filter(el => +(el.getAttribute('tabindex') || 0) > 0).sort((a, b) => +a.getAttribute('tabindex') - +b.getAttribute('tabindex'));
+      const ordered = [...pos, ...els.filter(el => !(+(el.getAttribute('tabindex') || 0) > 0))];
+      const main = box.querySelector('main');
+      data[id] = ordered.map((el, i) => {
+        const r = el.getBoundingClientRect();
+        const x = (r.left - br.left) / sc, y = (r.top - br.top) / sc, w = r.width / sc, h = r.height / sc;
+        const inMain = main && main.contains(el);
+        const onScreen = x + w > 0 && y + h > 0 && x < 1440 && y < 1000 && w > 0;
+        return { n: i + 1, x, y, w, h, onScreen, inMain, label: nameOf(el), kind: KIND(el) };
+      });
+    });
+    this.setState({ data });
+  };
+  renderVals() {
+    const s = this.state;
+    return {
+      recompute: this.recompute,
+      boards: BOARDS.map(([id, label, page, sellerTab]) => {
+        const items = s.data[id] || [];
+        const col = it => it.inMain ? '#5f5283' : '#18734b';
+        const marks = items.filter(it => it.onScreen).map(it => ({ n: it.n,
+          x: Math.max(2, Math.min(1414, it.x - 9)) + 'px', y: Math.max(2, Math.min(976, it.y - 9)) + 'px',
+          rx: it.x + 'px', ry: it.y + 'px', rw: it.w + 'px', rh: it.h + 'px', ring: col(it),
+          bg: col(it), fg: '#fff', border: '0' }));
+        const list = items.slice(0, 60).map(it => ({ n: it.n, label: it.label, kind: it.kind,
+          bg: it.onScreen ? col(it) : '#fff', fg: it.onScreen ? '#fff' : '#57534e', border: it.onScreen ? '0' : '1.5px dashed #57534e', rowBg: it.n === 1 ? '#eef8f2' : 'transparent' }));
+        return { id, label, page, sellerTab: sellerTab || 'overview', domId: 'fa-' + id, marks, list,
+          countText: items.length ? `${items.length} ta fokuslanadigan element` : 'hisoblanmoqda…',
+          hasMore: items.length > 60, moreText: `… yana ${items.length - 60} ta (jadval qatorlari, sahifalash)` };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!-- @dsCard group="Components" viewport="900x600" name="Overlays" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} body{padding:0} .pane{position:relative;height:600px;overflow:hidden;background:var(--bg-app)}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Modal, ConfirmDialog, Drawer, DropdownMenu, Popover, Button, IconButton, StatusBadge, Checkbox } = NS;
+const { useState } = React;
+
+function App(){ const [o,setO]=useState(true); const [d,setD]=useState(true);
+ return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr'}}>
+  <div className="pane" style={{borderRight:'1px solid var(--border-default)'}}>
+    <div className="r" style={{padding:20,gap:8}}>
+      <DropdownMenu defaultOpen items={[{heading:'Sotuvchi'},{label:'Ochish',icon:'panel-right-open'},{label:'Kirish so‘rash',icon:'send'},{label:'Nusxalash',icon:'copy',shortcut:['⌘','C']},{separator:true},{label:'Bloklash',icon:'ban',danger:true},{label:'O‘chirish',icon:'trash-2',danger:true,disabled:true}]} trigger={p=><Button size="sm" icon="ellipsis" {...p}>Amallar</Button>} />
+      <Popover label="Filtr" trigger={p=><Button size="sm" icon="filter" {...p}>Filtr</Button>}><div className="c"><Checkbox checked onChange={()=>{}} label="Faol" /><Checkbox checked={false} onChange={()=>{}} label="Bloklangan" /></div></Popover>
+      <Button size="sm" variant="danger" onClick={()=>setO(true)}>Bloklash…</Button>
+    </div>
+    <ConfirmDialog contained open={o} onClose={()=>setO(false)} onConfirm={()=>new Promise(r=>setTimeout(()=>{r();setO(false)},900))} requireReason
+      title="Sotuvchini bloklash" description="Dilnoza Karimova botdan foydalana olmaydi. Ma’lumotlari saqlanadi va blokdan chiqarish mumkin." confirmLabel="Bloklash" />
+  </div>
+  <div className="pane">
+    <div style={{padding:20}}><Button size="sm" onClick={()=>setD(true)}>Drawer ochish</Button></div>
+    <Drawer contained open={d} onClose={()=>setD(false)} title="Dilnoza Karimova" subtitle={<><StatusBadge status="Faol" /><span className="sf-id">482019377</span></>} footer={<><Button>Kirish so‘rash</Button><Button variant="danger" icon="ban">Bloklash</Button></>}>
+      <dl className="sf-dl"><dt>Ro‘yxatdan o‘tgan</dt><dd>14.03.2026 10:22</dd><dt>Tarif</dt><dd>Free (Beta)</dd><dt>Telefon</dt><dd className="sf-num">+998 90 *** ** 17</dd><dt>Oxirgi faollik</dt><dd>05.11.2026 14:32</dd></dl>
+    </Drawer>
+  </div>
+ </div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

@@ -1,0 +1,16 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font: var(--type-body);
+  color: var(--text-primary);
+  background: var(--bg-app);
+  font-feature-settings: "cv11", "ss01";
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--primary-active); }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.sf-mono, code, kbd { font-family: var(--font-mono); }
+.sf-num { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }

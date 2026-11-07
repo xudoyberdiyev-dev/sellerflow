@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfd] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfd] button{font-family:inherit;}
+[data-sfd] [class^="icon-"]{line-height:1;display:inline-flex;}
+</style>
+</helmet>
+<div data-sfd="" style="display:flex;flex-direction:column;gap:20px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;">
+
+  <div role="note" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:1px solid var(--privacy-border);border-radius:8px;background:var(--privacy-bg);color:var(--privacy-text);">
+    <i class="icon-shield-check" aria-hidden="true" style="font-size:18px;color:var(--privacy-icon);margin-top:1px;flex-shrink:0;"></i>
+    <span style="text-wrap:pretty;"><strong style="font-weight:600;">Faqat umumiy ko‘rsatkichlar.</strong> Sotuvchilarning tijoriy qiymatlari bu yerda ko‘rsatilmaydi.</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div role="radiogroup" aria-label="Davr" style="display:inline-flex;gap:2px;padding:2px;background:var(--bg-subtle);border:1px solid var(--border-default);border-radius:8px;">
+      <sc-for list="{{ periods }}" as="pd" hint-placeholder-count="3">
+        <button type="button" role="radio" aria-checked="{{ pd.checked }}" tabIndex="{{ pd.tabIndex }}" onClick="{{ pd.onClick }}" onKeyDown="{{ pd.onKey }}" style="height:32px;padding:0 14px;border:0;border-radius:6px;background:{{ pd.bg }};box-shadow:{{ pd.shadow }};color:{{ pd.fg }};font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">{{ pd.label }}</button>
+      </sc-for>
+    </div>
+    <div style="flex:1;"></div>
+    <span aria-live="polite" style="font-size:13px;color:var(--text-tertiary);white-space:nowrap;">{{ updatedText }}</span>
+    <button type="button" onClick="{{ onRefresh }}" disabled="{{ refreshing }}" aria-label="Ma’lumotlarni yangilash" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);">
+      <i class="icon-refresh-cw" aria-hidden="true" style="font-size:14px;animation:{{ spinAnim }};"></i>{{ refreshLabel }}
+    </button>
+  </div>
+
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-busy="true" aria-label="Ko‘rsatkichlar yuklanmoqda" style="display:flex;flex-direction:column;gap:20px;">
+      <div style="display:grid;grid-template-columns:{{ kpiCols }};gap:12px;">
+        <sc-for list="{{ skelKpis }}" as="sk" hint-placeholder-count="8">
+          <div style="height:{{ kpiH }}px;box-sizing:border-box;padding:16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:10px;">
+            <div style="width:62%;height:12px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+            <div style="width:44%;height:24px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+            <div style="flex:1;"></div>
+            <div style="width:100%;height:28px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:{{ chartCols }};gap:16px;">
+        <sc-for list="{{ skelCharts }}" as="sk" hint-placeholder-count="4">
+          <div style="height:356px;box-sizing:border-box;padding:20px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:12px;">
+            <div style="width:48%;height:14px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+            <div style="width:30%;height:10px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+            <div style="flex:1;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:{{ bottomCols }};gap:16px;">
+        <div style="height:220px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        <div style="height:220px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:{{ emptyPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;">
+      <span style="width:52px;height:52px;border-radius:12px;background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-bot" aria-hidden="true" style="font-size:24px;"></i></span>
+      <div style="display:flex;flex-direction:column;gap:6px;max-width:460px;">
+        <h2 style="margin:0;font:var(--type-h2);letter-spacing:var(--tracking-tight);">Hali sotuvchi yo‘q — botni ishga tushiring</h2>
+        <p style="margin:0;color:var(--text-secondary);text-wrap:pretty;">Birinchi sotuvchi botda /start bosgach, ko‘rsatkichlar va grafiklar shu yerda paydo bo‘ladi.</p>
+      </div>
+      <ol style="list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;text-align:left;width:100%;max-width:400px;">
+        <li style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-default);border-radius:6px;"><i class="icon-circle-check" aria-hidden="true" style="font-size:18px;color:var(--success-icon);"></i><span style="flex:1;">Bot tokeni ulangan</span><span style="font-size:12px;color:var(--success-text);">Tayyor</span></li>
+        <li style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-default);border-radius:6px;"><i class="icon-circle-check" aria-hidden="true" style="font-size:18px;color:var(--success-icon);"></i><span style="flex:1;">Webhook faol</span><span style="font-size:12px;color:var(--success-text);">Tayyor</span></li>
+        <li style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px dashed var(--border-strong);border-radius:6px;"><i class="icon-circle-dashed" aria-hidden="true" style="font-size:18px;color:var(--text-tertiary);"></i><span style="flex:1;">Birinchi sotuvchi /start bosadi</span><span style="font-size:12px;color:var(--text-tertiary);">Kutilmoqda</span></li>
+      </ol>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+        <a href="https://t.me/SellerFlowBot" target="_blank" rel="noopener" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;text-decoration:none;" style-hover="background:var(--primary-hover);color:var(--primary-fg);"><i class="icon-send" aria-hidden="true" style="font-size:16px;"></i>Botni ochish<span style="font-family:var(--font-mono);font-size:12px;opacity:.85;">@SellerFlowBot</span></a>
+        <button type="button" onClick="{{ goStatus }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-activity" aria-hidden="true" style="font-size:16px;"></i>Tizim holatini tekshirish</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasData }}" hint-placeholder-val="{{ true }}">
+    <div role="list" aria-label="Asosiy ko‘rsatkichlar" style="display:grid;grid-template-columns:{{ kpiCols }};gap:12px;">
+      <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="8">
+        <div role="listitem" style="position:relative;display:flex;">
+          <div role="{{ k.role }}" tabIndex="{{ k.tabIndex }}" aria-label="{{ k.aria }}" onClick="{{ k.onClick }}" onKeyDown="{{ k.onKey }}" style="flex:1;min-width:0;min-height:{{ kpiH }}px;box-sizing:border-box;padding:{{ kpiPad }};border:1px solid {{ k.border }};border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:6px;cursor:{{ k.cursor }};" style-hover="border-color:{{ k.hoverBorder }};">
+            <div style="display:flex;align-items:flex-start;gap:6px;">
+              <span style="flex:1;min-width:0;font-size:13px;line-height:18px;color:var(--text-secondary);text-wrap:pretty;">{{ k.label }}</span>
+              <sc-if value="{{ k.hasInfo }}" hint-placeholder-val="{{ false }}">
+                <button type="button" aria-label="Izoh: {{ k.info }}" aria-expanded="{{ tipOpen }}" onMouseEnter="{{ showTip }}" onMouseLeave="{{ hideTip }}" onFocus="{{ showTip }}" onBlur="{{ hideTip }}" onClick="{{ toggleTip }}" style="width:24px;height:24px;margin:-3px -4px -3px 0;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-tertiary);cursor:help;flex-shrink:0;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-info" aria-hidden="true" style="font-size:14px;"></i></button>
+              </sc-if>
+              <sc-if value="{{ k.isLink }}" hint-placeholder-val="{{ false }}">
+                <i class="icon-arrow-up-right" aria-hidden="true" style="font-size:16px;color:var(--text-tertiary);flex-shrink:0;"></i>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:{{ valueSize }}px;line-height:1.2;font-weight:600;letter-spacing:-.01em;color:{{ k.valueFg }};white-space:nowrap;">{{ k.value }}</span>
+              <sc-if value="{{ k.hasBadge }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:11px;line-height:16px;font-weight:600;padding:0 6px;border-radius:4px;background:var(--warning-bg);color:var(--warning-text);border:1px solid var(--warning-border);white-space:nowrap;">Kutilmoqda</span>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;line-height:16px;">
+              <span aria-label="{{ k.deltaAria }}" style="display:inline-flex;align-items:center;gap:2px;font-weight:600;color:{{ k.deltaFg }};white-space:nowrap;"><i class="icon-{{ k.deltaIcon }}" aria-hidden="true" style="font-size:13px;"></i>{{ k.delta }}</span>
+              <sc-if value="{{ showCmp }}" hint-placeholder-val="{{ true }}"><span style="color:var(--text-tertiary);white-space:nowrap;">{{ cmpText }}</span></sc-if>
+            </div>
+            <div style="flex:1;"></div>
+            <svg aria-hidden="true" viewBox="0 0 100 32" preserveAspectRatio="none" width="100%" height="28" style="display:block;overflow:visible;">
+              <path d="{{ k.area }}" style="fill:{{ k.color }};fill-opacity:.1;stroke:none;"></path>
+              <path d="{{ k.line }}" style="fill:none;stroke:{{ k.color }};stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;"></path>
+            </svg>
+          </div>
+          <sc-if value="{{ k.tipVisible }}" hint-placeholder-val="{{ false }}">
+            <div role="tooltip" style="position:absolute;right:8px;top:38px;width:220px;background:var(--bg-inverse);color:var(--text-inverse);font-size:12px;line-height:16px;padding:8px 10px;border-radius:6px;z-index:20;box-shadow:0 4px 12px rgba(12,10,9,.2);text-wrap:pretty;">{{ k.info }}</div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:{{ chartCols }};gap:16px;">
+
+      <section aria-labelledby="ch-line" style="min-width:0;padding:{{ cardPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <h2 id="ch-line" style="margin:0;font-size:15px;line-height:22px;font-weight:600;">Faol sotuvchilar va yangi ro‘yxatdan o‘tganlar</h2>
+            <p style="margin:2px 0 0;font-size:12px;line-height:16px;color:var(--text-tertiary);">Kunlik · {{ rangeText }}</p>
+          </div>
+          <div style="display:flex;gap:12px;font-size:12px;color:var(--text-secondary);flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:6px;"><svg aria-hidden="true" width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" style="stroke:var(--chart-2);stroke-width:2;"></line></svg>Faol (chap o‘q)</span>
+            <span style="display:flex;align-items:center;gap:6px;"><svg aria-hidden="true" width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" style="stroke:var(--chart-3);stroke-width:2;stroke-dasharray:4 3;"></line></svg>Yangi (o‘ng o‘q)</span>
+          </div>
+        </div>
+        <div style="padding:0 34px 0 38px;">
+          <div tabIndex="0" role="img" aria-label="{{ line.aria }}" onKeyDown="{{ line.onKey }}" onMouseMove="{{ line.onMove }}" onMouseLeave="{{ line.onLeave }}" onBlur="{{ line.onLeave }}" style="position:relative;height:{{ plotH }}px;cursor:crosshair;border-radius:2px;">
+            <sc-for list="{{ line.ticks }}" as="t" hint-placeholder-count="5">
+              <div style="position:absolute;left:0;right:0;top:{{ t.top }}%;border-top:1px {{ t.style }} var(--chart-grid);pointer-events:none;">
+                <span style="position:absolute;right:calc(100% + 8px);top:-8px;font-size:11px;line-height:16px;color:var(--chart-2);white-space:nowrap;">{{ t.left }}</span>
+                <span style="position:absolute;left:calc(100% + 8px);top:-8px;font-size:11px;line-height:16px;color:var(--text-tertiary);white-space:nowrap;">{{ t.right }}</span>
+              </div>
+            </sc-for>
+            <svg aria-hidden="true" viewBox="0 0 600 200" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;">
+              <path d="{{ line.aArea }}" style="fill:var(--chart-2);fill-opacity:.08;stroke:none;"></path>
+              <path d="{{ line.a }}" style="fill:none;stroke:var(--chart-2);stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round;"></path>
+              <path d="{{ line.b }}" style="fill:none;stroke:var(--chart-3);stroke-width:2;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;stroke-linejoin:round;"></path>
+            </svg>
+            <sc-if value="{{ line.hover }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:0;bottom:0;left:{{ line.hx }}%;border-left:1px solid var(--border-strong);pointer-events:none;"></div>
+              <span style="position:absolute;left:{{ line.hx }}%;top:{{ line.ya }}%;width:9px;height:9px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--chart-2);box-shadow:0 0 0 2px var(--bg-surface);pointer-events:none;"></span>
+              <span style="position:absolute;left:{{ line.hx }}%;top:{{ line.yb }}%;width:9px;height:9px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--chart-3);box-shadow:0 0 0 2px var(--bg-surface);pointer-events:none;"></span>
+              <div role="tooltip" style="position:absolute;top:8px;left:{{ line.hx }}%;transform:{{ line.tipX }};width:max-content;min-width:180px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 8px 24px rgba(12,10,9,.14);padding:8px 10px;font-size:12px;line-height:18px;pointer-events:none;z-index:5;">
+                <div style="font-weight:600;margin-bottom:4px;">{{ line.tipDate }}</div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:2px;background:var(--chart-2);"></span><span style="flex:1;color:var(--text-secondary);">Faol sotuvchilar</span><strong style="font-weight:600;">{{ line.tipA }}</strong></div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:2px;background:var(--chart-3);"></span><span style="flex:1;color:var(--text-secondary);">Yangi ro‘yxatdan o‘tganlar</span><strong style="font-weight:600;">{{ line.tipB }}</strong></div>
+              </div>
+            </sc-if>
+          </div>
+          <div aria-hidden="true" style="position:relative;height:16px;margin-top:8px;">
+            <sc-for list="{{ line.xTicks }}" as="x" hint-placeholder-count="6">
+              <span style="position:absolute;left:{{ x.left }}%;transform:translateX(-50%);font-size:11px;line-height:16px;color:var(--text-tertiary);white-space:nowrap;">{{ x.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="ch-bar" style="min-width:0;padding:{{ cardPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <h2 id="ch-bar" style="margin:0;font-size:15px;line-height:22px;font-weight:600;">Hisoblashlar kunlar bo‘yicha</h2>
+            <p style="margin:2px 0 0;font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ barUnit }} · {{ rangeText }}</p>
+          </div>
+          <sc-if value="{{ barReady }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:12px;font-size:12px;color:var(--text-secondary);flex-wrap:wrap;">
+              <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--chart-1);"></span>Foyda hisobi</span>
+              <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--chart-2);"></span>Narx hisobi</span>
+            </div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ barError }}" hint-placeholder-val="{{ false }}">
+          <div role="alert" style="height:{{ barBoxH }}px;border:1px dashed var(--border-strong);border-radius:6px;background:var(--bg-subtle);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;box-sizing:border-box;text-align:center;">
+            <span style="width:40px;height:40px;border-radius:10px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-chart-no-axes-column" aria-hidden="true" style="font-size:20px;"></i></span>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-weight:600;">Grafik ma’lumoti yuklanmadi</span>
+              <span style="font-size:13px;color:var(--text-secondary);text-wrap:pretty;">So‘rov vaqti tugadi. Boshqa ko‘rsatkichlar yangilangan.</span>
+            </div>
+            <button type="button" onClick="{{ retryBar }}" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:14px;"></i>Qayta urinish</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ barLoading }}" hint-placeholder-val="{{ false }}">
+          <div role="status" aria-label="Grafik yuklanmoqda" style="height:{{ barBoxH }}px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+        </sc-if>
+        <sc-if value="{{ barReady }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:0 0 0 38px;">
+            <div tabIndex="0" role="img" aria-label="{{ bar.aria }}" onKeyDown="{{ bar.onKey }}" onMouseLeave="{{ bar.onLeave }}" onBlur="{{ bar.onLeave }}" style="position:relative;height:{{ plotH }}px;border-radius:2px;">
+              <sc-for list="{{ bar.ticks }}" as="t" hint-placeholder-count="5">
+                <div style="position:absolute;left:0;right:0;top:{{ t.top }}%;border-top:1px {{ t.style }} var(--chart-grid);pointer-events:none;">
+                  <span style="position:absolute;right:calc(100% + 8px);top:-8px;font-size:11px;line-height:16px;color:var(--text-tertiary);white-space:nowrap;">{{ t.label }}</span>
+                </div>
+              </sc-for>
+              <div style="position:absolute;inset:0;display:flex;align-items:stretch;">
+                <sc-for list="{{ bar.groups }}" as="g" hint-placeholder-count="12">
+                  <div onMouseEnter="{{ g.onEnter }}" style="flex:1;min-width:0;display:flex;align-items:flex-end;justify-content:center;gap:{{ bar.gap }}px;padding:0 {{ bar.pad }}px;box-sizing:border-box;background:{{ g.bg }};">
+                    <span style="flex:1;max-width:16px;height:{{ g.h1 }}%;background:var(--chart-1);border-radius:2px 2px 0 0;"></span>
+                    <span style="flex:1;max-width:16px;height:{{ g.h2 }}%;background:var(--chart-2);border-radius:2px 2px 0 0;"></span>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ bar.hover }}" hint-placeholder-val="{{ false }}">
+                <div role="tooltip" style="position:absolute;top:8px;left:{{ bar.hx }}%;transform:{{ bar.tipX }};width:max-content;min-width:170px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 8px 24px rgba(12,10,9,.14);padding:8px 10px;font-size:12px;line-height:18px;pointer-events:none;z-index:5;">
+                  <div style="font-weight:600;margin-bottom:4px;">{{ bar.tipDate }}</div>
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:2px;background:var(--chart-1);"></span><span style="flex:1;color:var(--text-secondary);">Foyda hisobi</span><strong style="font-weight:600;">{{ bar.tipA }}</strong></div>
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:2px;background:var(--chart-2);"></span><span style="flex:1;color:var(--text-secondary);">Narx hisobi</span><strong style="font-weight:600;">{{ bar.tipB }}</strong></div>
+                </div>
+              </sc-if>
+            </div>
+            <div aria-hidden="true" style="position:relative;height:16px;margin-top:8px;">
+              <sc-for list="{{ bar.xTicks }}" as="x" hint-placeholder-count="6">
+                <span style="position:absolute;left:{{ x.left }}%;transform:translateX(-50%);font-size:11px;line-height:16px;color:var(--text-tertiary);white-space:nowrap;">{{ x.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </section>
+
+      <section aria-labelledby="ch-chan" style="min-width:0;padding:{{ cardPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <h2 id="ch-chan" style="margin:0;font-size:15px;line-height:22px;font-weight:600;">Asosiy savdo kanallari</h2>
+          <p style="margin:2px 0 0;font-size:12px;line-height:16px;color:var(--text-tertiary);">Faol sotuvchilar asosiy kanali bo‘yicha · jami {{ chanTotal }}</p>
+        </div>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;">
+          <sc-for list="{{ channels }}" as="c" hint-placeholder-count="7">
+            <li style="display:grid;grid-template-columns:{{ chanCols }};align-items:center;gap:12px;">
+              <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.name }}</span>
+              <span style="height:10px;border-radius:5px;background:var(--bg-subtle);overflow:hidden;display:block;"><span style="display:block;height:100%;width:{{ c.w }}%;background:{{ c.color }};border-radius:5px;"></span></span>
+              <span style="font-size:13px;text-align:right;white-space:nowrap;"><strong style="font-weight:600;">{{ c.count }}</strong><span style="color:var(--text-tertiary);"> · {{ c.pct }}</span></span>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+
+      <section aria-labelledby="ch-fun" style="min-width:0;padding:{{ cardPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <h2 id="ch-fun" style="margin:0;font-size:15px;line-height:22px;font-weight:600;">Onboarding voronkasi</h2>
+            <p style="margin:2px 0 0;font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ rangeText }}</p>
+          </div>
+          <span style="font-size:12px;line-height:18px;padding:1px 8px;border-radius:4px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success-text);font-weight:600;white-space:nowrap;">Konversiya {{ funnelConv }}</span>
+        </div>
+        <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;">
+          <sc-for list="{{ funnel }}" as="f" hint-placeholder-count="4">
+            <li style="display:flex;flex-direction:column;">
+              <sc-if value="{{ f.hasLoss }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:6px;height:24px;padding-left:12px;font-size:12px;color:var(--danger-text);">
+                  <i class="icon-corner-down-right" aria-hidden="true" style="font-size:13px;color:var(--text-tertiary);"></i><span>{{ f.loss }} yo‘qotildi</span><span style="color:var(--text-tertiary);">({{ f.lost }} kishi)</span>
+                </div>
+              </sc-if>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="flex:1;min-width:0;height:36px;position:relative;border-radius:6px;background:var(--bg-subtle);overflow:hidden;">
+                  <span style="position:absolute;left:0;top:0;bottom:0;width:{{ f.w }}%;background:var(--primary-subtle);border-right:2px solid var(--primary);"></span>
+                  <span style="position:absolute;left:12px;top:0;bottom:0;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-primary);white-space:nowrap;"><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);">{{ f.n }}</span>{{ f.name }}</span>
+                </div>
+                <span style="width:{{ funNumW }}px;flex-shrink:0;text-align:right;display:flex;flex-direction:column;line-height:16px;">
+                  <strong style="font-size:14px;line-height:18px;font-weight:600;">{{ f.count }}</strong>
+                  <span style="font-size:11px;color:var(--text-tertiary);">{{ f.ofStart }}</span>
+                </span>
+              </div>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showBottom }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:{{ bottomCols }};gap:16px;align-items:start;">
+    <section aria-labelledby="sys-h" style="min-width:0;padding:{{ cardPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <h2 id="sys-h" style="margin:0;flex:1;font-size:15px;line-height:22px;font-weight:600;">Tizim holati</h2>
+        <button type="button" onClick="{{ goStatus }}" style="border:0;background:none;padding:2px 4px;margin-right:-4px;border-radius:4px;color:var(--text-link);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:2px;" style-hover="text-decoration:underline;">Batafsil<i class="icon-chevron-right" aria-hidden="true" style="font-size:14px;"></i></button>
+      </div>
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;">
+        <sc-for list="{{ sys }}" as="s" hint-placeholder-count="3">
+          <li style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border-default);">
+            <i class="icon-{{ s.icon }}" aria-hidden="true" style="font-size:16px;color:var(--text-tertiary);"></i>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;">
+              <span style="font-size:13px;font-weight:500;">{{ s.name }}</span>
+              <span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ s.meta }}</span>
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:18px;font-weight:600;padding:1px 8px;border-radius:4px;background:{{ s.bg }};border:1px solid {{ s.border }};color:{{ s.fg }};white-space:nowrap;"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ s.dot }};"></span>{{ s.status }}</span>
+          </li>
+        </sc-for>
+      </ul>
+    </section>
+
+    <sc-if value="{{ isSuper }}" hint-placeholder-val="{{ true }}">
+      <section aria-labelledby="ev-h" style="min-width:0;padding:{{ cardPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h2 id="ev-h" style="margin:0;font-size:15px;line-height:22px;font-weight:600;">So‘nggi muhim hodisalar</h2>
+          <span style="font-size:10px;line-height:14px;font-weight:600;letter-spacing:.04em;padding:0 5px;border-radius:4px;background:var(--primary-subtle);color:var(--primary-subtle-fg);">SUPERADMIN</span>
+          <span style="flex:1;"></span>
+          <button type="button" onClick="{{ goAudit }}" style="border:0;background:none;padding:2px 4px;margin-right:-4px;border-radius:4px;color:var(--text-link);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:2px;" style-hover="text-decoration:underline;">Audit jurnali<i class="icon-chevron-right" aria-hidden="true" style="font-size:14px;"></i></button>
+        </div>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;">
+          <sc-for list="{{ events }}" as="e" hint-placeholder-count="8">
+            <li style="display:grid;grid-template-columns:{{ evCols }};align-items:center;gap:4px 12px;padding:8px 0;border-top:1px solid var(--border-default);font-size:13px;">
+              <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ e.time }}</span>
+              <span style="display:flex;align-items:center;gap:8px;min-width:0;">
+                <span style="width:24px;height:24px;flex-shrink:0;border-radius:6px;background:{{ e.bg }};color:{{ e.fg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ e.icon }}" aria-hidden="true" style="font-size:13px;"></i></span>
+                <span style="min-width:0;text-wrap:pretty;">{{ e.action }}<sc-if value="{{ e.hasTarget }}" hint-placeholder-val="{{ false }}"> <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);">{{ e.target }}</span></sc-if></span>
+              </span>
+              <span style="color:var(--text-secondary);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:{{ evWhoAlign }};padding-left:{{ evWhoPad }};grid-column:{{ evWhoCol }};">{{ e.who }}</span>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isSupport }}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="rq-h" style="min-width:0;padding:{{ cardPad }};border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <h2 id="rq-h" style="margin:0;flex:1;font-size:15px;line-height:22px;font-weight:600;">Mening so‘rovlarim</h2>
+          <button type="button" onClick="{{ goAccess }}" style="border:0;background:none;padding:2px 4px;margin-right:-4px;border-radius:4px;color:var(--text-link);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:2px;" style-hover="text-decoration:underline;">Barchasi<i class="icon-chevron-right" aria-hidden="true" style="font-size:14px;"></i></button>
+        </div>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;">
+          <sc-for list="{{ requests }}" as="r" hint-placeholder-count="5">
+            <li style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border-default);flex-wrap:wrap;">
+              <span style="flex:1;min-width:160px;display:flex;flex-direction:column;">
+                <span style="font-family:var(--font-mono);font-size:13px;font-weight:500;">{{ r.id }}</span>
+                <span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ r.meta }}</span>
+              </span>
+              <span style="font-size:12px;line-height:18px;font-weight:600;padding:1px 8px;border-radius:4px;background:{{ r.bg }};border:1px solid {{ r.border }};color:{{ r.fg }};white-space:nowrap;">{{ r.status }}</span>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+    </sc-if>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1500},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;SUPERADMIN&quot;,&quot;SUPPORT&quot;],&quot;default&quot;:&quot;SUPERADMIN&quot;,&quot;tsType&quot;:&quot;'SUPERADMIN'|'SUPPORT'&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;empty&quot;,&quot;chartError&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;systemIssue&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(page: string) =&gt; void&quot;}}">
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const nf = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+const pf = (n, d = 1) => n.toFixed(d).replace('.', ',');
+const pad = n => String(n).padStart(2, '0');
+const dm = d => pad(d.getDate()) + '.' + pad(d.getMonth() + 1);
+const dmy = d => dm(d) + '.' + d.getFullYear();
+const N = 90, END = new Date(2026, 10, 6);
+const R = rng(20261106);
+const DATES = Array.from({ length: N }, (_, i) => { const d = new Date(END); d.setDate(d.getDate() - (N - 1 - i)); return d; });
+const wd = d => d.getDay();
+const ACTIVE = DATES.map((d, i) => Math.round(408 + i * 2.2 + (wd(d) === 0 ? -52 : wd(d) === 6 ? -28 : 0) + (R() - .5) * 34));
+const NEWS = DATES.map((d, i) => Math.max(3, Math.round(6.8 + i * .05 + (wd(d) === 0 ? -3 : 0) + (R() - .5) * 6)));
+const PROF = DATES.map((d, i) => Math.round(1040 + i * 7 + (wd(d) === 0 ? -280 : wd(d) === 6 ? -150 : 0) + (R() - .5) * 220));
+const PRICE = DATES.map((d, i) => Math.round(710 + i * 5 + (wd(d) === 0 ? -200 : wd(d) === 6 ? -95 : 0) + (R() - .5) * 170));
+const sum = a => a.reduce((x, y) => x + y, 0);
+const walk = (seed, n, trend) => { const r = rng(seed); let v = 50; return Array.from({ length: n }, () => (v += trend * 1.2 + (r() - .5) * 6)); };
+
+const P = {
+  7:  { d: [2.1, 5.7, 1.2, 3.4, .9, -1.1, .8, 2], onb: 63.8, save: .386, est: 21.4, ret: 46.2 },
+  30: { d: [12.4, 8.1, 3.1, 14.9, 2.4, -3.6, -1.3, 2], onb: 64.2, save: .391, est: 22.8, ret: 47.5 },
+  90: { d: [31.7, 22.3, 4.8, 41.2, 5.1, -6.2, 2.2, 1], onb: 61.9, save: .374, est: 25.1, ret: 45.9 },
+};
+const CHANNELS = [['Uzum Market', 486, 1], ['Instagram', 268, 4], ['Telegram savdo', 187, 5], ['Wildberries', 142, 2], ['Offline do‘kon', 98, 6], ['Ozon', 61, 3], ['Boshqa', 42, 7]];
+const EVENTS = [
+  ['23:38', 'd.aliyev', 'Kirish so‘rovi yubordi', '517 334 902', 'key-round', 'info'],
+  ['23:12', 'm.karimova', 'Rozilik bilan ma’lumotni ko‘rdi', '517 334 902', 'eye', 'privacy'],
+  ['22:47', 'Tizim', 'Kirish muddati tugadi', '402 118 775', 'clock', 'neutral'],
+  ['21:30', 'd.aliyev', 'Sotuvchini blokladi', '388 102 557', 'ban', 'danger'],
+  ['20:05', 's.tursunov', '2FA qayta o‘rnatildi:', 'j.rahimov', 'shield-alert', 'warning'],
+  ['18:44', 'd.aliyev', 'Admin qo‘shdi:', 'j.rahimov', 'user-plus', 'success'],
+  ['17:20', 'Tizim', '5 marta noto‘g‘ri parol, akkaunt bloklandi:', 'a.saidov', 'lock', 'danger'],
+  ['14:02', 'd.aliyev', 'Sotuvchi o‘chirish so‘rovini tasdiqladi', '388 902 114', 'user-x', 'neutral'],
+];
+const REQ = [
+  ['517 334 902', 'Ruxsat berilgan', 'success', 'Faol · 32 daqiqa qoldi · faqat o‘qish'],
+  ['402 118 775', 'Kutilmoqda', 'warning', 'Yuborildi 23:20 · javob kutilmoqda'],
+  ['611 908 233', 'Rad etilgan', 'danger', 'Sotuvchi rad etdi · 21:14'],
+  ['274 550 019', 'Muddati tugagan', 'orange', 'Javob berilmadi · 05.11.2026, 18:02'],
+  ['388 902 114', 'Bekor qilingan', 'neutral', 'Siz bekor qildingiz · 05.11.2026, 11:47'],
+];
+const tone = t => t === 'privacy'
+  ? { bg: 'var(--privacy-bg)', fg: 'var(--privacy-icon)', border: 'var(--privacy-border)', text: 'var(--privacy-text)' }
+  : { bg: `var(--${t}-bg)`, fg: `var(--${t}-icon)`, border: `var(--${t}-border)`, text: `var(--${t}-text)` };
+const nice = v => { const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; };
+const spark = vals => {
+  const mn = Math.min(...vals), mx = Math.max(...vals), r = mx - mn || 1;
+  const pts = vals.map((v, i) => [i / (vals.length - 1) * 100, 30 - (v - mn) / r * 26]);
+  const line = 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
+  return { line, area: line + 'L100 32L0 32Z' };
+};
+const down = (a, n) => a.length <= n ? a : Array.from({ length: n }, (_, i) => a[Math.round(i / (n - 1) * (a.length - 1))]);
+
+class Component extends DCLogic {
+  state = { period: 30, refreshing: false, updated: '23:41', lh: null, bh: null, tip: false, barState: null };
+  componentWillUnmount() { clearTimeout(this.t1); clearTimeout(this.t2); }
+  nav = to => this.props.onNavigate && this.props.onNavigate(to);
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const isSuper = p.role !== 'SUPPORT';
+    const view = p.view ?? 'default';
+    const cw = p.contentWidth ?? 1136;
+    const mobile = cw < 560;
+    const per = s.period, cfg = P[per];
+    const sl = a => a.slice(N - per);
+    const act = sl(ACTIVE), nw = sl(NEWS), pr = sl(PROF), px = sl(PRICE), dates = sl(DATES);
+    const newSum = sum(nw), calcs = sum(pr) + sum(px), saved = Math.round(calcs * cfg.save);
+    const cmpText = `oldingi ${per} kunga nisbatan`;
+
+    const periods = [7, 30, 90].map((d, i, arr) => {
+      const on = per === d;
+      return {
+        label: d + ' kun', checked: on, tabIndex: on ? 0 : -1,
+        bg: on ? 'var(--bg-surface)' : 'transparent', shadow: on ? '0 1px 2px rgba(12,10,9,.12)' : 'none', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)',
+        onClick: () => this.setState({ period: d, lh: null, bh: null }),
+        onKey: e => {
+          const k = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+          if (!k) return; e.preventDefault();
+          const nx = arr[(i + k + arr.length) % arr.length];
+          this.setState({ period: nx, lh: null, bh: null });
+          const sib = k > 0 ? e.currentTarget.nextElementSibling || e.currentTarget.parentNode.firstElementChild : e.currentTarget.previousElementSibling || e.currentTarget.parentNode.lastElementChild;
+          sib && sib.focus();
+        },
+      };
+    });
+
+    const K = [
+      { label: 'Faol sotuvchilar', value: nf(1284), d: cfg.d[0], series: down(act, 24), color: 'var(--chart-2)' },
+      { label: 'Yangi ro‘yxatdan o‘tganlar', value: nf(newSum), d: cfg.d[1], series: down(nw, 24), color: 'var(--chart-3)' },
+      { label: 'Onboarding konversiyasi: /start → Faol', value: pf(cfg.onb) + '%', d: cfg.d[2], pp: true, series: walk(per + 1, 20, 1), color: 'var(--chart-1)' },
+      { label: 'Saqlangan hisoblashlar', value: nf(saved), d: cfg.d[3], series: down(pr.map((v, i) => v + px[i]), 24), color: 'var(--chart-1)' },
+      { label: 'Hisoblash → Saqlash konversiyasi', value: pf(cfg.save * 100) + '%', d: cfg.d[4], pp: true, series: walk(per + 2, 20, 1), color: 'var(--chart-2)' },
+      { label: 'Taxminiy natijalar ulushi', value: pf(cfg.est) + '%', d: cfg.d[5], pp: true, inverse: true, info: 'Noma’lum yoki kiritilmagan xarajat bilan hisoblangan natijalar ulushi. Kamroq bo‘lgani yaxshi.', series: walk(per + 3, 20, -1), color: 'var(--chart-7)' },
+      { label: '7 kunlik qaytish (retention)', value: pf(cfg.ret) + '%', d: cfg.d[6], pp: true, series: walk(per + 4, 20, Math.sign(cfg.d[6])), color: 'var(--chart-2)' },
+      { label: 'Kutilayotgan kirish so‘rovlari', value: '3', d: cfg.d[7], abs: true, link: 'access', series: [1, 2, 1, 1, 3, 2, 1, 2, 3, 2, 3], color: 'var(--warning-icon)' },
+    ];
+    const kpis = K.map(k => {
+      const good = k.abs ? null : (k.inverse ? k.d < 0 : k.d > 0);
+      const sign = k.d > 0 ? '+' : '−';
+      const delta = k.abs ? `${sign}${Math.abs(k.d)} ta` : `${sign}${pf(Math.abs(k.d))}${k.pp ? ' f.p.' : '%'}`;
+      const sp = spark(k.series);
+      const deltaAria = `${k.d > 0 ? 'O‘sish' : 'Kamayish'} ${delta.replace('f.p.', 'foiz punkt')}, ${good === null ? '' : good ? 'ijobiy, ' : 'salbiy, '}${cmpText}`;
+      return {
+        label: k.label, value: k.value, delta, deltaAria,
+        deltaFg: good === null ? 'var(--text-secondary)' : good ? 'var(--success-text)' : 'var(--danger-text)',
+        deltaIcon: k.d > 0 ? 'trending-up' : 'trending-down',
+        line: sp.line, area: sp.area, color: k.color, valueFg: 'var(--text-primary)',
+        hasInfo: !!k.info, info: k.info, tipVisible: !!k.info && s.tip,
+        isLink: !!k.link, hasBadge: !!k.link,
+        role: k.link ? 'link' : undefined, tabIndex: k.link ? 0 : undefined,
+        aria: k.link ? `${k.label}: ${k.value}. Kirish so‘rovlari sahifasini ochish` : undefined,
+        onClick: k.link ? () => this.nav(k.link) : undefined,
+        onKey: k.link ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.nav(k.link); } } : undefined,
+        cursor: k.link ? 'pointer' : 'default',
+        border: k.link ? 'var(--warning-border)' : 'var(--border-default)',
+        hoverBorder: k.link ? 'var(--warning-icon)' : 'var(--border-default)',
+      };
+    });
+
+    // Line chart
+    const n = per;
+    const aMax = nice(Math.max(...act) * 1.08), bMax = nice(Math.max(...nw) * 1.15);
+    const X = i => n === 1 ? 0 : i / (n - 1) * 600;
+    const path = (arr, mx) => 'M' + arr.map((v, i) => X(i).toFixed(1) + ' ' + (200 - v / mx * 200).toFixed(1)).join('L');
+    const aPath = path(act, aMax);
+    const ticks = [0, 1, 2, 3, 4].map(j => ({ top: j * 25, left: nf(aMax * (4 - j) / 4), right: nf(bMax * (4 - j) / 4), style: j === 4 ? 'solid' : 'dashed' }));
+    const xCount = mobile ? 3 : per === 7 ? 7 : 6;
+    const xTicks = Array.from({ length: xCount }, (_, j) => { const i = Math.round(j / (xCount - 1) * (n - 1)); return { left: i / (n - 1) * 100, label: dm(dates[i]) }; });
+    const lh = s.lh != null && s.lh < n ? s.lh : null;
+    const tipX = hx => hx > 60 ? 'translateX(calc(-100% - 12px))' : 'translateX(12px)';
+    const setL = v => this.setState({ lh: v });
+    const line = {
+      a: aPath, aArea: aPath + 'L600 200L0 200Z', b: path(nw, bMax), ticks, xTicks,
+      aria: `Chiziqli grafik, ${dmy(dates[0])} – ${dmy(dates[n - 1])}. Faol sotuvchilar ${nf(Math.min(...act))} dan ${nf(Math.max(...act))} gacha. Kunlarni ko‘rish uchun chap va o‘ng strelkalardan foydalaning.`,
+      hover: lh != null,
+      onMove: e => { const r = e.currentTarget.getBoundingClientRect(); const i = Math.max(0, Math.min(n - 1, Math.round((e.clientX - r.left) / r.width * (n - 1)))); if (i !== this.state.lh) setL(i); },
+      onLeave: () => this.state.lh != null && setL(null),
+      onKey: e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); const c = this.state.lh ?? n - 1; setL(Math.max(0, Math.min(n - 1, c + (e.key === 'ArrowRight' ? 1 : -1)))); },
+    };
+    if (lh != null) {
+      const hx = lh / (n - 1) * 100;
+      Object.assign(line, { hx, ya: 100 - act[lh] / aMax * 100, yb: 100 - nw[lh] / bMax * 100, tipX: tipX(hx), tipDate: dmy(dates[lh]), tipA: nf(act[lh]), tipB: nf(nw[lh]) });
+    }
+
+    // Bar chart (weekly for 90 days)
+    const weekly = per === 90;
+    const groups = [];
+    if (weekly) { for (let e = n; e > 0; e -= 7) { const b = Math.max(0, e - 7); groups.unshift({ a: sum(pr.slice(b, e)), b: sum(px.slice(b, e)), from: dates[b], to: dates[e - 1] }); } }
+    else pr.forEach((v, i) => groups.push({ a: v, b: px[i], from: dates[i], to: dates[i] }));
+    const gm = nice(Math.max(...groups.map(g => Math.max(g.a, g.b))) * 1.08);
+    const gn = groups.length;
+    const bhv = s.bh != null && s.bh < gn ? s.bh : null;
+    const setB = v => this.setState({ bh: v });
+    const bxCount = Math.min(gn, mobile ? 3 : per === 7 ? 7 : 6);
+    const bar = {
+      gap: gn > 20 ? 1 : 3, pad: gn > 20 ? 1 : 6,
+      ticks: [0, 1, 2, 3, 4].map(j => ({ top: j * 25, label: nf(gm * (4 - j) / 4), style: j === 4 ? 'solid' : 'dashed' })),
+      groups: groups.map((g, i) => ({ h1: g.a / gm * 100, h2: g.b / gm * 100, bg: i === bhv ? 'var(--bg-hover)' : 'transparent', onEnter: () => i !== this.state.bh && setB(i) })),
+      xTicks: Array.from({ length: bxCount }, (_, j) => { const i = Math.round(j / Math.max(1, bxCount - 1) * (gn - 1)); return { left: (i + .5) / gn * 100, label: dm(groups[i].from) }; }),
+      aria: `Ustunli grafik: ${weekly ? 'haftalik' : 'kunlik'} foyda va narx hisoblari. Jami ${nf(sum(pr))} foyda, ${nf(sum(px))} narx hisobi.`,
+      hover: bhv != null,
+      onLeave: () => this.state.bh != null && setB(null),
+      onKey: e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); const c = this.state.bh ?? gn - 1; setB(Math.max(0, Math.min(gn - 1, c + (e.key === 'ArrowRight' ? 1 : -1)))); },
+    };
+    if (bhv != null) {
+      const g = groups[bhv], hx = (bhv + .5) / gn * 100;
+      Object.assign(bar, { hx, tipX: tipX(hx), tipDate: weekly ? `${dm(g.from)} – ${dm(g.to)}` : dmy(g.from), tipA: nf(g.a), tipB: nf(g.b) });
+    }
+    const barState = s.barState ?? (view === 'chartError' ? 'error' : 'ready');
+
+    // Channels & funnel
+    const ctotal = sum(CHANNELS.map(c => c[1])), cmax = CHANNELS[0][1];
+    const channels = CHANNELS.map(([name, c, col]) => ({ name, count: nf(c), pct: pf(c / ctotal * 100) + '%', w: c / cmax * 100, color: `var(--chart-${col})` }));
+    const start = Math.round(newSum / (cfg.onb / 100));
+    const consent = Math.round(start * .866), chan = Math.round(consent * .874);
+    const stages = [['/start', start], ['Shartlarga rozilik', consent], ['Kanal tanlandi', chan], ['Faollashtirildi', newSum]];
+    const funnel = stages.map(([name, c], i) => ({
+      n: String(i + 1).padStart(2, '0'), name, count: nf(c), w: c / start * 100,
+      ofStart: i ? pf(c / start * 100) + '%' : '100%',
+      hasLoss: i > 0, loss: i ? '−' + pf((1 - c / stages[i - 1][1]) * 100) + '%' : '', lost: i ? nf(stages[i - 1][1] - c) : '',
+    }));
+
+    const issue = !!p.systemIssue;
+    const ok = { status: 'Ishlayapti', ...tone('success'), fg: 'var(--success-text)', dot: 'var(--success-icon)' };
+    const sys = [
+      { name: 'Ma’lumotlar bazasi', icon: 'database', meta: 'Javob vaqti 12 ms', ...ok },
+      { name: 'Telegram bot', icon: 'bot', meta: 'Webhook faol · 180 ms', ...ok },
+      issue
+        ? { name: 'Oxirgi backup', icon: 'hard-drive', meta: '06.11.2026, 03:00 · yaratilmadi', status: 'Xato', ...tone('danger'), fg: 'var(--danger-text)', dot: 'var(--danger-icon)' }
+        : { name: 'Oxirgi backup', icon: 'hard-drive', meta: '06.11.2026, 03:00 · 1,8 GB', status: 'Muvaffaqiyatli', ...tone('success'), fg: 'var(--success-text)', dot: 'var(--success-icon)' },
+    ];
+    const events = EVENTS.map(([time, who, action, target, icon, t]) => ({ time, who, action, target, hasTarget: !!target, icon, bg: tone(t).bg, fg: tone(t).fg }));
+    const requests = REQ.map(([id, status, t, meta]) => ({ id, status, meta, bg: tone(t).bg, border: tone(t).border, fg: tone(t).text }));
+
+    const kpiCols = cw >= 860 ? 'repeat(4,minmax(0,1fr))' : 'repeat(2,minmax(0,1fr))';
+    const twoCol = cw >= 900;
+    return {
+      isSuper, isSupport: !isSuper,
+      isLoading: view === 'loading', showBottom: view !== 'loading', isEmpty: view === 'empty', hasData: view === 'default' || view === 'chartError',
+      periods, updatedText: s.refreshing ? 'Yangilanmoqda…' : `Yangilandi: ${s.updated}`,
+      refreshing: s.refreshing, refreshLabel: mobile ? '' : 'Yangilash', spinAnim: s.refreshing ? 'sfSpin .8s linear infinite' : 'none',
+      onRefresh: () => {
+        this.setState({ refreshing: true });
+        clearTimeout(this.t1);
+        this.t1 = setTimeout(() => { const d = new Date(Date.now() + (new Date().getTimezoneOffset() + 300) * 60000); this.setState({ refreshing: false, updated: pad(d.getHours()) + ':' + pad(d.getMinutes()) }); }, 900);
+      },
+      kpis, kpiCols, kpiH: mobile ? 150 : 168, kpiPad: mobile ? '12px' : '16px', valueSize: mobile ? 20 : 24,
+      showCmp: !mobile, cmpText,
+      tipOpen: s.tip, showTip: () => this.setState({ tip: true }), hideTip: () => this.setState({ tip: false }), toggleTip: e => { e.stopPropagation(); this.setState({ tip: !this.state.tip }); },
+      skelKpis: Array.from({ length: 8 }, (_, i) => ({ i })), skelCharts: Array.from({ length: 4 }, (_, i) => ({ i })),
+      chartCols: twoCol ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)',
+      bottomCols: twoCol ? 'minmax(0,1fr) minmax(0,2fr)' : 'minmax(0,1fr)',
+      cardPad: mobile ? '16px' : '20px', plotH: mobile ? 180 : 220, barBoxH: (mobile ? 180 : 220) + 24,
+      emptyPad: mobile ? '32px 16px' : '48px 24px',
+      rangeText: `${dmy(dates[0])} – ${dmy(dates[n - 1])}`,
+      barUnit: weekly ? 'Haftalik' : 'Kunlik',
+      line, bar, barReady: barState === 'ready', barError: barState === 'error', barLoading: barState === 'loading',
+      retryBar: () => { this.setState({ barState: 'loading' }); clearTimeout(this.t2); this.t2 = setTimeout(() => this.setState({ barState: 'ready' }), 1100); },
+      channels, chanTotal: nf(ctotal) + ' ta', chanCols: mobile ? '96px minmax(0,1fr) auto' : '120px minmax(0,1fr) 104px',
+      funnel, funnelConv: pf(newSum / start * 100) + '%', funNumW: mobile ? 56 : 72,
+      sys, events, requests,
+      evCols: mobile ? '44px minmax(0,1fr)' : '44px minmax(0,1fr) 96px', evWhoAlign: mobile ? 'left' : 'right', evWhoPad: mobile ? '76px' : '0', evWhoCol: mobile ? '1 / -1' : 'auto',
+      goStatus: () => this.nav('status'), goAudit: () => this.nav('audit'), goAccess: () => this.nav('access'),
+    };
+  }
+}
+</script>
+</body>
+</html>

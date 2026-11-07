@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfm] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfm] button,[data-sfm] input,[data-sfm] textarea{font-family:inherit;}
+[data-sfm] [class^="icon-"]{line-height:1;display:inline-flex;}
+</style>
+</helmet>
+<div data-sfm="" ref="{{ rootRef }}" onKeyDown="{{ onRootKey }}" style="display:flex;flex-direction:column;gap:20px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;">
+
+  <div style="display:flex;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">
+      <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">Administratorlar</h1>
+      <p style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;">Panelga kirish huquqi bor xodimlar. Har bir o‘zgarish audit jurnaliga yoziladi.</p>
+    </div>
+    <button type="button" onClick="{{ openAdd }}" disabled="{{ addDisabled }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--primary-hover);"><i class="icon-user-plus" aria-hidden="true" style="font-size:16px;"></i>Admin qo‘shish</button>
+  </div>
+
+  <section aria-labelledby="sfm-rt" style="border:1px solid var(--border-default);border-radius:10px;background:var(--bg-surface);overflow:hidden;">
+    <h2 style="margin:0;"><button type="button" id="sfm-rt" aria-expanded="{{ mxOpen }}" aria-controls="sfm-mx" onClick="{{ toggleMx }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:14px 16px;border:0;background:transparent;color:var(--text-primary);font-size:15px;line-height:20px;font-weight:600;text-align:left;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-shield-check" aria-hidden="true" style="font-size:17px;color:var(--text-tertiary);"></i><span style="flex:1;">Rollar va huquqlar</span><span style="font-size:12px;font-weight:500;color:var(--text-tertiary);">{{ mxHint }}</span><i class="icon-chevron-down" aria-hidden="true" style="font-size:16px;color:var(--text-tertiary);transform:{{ mxRot }};transition:transform .15s ease;"></i></button></h2>
+    <sc-if value="{{ mxOpen }}" hint-placeholder-val="{{ true }}">
+      <div id="sfm-mx" style="border-top:1px solid var(--border-default);overflow:auto;">
+        <table style="width:100%;min-width:520px;border-collapse:collapse;font-size:13px;">
+          <caption style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Rollar bo‘yicha huquqlar</caption>
+          <thead>
+            <tr>
+              <th scope="col" style="height:40px;padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Huquq</th>
+              <th scope="col" style="width:160px;padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:center;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:var(--primary-subtle);color:var(--primary-subtle-fg);"><i class="icon-shield" aria-hidden="true" style="font-size:12px;"></i>SUPERADMIN</span></th>
+              <th scope="col" style="width:160px;padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:center;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-text);"><i class="icon-headset" aria-hidden="true" style="font-size:12px;"></i>SUPPORT</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ matrix }}" as="mr" hint-placeholder-count="7">
+              <tr>
+                <th scope="row" style="height:44px;padding:0 16px;border-bottom:1px solid var(--border-default);text-align:left;font-weight:500;">{{ mr.label }}</th>
+                <td style="padding:0 16px;border-bottom:1px solid var(--border-default);text-align:center;"><span aria-label="Ruxsat bor" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--success-bg);color:var(--success-icon);"><i class="icon-check" aria-hidden="true" style="font-size:14px;"></i></span></td>
+                <td style="padding:4px 16px;border-bottom:1px solid var(--border-default);text-align:center;">
+                  <span style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;">
+                    <sc-if value="{{ mr.sup }}" hint-placeholder-val="{{ true }}"><span aria-label="Ruxsat bor" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--success-bg);color:var(--success-icon);"><i class="icon-check" aria-hidden="true" style="font-size:14px;"></i></span></sc-if>
+                    <sc-if value="{{ mr.noSup }}" hint-placeholder-val="{{ false }}"><span aria-label="Ruxsat yo‘q" style="font-size:16px;color:var(--text-tertiary);">—</span></sc-if>
+                    <sc-if value="{{ mr.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:14px;color:var(--text-secondary);">{{ mr.note }}</span></sc-if>
+                  </span>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </sc-if>
+  </section>
+
+  <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="padding:56px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+      <span style="width:48px;height:48px;border-radius:12px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-cloud-off" aria-hidden="true" style="font-size:22px;"></i></span>
+      <h2 style="margin:0;font:var(--type-h3);">Adminlar ro‘yxatini yuklab bo‘lmadi</h2>
+      <p style="margin:0;max-width:420px;color:var(--text-secondary);text-wrap:pretty;">Server javob bermadi. Adminlarning kirish huquqlari o‘zgarmagan.</p>
+      <button type="button" onClick="{{ retry }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:16px;"></i>Qayta urinish</button>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">Xato ID: 7a2e-0b61 · 06.11.2026, 14:55</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showTable }}" hint-placeholder-val="{{ true }}">
+    <div style="border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);">
+      <div style="overflow:{{ tblOverflow }};border-radius:8px;">
+        <table aria-label="Administratorlar" aria-busy="{{ isLoading }}" style="width:100%;min-width:0;border-collapse:separate;border-spacing:0;font-size:13px;">
+          <thead>
+            <tr>
+              <sc-for list="{{ heads }}" as="h" hint-placeholder-count="8">
+                <th scope="col" style="height:40px;padding:0 14px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:{{ h.align }};font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">{{ h.label }}</th>
+              </sc-for>
+            </tr>
+          </thead>
+          <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+            <tbody>
+              <sc-for list="{{ skel }}" as="sk" hint-placeholder-count="5">
+                <tr>
+                  <sc-for list="{{ sk.cells }}" as="c" hint-placeholder-count="8">
+                    <td style="height:60px;padding:0 14px;border-bottom:1px solid var(--border-default);"><div style="width:{{ c.w }};height:12px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></td>
+                  </sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+          </sc-if>
+          <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                <tr style="background:{{ r.bg }};">
+                  <td style="height:60px;padding:0 14px;border-bottom:1px solid var(--border-default);">
+                    <span style="display:flex;align-items:center;gap:10px;min-width:0;">
+                      <span aria-hidden="true" style="width:32px;height:32px;flex-shrink:0;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ r.ini }}</span>
+                      <span style="display:flex;flex-direction:column;min-width:0;">
+                        <span style="display:flex;align-items:center;gap:6px;"><span style="font-weight:500;color:{{ r.nameFg }};">{{ r.email }}</span><sc-if value="{{ r.isMe }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:16px;padding:0 5px;border-radius:4px;background:var(--primary-subtle);color:var(--primary-subtle-fg);font-weight:600;">(siz)</span></sc-if></span>
+                        <span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ r.name }}</span>
+                      </span>
+                    </span>
+                  </td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.roleBg }};border:1px solid {{ r.roleBorder }};color:{{ r.roleFg }};"><i class="icon-{{ r.roleIcon }}" aria-hidden="true" style="font-size:12px;"></i>{{ r.role }}</span></td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.st.bg }};border:1px solid {{ r.st.border }};color:{{ r.st.fg }};"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ r.st.dot }};"></span>{{ r.st.label }}</span></td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.tfa.bg }};border:1px solid {{ r.tfa.border }};color:{{ r.tfa.fg }};"><i class="icon-{{ r.tfa.icon }}" aria-hidden="true" style="font-size:12px;color:{{ r.tfa.dot }};"></i>{{ r.tfa.label }}</span></td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;">
+                    <sc-if value="{{ r.temp }}" hint-placeholder-val="{{ false }}"><span title="Birinchi kirishda almashtiriladi" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:var(--warning-bg);border:1px solid var(--warning-border);color:var(--warning-text);"><i class="icon-key-round" aria-hidden="true" style="font-size:12px;"></i>Vaqtinchalik</span></sc-if>
+                    <sc-if value="{{ r.notTemp }}" hint-placeholder-val="{{ true }}"><span title="Oxirgi almashtirilgan sana" style="color:var(--text-secondary);">{{ r.pwd }}</span></sc-if>
+                  </td>
+                  <td style="padding:6px 14px;border-bottom:1px solid var(--border-default);"><span style="display:flex;flex-direction:column;max-width:170px;"><span style="white-space:nowrap;color:{{ r.lastFg }};">{{ r.last }}</span><sc-if value="{{ r.hasLastSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:16px;color:var(--text-tertiary);text-wrap:pretty;">{{ r.lastSub }}</span></sc-if></span></td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;color:var(--text-secondary);">{{ r.created }}</td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);text-align:right;">
+                    <sc-if value="{{ r.hasActions }}" hint-placeholder-val="{{ true }}">
+                      <span style="position:relative;display:inline-flex;">
+                        <button type="button" aria-label="{{ r.menuAria }}" aria-haspopup="menu" aria-expanded="{{ r.menuOpen }}" onClick="{{ r.toggleMenu }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid {{ r.menuBorder }};border-radius:6px;background:{{ r.menuBg }};color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-ellipsis" aria-hidden="true" style="font-size:16px;"></i></button>
+                        <sc-if value="{{ r.menuOpen }}" hint-placeholder-val="{{ false }}">
+                          <div onClick="{{ closeMenu }}" aria-hidden="true" style="position:fixed;inset:0;z-index:40;"></div>
+                          <div role="menu" aria-label="{{ r.menuAria }}" onKeyDown="{{ menuKey }}" style="position:absolute;right:0;top:38px;z-index:41;width:244px;padding:4px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;text-align:left;">
+                            <sc-for list="{{ r.items }}" as="a" hint-placeholder-count="2">
+                              <button type="button" role="menuitem" aria-disabled="{{ a.disabled }}" onClick="{{ a.run }}" style="min-height:36px;display:flex;align-items:center;gap:10px;padding:4px 10px;border:0;border-radius:6px;background:transparent;color:{{ a.fg }};font-size:13px;cursor:{{ a.cursor }};text-align:left;" style-hover="background:{{ a.hover }};"><i class="icon-{{ a.icon }}" aria-hidden="true" style="font-size:15px;color:{{ a.iconFg }};"></i><span style="display:flex;flex-direction:column;"><span>{{ a.label }}</span><sc-if value="{{ a.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:14px;color:var(--text-tertiary);">{{ a.sub }}</span></sc-if></span></button>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+                      </span>
+                    </sc-if>
+                    <sc-if value="{{ r.isMe }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--text-tertiary);">—</span></sc-if>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </sc-if>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--border-default);font-size:12px;color:var(--text-secondary);"><span>{{ footText }}</span><span style="margin-left:auto;display:flex;align-items:center;gap:6px;"><i class="icon-globe" aria-hidden="true" style="font-size:12px;"></i>Asia/Tashkent</span></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showCards }}" hint-placeholder-val="{{ false }}">
+    <ul aria-label="Administratorlar" style="list-style:none;margin:0;padding:0;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);">
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+        <li style="padding:14px 16px;border-bottom:1px solid var(--border-default);display:flex;flex-direction:column;gap:10px;">
+          <span style="display:flex;align-items:center;gap:10px;">
+            <span aria-hidden="true" style="width:36px;height:36px;flex-shrink:0;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ r.ini }}</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;"><span style="font-weight:500;overflow-wrap:anywhere;color:{{ r.nameFg }};">{{ r.email }}<sc-if value="{{ r.isMe }}" hint-placeholder-val="{{ false }}"> <span style="font-size:11px;padding:0 5px;border-radius:4px;background:var(--primary-subtle);color:var(--primary-subtle-fg);font-weight:600;">(siz)</span></sc-if></span><span style="font-size:12px;color:var(--text-tertiary);">Oxirgi kirish: {{ r.last }}</span></span>
+            <sc-if value="{{ r.hasActions }}" hint-placeholder-val="{{ true }}">
+              <span style="position:relative;display:inline-flex;">
+                <button type="button" aria-label="{{ r.menuAria }}" aria-haspopup="menu" aria-expanded="{{ r.menuOpen }}" onClick="{{ r.toggleMenu }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-secondary);cursor:pointer;"><i class="icon-ellipsis" aria-hidden="true" style="font-size:18px;"></i></button>
+                <sc-if value="{{ r.menuOpen }}" hint-placeholder-val="{{ false }}">
+                  <div onClick="{{ closeMenu }}" aria-hidden="true" style="position:fixed;inset:0;z-index:40;"></div>
+                  <div role="menu" aria-label="{{ r.menuAria }}" onKeyDown="{{ menuKey }}" style="position:absolute;right:0;top:50px;z-index:41;width:244px;padding:4px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;">
+                    <sc-for list="{{ r.items }}" as="a" hint-placeholder-count="2">
+                      <button type="button" role="menuitem" aria-disabled="{{ a.disabled }}" onClick="{{ a.run }}" style="min-height:44px;display:flex;align-items:center;gap:10px;padding:4px 10px;border:0;border-radius:6px;background:transparent;color:{{ a.fg }};font-size:14px;cursor:{{ a.cursor }};text-align:left;"><i class="icon-{{ a.icon }}" aria-hidden="true" style="font-size:16px;color:{{ a.iconFg }};"></i><span style="display:flex;flex-direction:column;"><span>{{ a.label }}</span><sc-if value="{{ a.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:14px;color:var(--text-tertiary);">{{ a.sub }}</span></sc-if></span></button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </span>
+            </sc-if>
+          </span>
+          <span style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.roleBg }};border:1px solid {{ r.roleBorder }};color:{{ r.roleFg }};"><i class="icon-{{ r.roleIcon }}" aria-hidden="true" style="font-size:12px;"></i>{{ r.role }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.st.bg }};border:1px solid {{ r.st.border }};color:{{ r.st.fg }};"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ r.st.dot }};"></span>{{ r.st.label }}</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.tfa.bg }};border:1px solid {{ r.tfa.border }};color:{{ r.tfa.fg }};"><i class="icon-{{ r.tfa.icon }}" aria-hidden="true" style="font-size:12px;color:{{ r.tfa.dot }};"></i>2FA: {{ r.tfa.label }}</span>
+            <sc-if value="{{ r.temp }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:var(--warning-bg);border:1px solid var(--warning-border);color:var(--warning-text);"><i class="icon-key-round" aria-hidden="true" style="font-size:12px;"></i>Vaqtinchalik parol</span></sc-if>
+          </span>
+        </li>
+      </sc-for>
+    </ul>
+  </sc-if>
+
+  <sc-if value="{{ isSingle }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;padding:16px 18px;border:1px dashed var(--border-strong);border-radius:10px;background:var(--bg-subtle);">
+      <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-users-round" aria-hidden="true" style="font-size:18px;"></i></span>
+      <div style="flex:1 1 280px;display:flex;flex-direction:column;gap:4px;">
+        <span style="font-weight:600;">Hozircha panelda faqat siz</span>
+        <span style="color:var(--text-secondary);text-wrap:pretty;">Ikkinchi SUPERADMIN qo‘shishni tavsiya qilamiz: telefoningiz yoki 2FA yo‘qolsa, kirishni u tiklay oladi. Murojaatlar uchun SUPPORT rolini bering.</span>
+      </div>
+      <button type="button" onClick="{{ openAdd }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-user-plus" aria-hidden="true" style="font-size:16px;"></i>Admin qo‘shish</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAdd }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:70;"></div>
+    <div style="position:fixed;inset:0;z-index:71;display:flex;align-items:{{ modalAlign }};justify-content:center;padding:16px;pointer-events:none;overflow:auto;">
+      <sc-if value="{{ addForm }}" hint-placeholder-val="{{ true }}">
+        <form role="dialog" aria-modal="true" aria-labelledby="sfm-at" onSubmit="{{ submitAdd }}" noValidate="{{ true }}" style="pointer-events:auto;width:540px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);display:flex;flex-direction:column;">
+          <div style="padding:20px 20px 0;display:flex;gap:14px;align-items:flex-start;">
+            <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--primary-subtle);color:var(--primary-subtle-fg);display:flex;align-items:center;justify-content:center;"><i class="icon-user-plus" aria-hidden="true" style="font-size:20px;"></i></span>
+            <div style="flex:1;min-width:0;"><h2 id="sfm-at" style="margin:0;font:var(--type-h3);">Admin qo‘shish</h2><p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">Yangi admin vaqtinchalik parol bilan kiradi.</p></div>
+            <button type="button" aria-label="Yopish" onClick="{{ closeAdd }}" style="width:32px;height:32px;margin:-6px -6px 0 0;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:16px;"></i></button>
+          </div>
+          <div style="padding:18px 20px;display:flex;flex-direction:column;gap:18px;">
+            <label style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:13px;font-weight:500;">Email <span style="color:var(--danger-text);">*</span></span>
+              <input ref="{{ emailRef }}" type="email" value="{{ af.email }}" onChange="{{ onEmail }}" onBlur="{{ onEmailBlur }}" autoComplete="off" spellCheck="false" placeholder="ism.familiya@sellerflow.uz" aria-invalid="{{ em.invalid }}" aria-describedby="sfm-eerr" style="height:40px;padding:0 12px;border:1px solid {{ em.border }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;outline:none;" style-focus="border-color:var(--border-focus);">
+              <span id="sfm-eerr" role="alert" style="display:flex;align-items:flex-start;gap:6px;min-height:16px;font-size:12px;line-height:16px;color:var(--danger-text);"><sc-if value="{{ em.invalid }}" hint-placeholder-val="{{ false }}"><i class="icon-circle-alert" aria-hidden="true" style="font-size:13px;"></i></sc-if>{{ em.err }}</span>
+            </label>
+
+            <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:6px;">
+              <legend style="padding:0;margin-bottom:6px;font-size:13px;font-weight:500;">Rol <span style="color:var(--danger-text);">*</span></legend>
+              <div role="radiogroup" aria-label="Rol" onKeyDown="{{ roleKey }}" style="display:grid;grid-template-columns:{{ roleCols }};gap:8px;">
+                <sc-for list="{{ roleOpts }}" as="ro" hint-placeholder-count="2">
+                  <button type="button" role="radio" aria-checked="{{ ro.on }}" tabIndex="{{ ro.tabIndex }}" id="{{ ro.domId }}" onClick="{{ ro.pick }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px;border:{{ ro.border }};border-radius:8px;background:{{ ro.bg }};color:var(--text-primary);text-align:left;cursor:pointer;" style-hover="border-color:var(--primary);">
+                    <span style="width:100%;display:flex;align-items:center;gap:8px;"><i class="icon-{{ ro.icon }}" aria-hidden="true" style="font-size:16px;color:{{ ro.iconFg }};"></i><span style="flex:1;font-weight:600;font-size:13px;letter-spacing:.02em;">{{ ro.label }}</span><span aria-hidden="true" style="width:16px;height:16px;box-sizing:border-box;border-radius:50%;border:{{ ro.dotBorder }};background:var(--bg-surface);"></span></span>
+                    <span style="font-size:12px;line-height:17px;color:var(--text-secondary);text-wrap:pretty;">{{ ro.desc }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </fieldset>
+
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label for="sfm-pw" style="font-size:13px;font-weight:500;">Vaqtinchalik parol <span style="color:var(--danger-text);">*</span></label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span style="position:relative;flex:1 1 220px;display:flex;">
+                  <input id="sfm-pw" type="{{ pwType }}" value="{{ af.pw }}" onChange="{{ onPw }}" onBlur="{{ onPwBlur }}" autoComplete="new-password" spellCheck="false" aria-invalid="{{ pw.invalid }}" aria-describedby="sfm-pwh" style="flex:1;min-width:0;height:40px;padding:0 40px 0 12px;border:1px solid {{ pw.border }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:14px;letter-spacing:.02em;outline:none;" style-focus="border-color:var(--border-focus);">
+                  <button type="button" aria-label="{{ pwToggleAria }}" aria-pressed="{{ pwShown }}" onClick="{{ togglePw }}" style="position:absolute;right:4px;top:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-{{ pwToggleIcon }}" aria-hidden="true" style="font-size:16px;"></i></button>
+                </span>
+                <button type="button" onClick="{{ genPw }}" style="height:40px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);"><i class="icon-dices" aria-hidden="true" style="font-size:15px;"></i>Tasodifiy yaratish</button>
+                <button type="button" aria-label="Parolni nusxalash" title="Nusxalash" onClick="{{ copyPw }}" disabled="{{ pwEmpty }}" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:{{ copyFg }};cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-{{ copyIcon }}" aria-hidden="true" style="font-size:16px;"></i></button>
+              </div>
+              <span id="sfm-pwh" role="{{ pw.role }}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;line-height:16px;color:{{ pw.fg }};">
+                <span style="display:flex;gap:3px;" aria-hidden="true"><sc-for list="{{ pw.bars }}" as="b" hint-placeholder-count="4"><span style="width:22px;height:4px;border-radius:2px;background:{{ b }};"></span></sc-for></span>
+                <span>{{ pw.text }}</span>
+              </span>
+            </div>
+
+            <div role="note" style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--info-border);border-radius:8px;background:var(--info-bg);color:var(--info-text);font-size:13px;"><i class="icon-shield-check" aria-hidden="true" style="font-size:15px;margin-top:2px;color:var(--info-icon);"></i><span style="text-wrap:pretty;">Parolni xavfsiz kanal orqali bering. Birinchi kirishda admin parolni almashtiradi va 2FA ni ulaydi.</span></div>
+
+            <sc-if value="{{ srvErr }}" hint-placeholder-val="{{ false }}">
+              <div role="alert" style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--danger-border);border-radius:8px;background:var(--danger-bg);color:var(--danger-text);font-size:13px;"><i class="icon-circle-alert" aria-hidden="true" style="font-size:15px;margin-top:2px;color:var(--danger-icon);"></i><span style="flex:1;text-wrap:pretty;">{{ srvErrText }}</span></div>
+            </sc-if>
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-radius:0 0 12px 12px;">
+            <button type="button" onClick="{{ closeAdd }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Bekor qilish</button>
+            <button type="submit" disabled="{{ busy }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-{{ addIcon }}" aria-hidden="true" style="font-size:16px;animation:{{ addAnim }};"></i>{{ addLabel }}</button>
+          </div>
+        </form>
+      </sc-if>
+
+      <sc-if value="{{ addDone }}" hint-placeholder-val="{{ false }}">
+        <div role="dialog" aria-modal="true" aria-labelledby="sfm-dt" aria-describedby="sfm-dd" style="pointer-events:auto;width:500px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);display:flex;flex-direction:column;">
+          <div style="padding:24px 24px 0;display:flex;flex-direction:column;gap:14px;">
+            <span style="width:44px;height:44px;border-radius:12px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-circle-check" aria-hidden="true" style="font-size:22px;"></i></span>
+            <div><h2 id="sfm-dt" style="margin:0;font:var(--type-h2);letter-spacing:var(--tracking-tight);">Admin qo‘shildi</h2><p id="sfm-dd" style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;">Kirish ma’lumotlarini hozir nusxalab, xavfsiz kanal orqali yuboring.</p></div>
+          </div>
+          <div style="padding:18px 24px;display:flex;flex-direction:column;gap:12px;">
+            <dl style="margin:0;border:1px solid var(--border-default);border-radius:8px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:12px 14px;border-bottom:1px solid var(--border-default);"><dt style="margin:0;font-size:13px;color:var(--text-secondary);">Email</dt><dd style="margin:0;font-weight:500;overflow-wrap:anywhere;">{{ done.email }}</dd></div>
+              <div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:12px 14px;border-bottom:1px solid var(--border-default);"><dt style="margin:0;font-size:13px;color:var(--text-secondary);">Rol</dt><dd style="margin:0;font-weight:500;">{{ done.role }}</dd></div>
+              <div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:12px 14px;background:var(--bg-subtle);"><dt style="margin:0;font-size:13px;color:var(--text-secondary);">Parol</dt><dd style="margin:0;font-family:var(--font-mono);font-size:15px;font-weight:600;letter-spacing:.04em;overflow-wrap:anywhere;">{{ done.pw }}</dd></div>
+            </dl>
+            <button type="button" ref="{{ doneCopyRef }}" onClick="{{ copyDone }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-{{ doneCopyIcon }}" aria-hidden="true" style="font-size:16px;color:{{ doneCopyFg }};"></i>{{ doneCopyLabel }}</button>
+            <div role="note" style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--warning-border);border-radius:8px;background:var(--warning-bg);color:var(--warning-text);font-size:13px;"><i class="icon-eye-off" aria-hidden="true" style="font-size:15px;margin-top:2px;color:var(--warning-icon);"></i><span style="text-wrap:pretty;">Bu oynani yopgandan keyin parol qayta ko‘rsatilmaydi.</span></div>
+          </div>
+          <div style="padding:12px 24px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;border-radius:0 0 12px 12px;">
+            <button type="button" onClick="{{ finishAdd }}" style="height:36px;padding:0 16px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">Tayyor</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ dzOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDz }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:70;"></div>
+    <div style="position:fixed;inset:0;z-index:71;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;">
+      <form role="alertdialog" aria-modal="true" aria-labelledby="sfm-zt" aria-describedby="sfm-zd" onSubmit="{{ submitDz }}" style="pointer-events:auto;width:480px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);display:flex;flex-direction:column;">
+        <div style="padding:20px 20px 0;display:flex;gap:14px;align-items:flex-start;">
+          <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:{{ z.iconBg }};color:{{ z.iconFg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ z.icon }}" aria-hidden="true" style="font-size:20px;"></i></span>
+          <div style="flex:1;min-width:0;">
+            <h2 id="sfm-zt" style="margin:0;font:var(--type-h3);">{{ z.title }}</h2>
+            <p id="sfm-zd" style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">{{ z.desc }}</p>
+          </div>
+        </div>
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-subtle);">
+            <span aria-hidden="true" style="width:32px;height:32px;flex-shrink:0;border-radius:50%;background:var(--bg-muted);color:var(--text-secondary);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ z.ini }}</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;"><span style="font-weight:500;overflow-wrap:anywhere;">{{ z.email }}</span><span style="font-size:12px;color:var(--text-tertiary);">{{ z.meta }}</span></span>
+          </div>
+          <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px;">
+            <sc-for list="{{ z.items }}" as="it" hint-placeholder-count="3">
+              <li style="display:flex;gap:8px;align-items:flex-start;"><i class="icon-{{ it.icon }}" aria-hidden="true" style="font-size:14px;margin-top:3px;color:var(--text-tertiary);"></i><span style="text-wrap:pretty;">{{ it.text }}</span></li>
+            </sc-for>
+          </ul>
+          <label style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:13px;font-weight:500;">Sabab <span style="color:var(--danger-text);">*</span><span style="font-weight:400;color:var(--text-tertiary);"> — auditga yoziladi</span></span>
+            <textarea ref="{{ reasonRef }}" value="{{ reason }}" onChange="{{ onReason }}" rows="3" placeholder="{{ z.placeholder }}" aria-invalid="{{ rInvalid }}" aria-describedby="sfm-rerr" style="resize:vertical;min-height:72px;padding:8px 10px;border:1px solid {{ rBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;line-height:20px;outline:none;" style-focus="border-color:var(--border-focus);"></textarea>
+            <span style="display:flex;justify-content:space-between;gap:8px;font-size:12px;line-height:16px;"><span id="sfm-rerr" role="alert" style="color:var(--danger-text);">{{ rErr }}</span><span style="color:var(--text-tertiary);">{{ rCount }}/300</span></span>
+          </label>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-radius:0 0 12px 12px;">
+          <button type="button" onClick="{{ closeDz }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Bekor qilish</button>
+          <button type="submit" disabled="{{ busy }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:{{ z.btnBg }};color:#fff;font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:{{ z.btnHover }};"><i class="icon-{{ z.btnIcon }}" aria-hidden="true" style="font-size:16px;animation:{{ z.btnAnim }};"></i>{{ z.btnLabel }}</button>
+        </div>
+      </form>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:fixed;left:{{ toastLeft }};right:{{ toastRight }};bottom:20px;z-index:75;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;max-width:480px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.28);font-size:14px;">
+      <i class="icon-circle-check" aria-hidden="true" style="font-size:16px;color:var(--success-icon);"></i>
+      <span style="flex:1;min-width:0;"><strong style="font-weight:600;">{{ toast.title }}</strong> {{ toast.sub }}</span>
+      <button type="button" aria-label="Xabarni yopish" onClick="{{ closeToast }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-inverse);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1100},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;error&quot;,&quot;single&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;collapsed&quot;,&quot;menu&quot;,&quot;add&quot;,&quot;addFilled&quot;,&quot;addWeak&quot;,&quot;addDup&quot;,&quot;addDone&quot;,&quot;disable&quot;,&quot;reset&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;}}">
+const pad = n => String(n).padStart(2, '0');
+const nowAt = () => { const d = new Date(); return '06.11.2026, ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const ME = 'd.aliyev@sellerflow.uz';
+const tone = t => ({ bg: `var(--${t}-bg)`, border: `var(--${t}-border)`, fg: `var(--${t}-text)`, dot: `var(--${t}-icon)` });
+const ADMINS = [
+  { e: ME, n: 'Doniyor Aliyev', r: 'SUPERADMIN', on: true, tfa: true, temp: false, pwd: '12.08.2026', last: '06.11.2026, 09:12', lastSub: 'hozir faol', created: '04.01.2026' },
+  { e: 'j.umarov@sellerflow.uz', n: 'Jasur Umarov', r: 'SUPERADMIN', on: true, tfa: true, temp: false, pwd: '30.09.2026', last: '06.11.2026, 13:41', lastSub: '', created: '04.01.2026' },
+  { e: 'm.karimova@sellerflow.uz', n: 'Malika Karimova', r: 'SUPPORT', on: true, tfa: true, temp: false, pwd: '02.10.2026', last: '06.11.2026, 14:38', lastSub: '', created: '18.02.2026' },
+  { e: 's.toshev@sellerflow.uz', n: 'Sardor Toshev', r: 'SUPPORT', on: true, tfa: false, temp: false, pwd: '21.07.2026', last: '06.11.2026, 13:20', lastSub: '2FA bugun qayta o‘rnatildi', created: '03.03.2026' },
+  { e: 'n.rashidova@sellerflow.uz', n: 'Nigora Rashidova', r: 'SUPPORT', on: true, tfa: true, temp: false, pwd: '15.09.2026', last: '05.11.2026, 18:02', lastSub: 'bugun 5 ta muvaffaqiyatsiz urinish', created: '11.05.2026' },
+  { e: 'z.ergasheva@sellerflow.uz', n: 'Zarina Ergasheva', r: 'SUPPORT', on: true, tfa: false, temp: true, pwd: '', last: 'Hali kirmagan', lastSub: '', created: '05.11.2026' },
+  { e: 'b.qodirov@sellerflow.uz', n: 'Bekzod Qodirov', r: 'SUPPORT', on: false, tfa: true, temp: false, pwd: '08.04.2026', last: '29.10.2026, 17:55', lastSub: '', created: '11.05.2026' },
+];
+const MATRIX = [
+  ['Statistika va tizim holati', true], ['Sotuvchilar ro‘yxati', true], ['Kirish so‘rovi yuborish', true, 'faqat o‘z so‘rovlari'],
+  ['Sotuvchini bloklash/tiklash', false], ['Qo‘llab-quvvatlash sozlamalari', false], ['Audit jurnali', false], ['Adminlarni boshqarish', false],
+];
+const ROLES = [
+  ['SUPERADMIN', 'shield', 'Barcha huquqlar: bloklash, sozlamalar, audit va adminlarni boshqarish.'],
+  ['SUPPORT', 'headset', 'Statistika, sotuvchilar ro‘yxati va faqat o‘z kirish so‘rovlari.'],
+];
+const PWSET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*?';
+const genPw = () => { const a = new Uint32Array(16); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach((_, i) => a[i] = Math.random() * 1e9); return Array.from(a, x => PWSET[x % PWSET.length]).join(''); };
+const ini = e => { const [a, b] = e.split('@')[0].split('.'); return ((a || '')[0] + ((b || '')[0] || (a || '')[1] || '')).toUpperCase(); };
+const DEMO_AF = { addFilled: { email: 'o.yusupov@sellerflow.uz', role: 'SUPPORT', pw: 'q7M#vR2kX9pLw4Tz' }, addDup: { email: 'm.karimova@sellerflow.uz', role: 'SUPPORT', pw: 'Hn8$eW3tZq6Ycm2B' }, addWeak: { email: 'o.yusupov@sellerflow.uz', role: 'SUPERADMIN', pw: 'Salom2026' } };
+
+class Component extends DCLogic {
+  state = { list: null, mx: null, menu: undefined, add: undefined, af: null, touched: null, pwShown: false, busy: false, srvErr: null, done: undefined, copied: false, doneCopied: false, dz: undefined, reason: '', rTouched: false, toast: null, view: null };
+  rootRef = React.createRef(); emailRef = React.createRef(); reasonRef = React.createRef(); doneCopyRef = React.createRef();
+  componentWillUnmount() { ['tt', 'tb', 'tc', 'tr'].forEach(k => clearTimeout(this[k])); }
+  showToast = toast => { clearTimeout(this.tt); this.setState({ toast }); this.tt = setTimeout(() => this.setState({ toast: null }), 5000); };
+  copy = txt => { try { navigator.clipboard && navigator.clipboard.writeText(txt); } catch (_) {} };
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const demo = p.demo || 'none', view = s.view ?? p.view ?? 'default';
+    const cw = p.contentWidth ?? 1136, mobile = cw < 720;
+    const list = s.list || (view === 'single' ? ADMINS.slice(0, 1) : ADMINS);
+    this._list = list;
+    const mxOpen = s.mx ?? (demo !== 'collapsed');
+    const menuE = s.menu === undefined ? (demo === 'menu' ? 'm.karimova@sellerflow.uz' : null) : s.menu;
+
+    const openDz = (kind, e) => this.setState({ dz: { kind, e }, menu: null, reason: '', rTouched: false, busy: false }, () => setTimeout(() => this.reasonRef.current && this.reasonRef.current.focus({ preventScroll: true }), 30));
+    const rows = list.map(a => {
+      const me = a.e === ME, sup = a.r === 'SUPERADMIN';
+      const st = a.on ? { ...tone('success'), label: 'Faol' } : { ...tone('neutral'), label: 'O‘chirilgan' };
+      const tfa = a.tfa ? { ...tone('success'), label: 'Ulangan', icon: 'shield-check' } : { ...tone('warning'), label: 'Ulanmagan', icon: 'shield-alert' };
+      const items = [
+        a.tfa ? { label: '2FA reset', icon: 'rotate-ccw-key', run: () => openDz('reset', a.e) } : { label: '2FA reset', sub: '2FA hali ulanmagan', icon: 'rotate-ccw-key', disabled: true },
+        a.on ? { label: 'O‘chirish', icon: 'user-x', danger: true, run: () => openDz('disable', a.e) } : { label: 'Yoqish', icon: 'user-check', run: () => openDz('enable', a.e) },
+      ].map(it => ({ ...it, hasSub: !!it.sub, sub: it.sub || '', disabled: !!it.disabled, run: it.run || (() => {}), fg: it.disabled ? 'var(--text-tertiary)' : it.danger ? 'var(--danger-text)' : 'var(--text-primary)', iconFg: it.disabled ? 'var(--text-tertiary)' : it.danger ? 'var(--danger-icon)' : 'var(--text-secondary)', hover: it.disabled ? 'transparent' : it.danger ? 'var(--danger-bg)' : 'var(--bg-hover)', cursor: it.disabled ? 'not-allowed' : 'pointer' }));
+      const open = menuE === a.e;
+      return { email: a.e, name: a.n, ini: ini(a.e), isMe: me, hasActions: !me,
+        avBg: me ? 'var(--primary)' : a.on ? 'var(--bg-muted)' : 'var(--bg-subtle)', avFg: me ? 'var(--primary-fg)' : a.on ? 'var(--text-secondary)' : 'var(--text-tertiary)', nameFg: a.on ? 'var(--text-primary)' : 'var(--text-secondary)',
+        role: a.r, roleIcon: sup ? 'shield' : 'headset', roleBg: sup ? 'var(--primary-subtle)' : 'var(--info-bg)', roleBorder: sup ? 'var(--primary-subtle)' : 'var(--info-border)', roleFg: sup ? 'var(--primary-subtle-fg)' : 'var(--info-text)',
+        st, tfa, temp: a.temp, notTemp: !a.temp, pwd: a.pwd || '—',
+        last: a.last, lastFg: a.last === 'Hali kirmagan' ? 'var(--text-tertiary)' : 'var(--text-primary)', hasLastSub: !!a.lastSub, lastSub: a.lastSub, created: a.created,
+        bg: a.on ? 'transparent' : 'var(--bg-subtle)',
+        menuAria: `${a.e} uchun amallar`, menuOpen: open, menuBg: open ? 'var(--bg-active)' : 'transparent', menuBorder: open ? 'var(--border-strong)' : 'transparent', items,
+        toggleMenu: () => this.setState({ menu: open ? null : a.e }, () => { if (!open) setTimeout(() => { const el = this.rootRef.current && this.rootRef.current.querySelector('[role="menu"] [role="menuitem"]:not([aria-disabled="true"])'); el && el.focus({ preventScroll: true }); }, 0); }) };
+    });
+
+    // add modal
+    const addKind = s.add === undefined ? (['add', 'addFilled', 'addDup', 'addWeak', 'addDone'].includes(demo) ? demo : null) : s.add;
+    const af = s.af || { email: '', role: 'SUPPORT', pw: '', ...(DEMO_AF[demo] || {}) };
+    const touched = s.touched || (DEMO_AF[demo] ? { email: true, pw: true } : { email: false, pw: false });
+    const eTrim = af.email.trim().toLowerCase();
+    const dup = list.some(a => a.e === eTrim);
+    const eBad = !eTrim ? 'Emailni kiriting.' : !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(eTrim) ? 'Email formati noto‘g‘ri.' : dup ? 'Bu email bilan admin allaqachon bor' : '';
+    const em = { invalid: touched.email && !!eBad, err: touched.email ? eBad : '' };
+    em.border = em.invalid ? 'var(--danger-icon)' : 'var(--border-input)';
+    const pwv = af.pw, len = pwv.length;
+    const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(r => r.test(pwv)).length;
+    const score = len === 0 ? 0 : len < 12 ? 1 : kinds <= 2 ? 2 : len < 16 || kinds < 4 ? 3 : 4;
+    const pBad = len < 12;
+    const pwColor = ['var(--border-default)', 'var(--danger-icon)', 'var(--warning-icon)', 'var(--success-icon)', 'var(--success-icon)'][score];
+    const pw = { invalid: touched.pw && pBad, role: touched.pw && pBad ? 'alert' : 'status',
+      fg: touched.pw && pBad ? 'var(--danger-text)' : 'var(--text-secondary)',
+      text: len === 0 ? 'Kamida 12 belgi. «Tasodifiy yaratish» 16 belgili parol beradi.' : pBad ? `Kamida 12 belgi kerak — hozir ${len} ta.` : ['', '', 'O‘rtacha: katta harf, raqam va belgi qo‘shing.', 'Yaxshi parol.', 'Kuchli parol.'][score],
+      bars: [1, 2, 3, 4].map(i => i <= score ? pwColor : 'var(--border-default)') };
+    pw.border = pw.invalid ? 'var(--danger-icon)' : 'var(--border-input)';
+    const srvErr = s.srvErr ?? (demo === 'addDup' ? 'dup' : null);
+    const done = s.done !== undefined ? s.done : demo === 'addDone' ? { email: 'o.yusupov@sellerflow.uz', role: 'SUPPORT', pw: 'q7M#vR2kX9pLw4Tz' } : null;
+
+    // danger modal
+    const dz = s.dz === undefined ? (demo === 'disable' ? { kind: 'disable', e: 'm.karimova@sellerflow.uz' } : demo === 'reset' ? { kind: 'reset', e: 'j.umarov@sellerflow.uz' } : null) : s.dz;
+    const dza = dz ? list.find(a => a.e === dz.e) : null;
+    let z = {};
+    if (dza) {
+      const base = { email: dza.e, ini: ini(dza.e), meta: `${dza.r} · oxirgi kirish: ${dza.last}`, btnAnim: s.busy ? 'sfSpin .8s linear infinite' : 'none' };
+      if (dz.kind === 'disable') z = { ...base, icon: 'user-x', iconBg: 'var(--danger-bg)', iconFg: 'var(--danger-icon)', title: 'Admin o‘chirilsinmi?', desc: 'Barcha faol sessiyalari darhol yopiladi.',
+        items: [{ icon: 'log-out', text: 'Panelga kira olmaydi, ochiq sessiyalar shu zahoti tugaydi.' }, { icon: 'key-round', text: 'Uning faol kirish ruxsatlari bekor qilinadi.' }, { icon: 'rotate-ccw', text: 'Keyin «Yoqish» orqali qayta tiklash mumkin.' }],
+        placeholder: 'Masalan: Shtatdan chiqdi', btnBg: 'var(--danger-solid)', btnHover: 'var(--danger-solid-hover)', btnIcon: s.busy ? 'loader-circle' : 'user-x', btnLabel: s.busy ? 'O‘chirilmoqda…' : 'O‘chirish' };
+      else if (dz.kind === 'reset') z = { ...base, icon: 'rotate-ccw-key', iconBg: 'var(--warning-bg)', iconFg: 'var(--warning-icon)', title: '2FA qayta o‘rnatilsinmi?', desc: 'Keyingi kirishda yangi QR kod beriladi. Sessiyalari yopiladi.',
+        items: [{ icon: 'qr-code', text: 'Eski autentifikator kodlari ishlamay qoladi.' }, { icon: 'log-out', text: 'Barcha ochiq sessiyalar yopiladi.' }, { icon: 'scroll-text', text: 'Amal ADMIN_2FA_RESET sifatida auditga yoziladi.' }],
+        placeholder: 'Masalan: Telefon almashtirildi', btnBg: 'var(--danger-solid)', btnHover: 'var(--danger-solid-hover)', btnIcon: s.busy ? 'loader-circle' : 'rotate-ccw-key', btnLabel: s.busy ? 'Bajarilmoqda…' : '2FA reset' };
+      else z = { ...base, icon: 'user-check', iconBg: 'var(--success-bg)', iconFg: 'var(--success-icon)', title: 'Admin qayta yoqilsinmi?', desc: 'Admin yana panelga kira oladi. Avvalgi roli saqlanadi.',
+        items: [{ icon: 'shield', text: `Rol: ${dza.r}` }, { icon: 'scroll-text', text: 'Amal auditga yoziladi.' }],
+        placeholder: 'Masalan: Ishga qaytdi', btnBg: 'var(--primary)', btnHover: 'var(--primary-hover)', btnIcon: s.busy ? 'loader-circle' : 'user-check', btnLabel: s.busy ? 'Yoqilmoqda…' : 'Yoqish' };
+    }
+    const rTrim = s.reason.trim(), rInvalid = s.rTouched && !rTrim;
+    const upd = (e, patch) => this.setState({ list: this._list.map(a => a.e === e ? { ...a, ...patch } : a) });
+
+    const loading = view === 'loading', isError = view === 'error';
+    return {
+      rootRef: this.rootRef, emailRef: this.emailRef, reasonRef: this.reasonRef, doneCopyRef: this.doneCopyRef,
+      openAdd: () => this.setState({ add: 'add', af: { email: '', role: 'SUPPORT', pw: '' }, touched: { email: false, pw: false }, pwShown: false, srvErr: null, done: null, busy: false }, () => setTimeout(() => this.emailRef.current && this.emailRef.current.focus({ preventScroll: true }), 40)),
+      addDisabled: loading || isError,
+      mxOpen, toggleMx: () => this.setState({ mx: !mxOpen }), mxRot: mxOpen ? 'rotate(180deg)' : 'none', mxHint: mxOpen ? 'Yig‘ish' : '2 ta rol · 7 ta huquq',
+      matrix: MATRIX.map(([label, sup, note]) => ({ label, sup, noSup: !sup, hasNote: !!note, note: note || '' })),
+      isError, isLoading: loading,
+      showTable: !mobile && !isError, tblOverflow: cw < 1080 ? 'auto' : 'visible', showCards: mobile && !isError && !loading,
+      hasRows: !loading, rows,
+      heads: [['Admin', 'left'], ['Rol', 'left'], ['Holat', 'left'], ['2FA', 'left'], ['Parol (almashtirilgan)', 'left'], ['Oxirgi kirish', 'left'], ['Yaratilgan', 'left'], ['Amallar', 'right']].map(([label, align]) => ({ label, align })),
+      skel: Array.from({ length: 5 }, (_, i) => ({ cells: Array.from({ length: 8 }, (_, j) => ({ w: ['80%', '60%', '50%', '55%', '45%', '70%', '60%', '30%'][(i + j) % 8] })) })),
+      footText: `${list.length} ta admin · ${list.filter(a => a.on).length} ta faol · ${list.filter(a => !a.tfa && a.on).length} tasida 2FA ulanmagan`,
+      isSingle: !loading && !isError && list.length === 1,
+      retry: () => { this.setState({ view: 'loading' }); clearTimeout(this.tr); this.tr = setTimeout(() => this.setState({ view: 'default' }), 1100); },
+      closeMenu: () => this.setState({ menu: null }),
+      menuKey: e => {
+        const items = [...e.currentTarget.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')], i = items.indexOf(document.activeElement);
+        if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.setState({ menu: null }); }
+      },
+
+      addOpen: !!addKind, addForm: !!addKind && !done, addDone: !!addKind && !!done, modalAlign: mobile ? 'flex-start' : 'center',
+      closeAdd: () => { if (!s.busy) this.setState({ add: null, done: null }); },
+      af, em, pw, roleCols: mobile ? 'minmax(0,1fr)' : 'repeat(2,minmax(0,1fr))',
+      onEmail: e => this.setState({ af: { ...af, email: e.target.value }, srvErr: null }),
+      onEmailBlur: () => this.setState({ touched: { ...touched, email: true } }),
+      roleOpts: ROLES.map(([id, icon, desc]) => { const on = af.role === id; return { label: id, icon, desc, on, tabIndex: on ? 0 : -1, domId: 'sfm-role-' + id, border: on ? '2px solid var(--primary)' : '1px solid var(--border-default)', bg: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', iconFg: on ? 'var(--primary)' : 'var(--text-tertiary)', dotBorder: on ? '5px solid var(--primary)' : '1px solid var(--border-strong)', pick: () => this.setState({ af: { ...af, role: id } }) }; }),
+      roleKey: e => { if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return; e.preventDefault(); const nr = af.role === 'SUPERADMIN' ? 'SUPPORT' : 'SUPERADMIN'; this.setState({ af: { ...af, role: nr } }); setTimeout(() => { const el = this.rootRef.current && this.rootRef.current.querySelector('#sfm-role-' + nr); el && el.focus(); }, 0); },
+      pwType: s.pwShown ? 'text' : 'password', pwShown: s.pwShown, pwToggleIcon: s.pwShown ? 'eye-off' : 'eye', pwToggleAria: s.pwShown ? 'Parolni yashirish' : 'Parolni ko‘rsatish',
+      togglePw: () => this.setState({ pwShown: !s.pwShown }),
+      onPw: e => this.setState({ af: { ...af, pw: e.target.value.slice(0, 64) } }), onPwBlur: () => this.setState({ touched: { ...touched, pw: true } }),
+      genPw: () => this.setState({ af: { ...af, pw: genPw() }, pwShown: true, touched: { ...touched, pw: true } }),
+      pwEmpty: !af.pw, copyIcon: s.copied ? 'check' : 'copy', copyFg: s.copied ? 'var(--success-icon)' : 'var(--text-primary)',
+      copyPw: () => { this.copy(af.pw); clearTimeout(this.tc); this.setState({ copied: true }); this.tc = setTimeout(() => this.setState({ copied: false }), 1600); },
+      srvErr: !!srvErr, srvErrText: srvErr === 'dup' ? 'Bu email bilan admin allaqachon bor. O‘chirilgan admin bo‘lsa, uni ro‘yxatdan «Yoqish» orqali tiklang.' : 'Saqlab bo‘lmadi: server javob bermadi.',
+      busy: s.busy, addIcon: s.busy ? 'loader-circle' : 'user-plus', addAnim: s.busy ? 'sfSpin .8s linear infinite' : 'none', addLabel: s.busy ? 'Qo‘shilmoqda…' : 'Admin qo‘shish',
+      submitAdd: e => {
+        e.preventDefault();
+        if (eBad || pBad) { this.setState({ touched: { email: true, pw: true }, af, add: addKind, srvErr: dup ? 'dup' : null }); if (eBad && this.emailRef.current) this.emailRef.current.focus(); return; }
+        this.setState({ busy: true, af, add: addKind }); clearTimeout(this.tb);
+        this.tb = setTimeout(() => {
+          const d = new Date(), created = `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
+          this.setState({ busy: false, done: { email: eTrim, role: af.role, pw: af.pw }, doneCopied: false, list: [...this._list, { e: eTrim, n: 'Yangi admin', r: af.role, on: true, tfa: false, temp: true, pwd: '', last: 'Hali kirmagan', lastSub: '', created: '06.11.2026' }] }, () => setTimeout(() => this.doneCopyRef.current && this.doneCopyRef.current.focus({ preventScroll: true }), 40));
+        }, 900);
+      },
+      done: done || {}, doneCopyIcon: s.doneCopied ? 'check' : 'copy', doneCopyFg: s.doneCopied ? 'var(--success-icon)' : 'var(--text-secondary)', doneCopyLabel: s.doneCopied ? 'Nusxa olindi' : 'Email va parolni nusxalash',
+      copyDone: () => { this.copy(`Email: ${done.email}\nParol: ${done.pw}`); this.setState({ doneCopied: true }); },
+      finishAdd: () => { const em2 = done && done.email; this.setState({ add: null, done: null, af: null }); this.showToast({ title: 'Admin qo‘shildi.', sub: `${em2} birinchi kirishda parolni almashtiradi. Auditga yozildi.` }); },
+
+      dzOpen: !!dza, z, closeDz: () => { if (!s.busy) this.setState({ dz: null }); },
+      reason: s.reason, onReason: e => this.setState({ reason: e.target.value.slice(0, 300) }), rCount: s.reason.length,
+      rInvalid, rBorder: rInvalid ? 'var(--danger-icon)' : 'var(--border-input)', rErr: rInvalid ? 'Sababni kiriting — u audit jurnaliga yoziladi.' : '',
+      submitDz: e => {
+        e.preventDefault();
+        if (!rTrim) { this.setState({ rTouched: true, dz }); this.reasonRef.current && this.reasonRef.current.focus(); return; }
+        this.setState({ busy: true, dz }); clearTimeout(this.tb);
+        this.tb = setTimeout(() => {
+          const k = dz.kind, em2 = dz.e;
+          this.setState({ busy: false, dz: null });
+          if (k === 'disable') { upd(em2, { on: false, lastSub: 'sessiyalar yopildi' }); this.showToast({ title: 'Admin o‘chirildi.', sub: 'Sessiyalari yopildi. Auditga yozildi.' }); }
+          else if (k === 'reset') { upd(em2, { tfa: false, lastSub: '2FA bugun qayta o‘rnatildi' }); this.showToast({ title: '2FA qayta o‘rnatildi.', sub: 'Keyingi kirishda yangi QR kod beriladi.' }); }
+          else { upd(em2, { on: true, lastSub: '' }); this.showToast({ title: 'Admin qayta yoqildi.', sub: 'Auditga yozildi.' }); }
+        }, 800);
+      },
+      onRootKey: e => { if (e.key !== 'Escape') return; if (dza) { e.stopPropagation(); if (!s.busy) this.setState({ dz: null }); } else if (addKind) { e.stopPropagation(); if (!s.busy) this.setState({ add: null, done: null }); } else if (menuE) { e.stopPropagation(); this.setState({ menu: null }); } },
+      hasToast: !!s.toast, toast: s.toast || {}, closeToast: () => this.setState({ toast: null }),
+      toastLeft: mobile ? '12px' : 'auto', toastRight: mobile ? '12px' : '24px',
+    };
+  }
+}
+</script>
+</body>
+</html>

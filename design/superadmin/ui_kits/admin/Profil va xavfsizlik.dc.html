@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<style>html,body{margin:0;background:#f5f5f4;} a{color:#1c1917;} a:hover{color:#57534e;}</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:40px;font-family:Inter,system-ui,sans-serif;color:#1c1917;">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px;">
+    <span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#57534e;">SellerFlow Admin · Profil va xavfsizlik</span>
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.02em;">Har bir admin o‘zi uchun</h1>
+    <p style="margin:0;font-size:15px;line-height:24px;color:#57534e;text-wrap:pretty;">Chapdagi bo‘limlar ishlaydi. Parol validatsiyasi va kuch indikatori jonli, sessiyalardan chiqish ro‘yxatni yangilaydi, «Interfeys»dagi mavzu butun panelga darhol qo‘llanadi.</p>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Bo‘limlar</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="11a" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11a</span><span style="font-size:14px;font-weight:500;">Profil</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile"  preview-width="{{ 1440 }}" hint-size="1440px,900px"></dc-import></div>
+    </div>
+    <div id="11b" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11b</span><span style="font-size:14px;font-weight:500;">Parol · kuchli, mos</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="password" profile-demo="pwFilled" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="11c" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11c</span><span style="font-size:14px;font-weight:500;">Ikki bosqichli himoya · ulangan</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="2fa" preview-width="{{ 1440 }}" hint-size="1440px,900px"></dc-import></div>
+    </div>
+    <div id="11d" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11d</span><span style="font-size:14px;font-weight:500;">Faol sessiyalar</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="sessions" preview-width="{{ 1440 }}" hint-size="1440px,900px"></dc-import></div>
+    </div>
+    <div id="11e" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11e</span><span style="font-size:14px;font-weight:500;">Mening faolligim · 20 ta hodisa</span></div>
+      <div style="width:1440px;height:1400px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="activity" preview-width="{{ 1440 }}" hint-size="1440px,1400px"></dc-import></div>
+    </div>
+    <div id="11f" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11f</span><span style="font-size:14px;font-weight:500;">Interfeys</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="ui" preview-width="{{ 1440 }}" hint-size="1440px,900px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Parol xatolari va tasdiq</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="11g" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11g</span><span style="font-size:14px;font-weight:500;">Zaif parol</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="password" profile-demo="pwWeak" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="11h" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11h</span><span style="font-size:14px;font-weight:500;">Parollar mos emas</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="password" profile-demo="pwMismatch" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="11i" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11i</span><span style="font-size:14px;font-weight:500;">Joriy parol noto‘g‘ri</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="password" profile-demo="pwWrong" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="11j" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11j</span><span style="font-size:14px;font-weight:500;">Barcha sessiyalardan chiqish tasdig‘i</span></div>
+      <div style="width:1280px;height:900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="sessions" profile-demo="logoutAll" preview-width="{{ 1280 }}" hint-size="1280px,900px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Vaqtinchalik parol bilan birinchi kirish</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="11k" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11k</span><span style="font-size:14px;font-weight:500;">Amber banner · parol bo‘limi</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" role="SUPPORT" profile-temp="true" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="11l" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11l</span><span style="font-size:14px;font-weight:500;">2FA ulanmagan</span></div>
+      <div style="width:1440px;height:900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" role="SUPPORT" profile-temp="true" profile-section="2fa" preview-width="{{ 1440 }}" hint-size="1440px,900px"></dc-import></div>
+    </div>
+    <div id="11m" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11m</span><span style="font-size:14px;font-weight:500;">Faollik bo‘sh</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" role="SUPPORT" profile-temp="true" profile-section="activity" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Rollar, mobil va holatlar</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="11n" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11n</span><span style="font-size:14px;font-weight:500;">SUPPORT · qorong‘i</span></div>
+      <div style="width:1440px;height:1200px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" role="SUPPORT" theme="dark" profile-section="activity" preview-width="{{ 1440 }}" hint-size="1440px,1200px"></dc-import></div>
+    </div>
+    <div id="11o" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11o</span><span style="font-size:14px;font-weight:500;">Mobil · parol</span></div>
+      <div style="width:390px;height:1500px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" profile-section="password" profile-demo="pwWeak" preview-width="{{ 390 }}" hint-size="390px,1500px"></dc-import></div>
+    </div>
+    <div id="11p" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11p</span><span style="font-size:14px;font-weight:500;">Skeleton</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" page-state="loading" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+    <div id="11q" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11q</span><span style="font-size:14px;font-weight:500;">Xato</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" page-state="error" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+    <div id="11r" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">11r</span><span style="font-size:14px;font-weight:500;">403</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="profile" page-state="forbidden" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

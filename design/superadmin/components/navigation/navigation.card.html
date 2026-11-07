@@ -1,0 +1,31 @@
+<!-- @dsCard group="Components" viewport="900x600" name="Navigation" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} body{padding:0}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Sidebar, Topbar, Tabs, Breadcrumbs, CommandPalette, Button } = NS;
+const { useState } = React;
+
+const groups=[{label:'Asosiy',items:[{id:'dash',label:'Boshqaruv paneli',icon:'layout-dashboard'},{id:'sellers',label:'Sotuvchilar',icon:'users',count:1284},{id:'access',label:'Kirish so‘rovlari',icon:'key-round',count:3}]},{label:'Nazorat',items:[{id:'audit',label:'Audit jurnali',icon:'scroll-text'},{id:'admins',label:'Adminlar',icon:'user-cog',roles:['SUPERADMIN']}]},{label:'Tizim',items:[{id:'settings',label:'Sozlamalar',icon:'settings',roles:['SUPERADMIN']}]}];
+const cmds=[{group:'Sahifalar',label:'Boshqaruv paneli',icon:'layout-dashboard',shortcut:['G','D']},{group:'Sahifalar',label:'Sotuvchilar',icon:'users',shortcut:['G','S']},{group:'Sotuvchilar',label:'Dilnoza Karimova',icon:'user',hint:'482019377',hintMono:true},{group:'Amallar',label:'Admin qo‘shish',icon:'user-plus'}];
+function App(){ const [a,setA]=useState('sellers'); const [c,setC]=useState(false); const [t,setT]=useState('all'); const [cmd,setCmd]=useState(true);
+ return <div style={{display:'flex',height:600,background:'var(--bg-app)'}}>
+  <Sidebar groups={groups} active={a} onNavigate={setA} collapsed={c} onToggleCollapsed={()=>setC(!c)} role="SUPERADMIN" />
+  <div style={{flex:1,minWidth:0,display:'flex',flexDirection:'column',position:'relative'}}>
+    <Topbar breadcrumbs={[{label:'Sotuvchilar',href:'#'},{label:'Ro‘yxat'}]} onOpenSearch={()=>setCmd(true)} user={{name:'Aziz Rahimov',role:'SUPERADMIN'}} />
+    <div style={{padding:24,display:'flex',flexDirection:'column',gap:16}}>
+      <Breadcrumbs items={[{label:'Sotuvchilar',href:'#'},{label:'Dilnoza Karimova',href:'#'},{label:'Kirish tarixi'}]} />
+      <h1 style={{font:'var(--type-h1)',margin:0}}>Sotuvchilar</h1>
+      <Tabs label="Holat bo‘yicha" value={t} onChange={setT} items={[{value:'all',label:'Hammasi',count:1284},{value:'active',label:'Faol',count:1203},{value:'onb',label:'Ro‘yxatdan o‘tmoqda',count:61},{value:'blocked',label:'Bloklangan',count:12},{value:'closed',label:'Yopilgan',disabled:true}]} />
+    </div>
+    <CommandPalette contained open={cmd} onOpenChange={setCmd} items={cmds} bindShortcut />
+  </div>
+ </div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

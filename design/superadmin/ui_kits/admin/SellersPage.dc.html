@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfs] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfs] button,[data-sfs] input,[data-sfs] select,[data-sfs] textarea{font-family:inherit;}
+[data-sfs] [class^="icon-"]{line-height:1;display:inline-flex;}
+[data-sfs] tbody tr:focus-visible{outline-offset:-2px;}
+</style>
+</helmet>
+<div data-sfs="" ref="{{ rootRef }}" onKeyDown="{{ onRootKey }}" style="display:flex;flex-direction:column;gap:16px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;">
+
+  <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">Sotuvchilar</h1>
+        <span style="font-size:13px;line-height:20px;font-weight:500;padding:1px 8px;border-radius:10px;background:var(--bg-subtle);border:1px solid var(--border-default);color:var(--text-secondary);">Jami: {{ totalText }}</span>
+      </div>
+      <p style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;display:flex;gap:6px;align-items:flex-start;"><i class="icon-lock" aria-hidden="true" style="font-size:14px;color:var(--privacy-icon);margin-top:3px;"></i><span>Faqat metadata: holat, kanal, tarif va sanalar. Tannarx, foyda va tarix ko‘rsatilmaydi.</span></p>
+    </div>
+    <sc-if value="{{ isSuper }}" hint-placeholder-val="{{ true }}">
+      <button type="button" onClick="{{ exportCsv }}" title="Faqat metadata eksport qilinadi" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);"><i class="icon-download" aria-hidden="true" style="font-size:16px;"></i>CSV eksport<span style="font-size:12px;color:var(--text-tertiary);font-weight:400;">· metadata</span></button>
+    </sc-if>
+  </div>
+
+  <div role="tablist" aria-label="Saqlangan ko‘rinishlar" style="display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border-default);">
+    <sc-for list="{{ views }}" as="v" hint-placeholder-count="3">
+      <button type="button" role="tab" aria-selected="{{ v.on }}" onClick="{{ v.onClick }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;margin-bottom:-1px;border:0;border-bottom:2px solid {{ v.line }};background:transparent;color:{{ v.fg }};font-size:14px;font-weight:{{ v.weight }};cursor:pointer;white-space:nowrap;" style-hover="color:var(--text-primary);"><i class="icon-{{ v.icon }}" aria-hidden="true" style="font-size:14px;"></i>{{ v.label }}<span style="font-size:12px;line-height:16px;padding:0 6px;border-radius:8px;background:var(--bg-subtle);color:var(--text-secondary);">{{ v.count }}</span></button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div style="position:relative;flex:1 1 240px;max-width:{{ searchMax }};">
+        <i class="icon-search" aria-hidden="true" style="position:absolute;left:10px;top:10px;font-size:16px;color:var(--text-tertiary);pointer-events:none;"></i>
+        <input value="{{ q }}" onChange="{{ onQ }}" inputMode="numeric" placeholder="Telegram ID bo‘yicha qidirish" aria-label="Telegram ID bo‘yicha qidirish" aria-describedby="sfs-qhint" style="width:100%;height:36px;box-sizing:border-box;padding:0 32px 0 34px;border:1px solid {{ qBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:13px;outline:none;" style-focus="border-color:var(--border-focus);box-shadow:0 0 0 3px var(--focus-ring, rgba(37,99,235,.18));">
+        <sc-if value="{{ hasQ }}" hint-placeholder-val="{{ false }}">
+          <button type="button" aria-label="Qidiruvni tozalash" onClick="{{ clearQ }}" style="position:absolute;right:4px;top:4px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+        </sc-if>
+        <sc-if value="{{ qBad }}" hint-placeholder-val="{{ false }}">
+          <span id="sfs-qhint" role="alert" style="position:absolute;left:0;top:40px;font-size:12px;line-height:16px;color:var(--danger-text);white-space:nowrap;">Faqat raqam kiriting — Telegram ID</span>
+        </sc-if>
+      </div>
+
+      <div ref="{{ chanRef }}" style="position:relative;display:{{ deskDisp }};">
+        <button type="button" aria-haspopup="dialog" aria-expanded="{{ chanOpen }}" onClick="{{ toggleChan }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 10px 0 12px;border:1px {{ chanBorderStyle }} {{ chanBorder }};border-radius:6px;background:{{ chanBg }};color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);"><i class="icon-store" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i>Kanal<sc-if value="{{ chanHasSel }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:16px;padding:0 6px;border-radius:8px;background:var(--primary);color:var(--primary-fg);">{{ chanSelCount }}</span></sc-if><i class="icon-chevron-down" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i></button>
+        <sc-if value="{{ chanOpen }}" hint-placeholder-val="{{ false }}">
+          <div role="dialog" aria-label="Kanal bo‘yicha filtr" style="position:absolute;top:40px;left:0;z-index:30;width:240px;padding:6px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;">
+            <sc-for list="{{ chanOpts }}" as="c" hint-placeholder-count="7">
+              <label style="height:34px;display:flex;align-items:center;gap:10px;padding:0 8px;border-radius:6px;cursor:pointer;font-size:13px;" style-hover="background:var(--bg-hover);">
+                <input type="checkbox" checked="{{ c.on }}" onChange="{{ c.onChange }}" style="width:16px;height:16px;margin:0;accent-color:var(--primary);">
+                <span aria-hidden="true" style="width:8px;height:8px;border-radius:2px;background:{{ c.color }};"></span>
+                <span style="flex:1;">{{ c.name }}</span>
+                <span style="font-size:12px;color:var(--text-tertiary);">{{ c.count }}</span>
+              </label>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <div ref="{{ dateRef }}" style="position:relative;display:{{ deskDisp }};">
+        <button type="button" aria-haspopup="dialog" aria-expanded="{{ dateOpen }}" onClick="{{ toggleDate }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 10px 0 12px;border:1px {{ dateBorderStyle }} {{ dateBorder }};border-radius:6px;background:{{ dateBg }};color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);"><i class="icon-calendar" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i>{{ dateBtnLabel }}<i class="icon-chevron-down" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i></button>
+        <sc-if value="{{ dateOpen }}" hint-placeholder-val="{{ false }}">
+          <div role="dialog" aria-label="Ro‘yxatdan o‘tgan sana oralig‘i" style="position:absolute;top:40px;left:{{ datePopLeft }};right:{{ datePopRight }};z-index:30;width:280px;padding:12px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:12px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-tertiary);letter-spacing:.04em;text-transform:uppercase;">Ro‘yxatdan o‘tgan sana</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+              <sc-for list="{{ datePresets }}" as="dp" hint-placeholder-count="4">
+                <button type="button" aria-pressed="{{ dp.on }}" onClick="{{ dp.onClick }}" style="height:30px;border:1px solid {{ dp.border }};border-radius:6px;background:{{ dp.bg }};color:{{ dp.fg }};font-size:12px;font-weight:500;cursor:pointer;" style-hover="border-color:var(--border-strong);">{{ dp.label }}</button>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-secondary);">Dan<input value="{{ dFrom }}" onChange="{{ onDFrom }}" placeholder="KK.OO.YYYY" inputMode="numeric" maxLength="10" style="height:32px;padding:0 8px;border:1px solid {{ dFromBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;outline:none;min-width:0;" style-focus="border-color:var(--border-focus);"></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-secondary);">Gacha<input value="{{ dTo }}" onChange="{{ onDTo }}" placeholder="KK.OO.YYYY" inputMode="numeric" maxLength="10" style="height:32px;padding:0 8px;border:1px solid {{ dToBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;outline:none;min-width:0;" style-focus="border-color:var(--border-focus);"></label>
+            </div>
+            <sc-if value="{{ dateErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:12px;color:var(--danger-text);">Sana formati: KK.OO.YYYY, masalan 01.10.2026</span></sc-if>
+            <div style="display:flex;justify-content:flex-end;gap:6px;">
+              <button type="button" onClick="{{ resetDate }}" style="height:30px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);font-size:13px;cursor:pointer;" style-hover="background:var(--bg-hover);">Tozalash</button>
+              <button type="button" onClick="{{ applyDate }}" style="height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">Qo‘llash</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="flex:1;"></div>
+
+      <div ref="{{ colsRef }}" style="position:relative;display:{{ deskDisp }};">
+        <button type="button" aria-haspopup="dialog" aria-expanded="{{ colsOpen }}" aria-label="Ustunlarni sozlash" onClick="{{ toggleCols }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);"><i class="icon-columns-3" aria-hidden="true" style="font-size:14px;"></i><sc-if value="{{ notMobile }}" hint-placeholder-val="{{ true }}"><span>Ustunlar</span></sc-if></button>
+        <sc-if value="{{ colsOpen }}" hint-placeholder-val="{{ false }}">
+          <div role="dialog" aria-label="Ko‘rinadigan ustunlar" style="position:absolute;top:40px;right:0;z-index:30;width:260px;padding:6px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;">
+            <span style="padding:6px 8px 4px;font-size:12px;font-weight:600;color:var(--text-tertiary);letter-spacing:.04em;text-transform:uppercase;">Ustunlar</span>
+            <label style="height:34px;display:flex;align-items:center;gap:10px;padding:0 8px;border-radius:6px;font-size:13px;color:var(--text-tertiary);"><input type="checkbox" checked="{{ true }}" disabled="{{ true }}" style="width:16px;height:16px;margin:0;">Telegram ID<i class="icon-lock" aria-hidden="true" style="font-size:12px;margin-left:auto;"></i></label>
+            <sc-for list="{{ colOpts }}" as="c" hint-placeholder-count="5">
+              <label style="height:34px;display:flex;align-items:center;gap:10px;padding:0 8px;border-radius:6px;cursor:pointer;font-size:13px;" style-hover="background:var(--bg-hover);"><input type="checkbox" checked="{{ c.on }}" onChange="{{ c.onChange }}" style="width:16px;height:16px;margin:0;accent-color:var(--primary);">{{ c.label }}</label>
+            </sc-for>
+            <div style="height:1px;background:var(--border-default);margin:4px 0;"></div>
+            <span style="padding:4px 8px;font-size:12px;font-weight:600;color:var(--text-tertiary);letter-spacing:.04em;text-transform:uppercase;">Zichlik</span>
+            <div role="radiogroup" aria-label="Jadval zichligi" style="display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:2px;margin:0 6px 6px;background:var(--bg-subtle);border:1px solid var(--border-default);border-radius:6px;">
+              <sc-for list="{{ densOpts }}" as="d" hint-placeholder-count="2">
+                <button type="button" role="radio" aria-checked="{{ d.on }}" onClick="{{ d.onClick }}" style="height:28px;display:flex;align-items:center;justify-content:center;gap:4px;border:0;border-radius:4px;background:{{ d.bg }};box-shadow:{{ d.shadow }};color:{{ d.fg }};font-size:12px;font-weight:500;cursor:pointer;"><i class="icon-{{ d.icon }}" aria-hidden="true" style="font-size:13px;"></i>{{ d.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div role="group" aria-label="Holat bo‘yicha filtr" style="display:{{ deskFlex }};gap:6px;flex-wrap:wrap;">
+      <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="5">
+        <button type="button" aria-pressed="{{ c.on }}" onClick="{{ c.onClick }}" style="height:30px;display:flex;align-items:center;gap:6px;padding:0 10px;border:1px solid {{ c.border }};border-radius:15px;background:{{ c.bg }};color:{{ c.fg }};font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="border-color:{{ c.hover }};">
+          <i class="icon-{{ c.icon }}" aria-hidden="true" style="font-size:13px;color:{{ c.iconFg }};"></i>{{ c.label }}<span style="font-size:12px;color:{{ c.countFg }};font-weight:400;">{{ c.count }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;border-radius:6px;background:var(--bg-subtle);">
+        <span style="font-size:12px;color:var(--text-tertiary);margin-right:2px;">Faol filtrlar:</span>
+        <sc-for list="{{ activeChips }}" as="a" hint-placeholder-count="2">
+          <span style="height:26px;display:inline-flex;align-items:center;gap:4px;padding:0 2px 0 8px;border:1px solid var(--border-default);border-radius:4px;background:var(--bg-surface);font-size:12px;white-space:nowrap;"><span style="color:var(--text-tertiary);">{{ a.k }}:</span><span style="font-weight:500;font-family:{{ a.font }};">{{ a.v }}</span><button type="button" aria-label="Filtrni olib tashlash: {{ a.k }} {{ a.v }}" onClick="{{ a.remove }}" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:12px;"></i></button></span>
+        </sc-for>
+        <button type="button" onClick="{{ clearAll }}" style="height:26px;padding:0 8px;border:0;border-radius:4px;background:transparent;color:var(--text-link);font-size:12px;font-weight:500;cursor:pointer;" style-hover="text-decoration:underline;">Filtrlarni tozalash</button>
+        <span style="margin-left:auto;font-size:12px;color:var(--text-secondary);">{{ resultText }}</span>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="padding:56px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+      <span style="width:48px;height:48px;border-radius:12px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-cloud-off" aria-hidden="true" style="font-size:22px;"></i></span>
+      <h2 style="margin:0;font:var(--type-h3);">Sotuvchilar ro‘yxatini yuklab bo‘lmadi</h2>
+      <p style="margin:0;max-width:420px;color:var(--text-secondary);text-wrap:pretty;">Server javob bermadi. Filtrlar saqlanib qoldi — qayta urinib ko‘ring.</p>
+      <button type="button" onClick="{{ retry }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:16px;"></i>Qayta urinish</button>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">Xato ID: c41e-07ad · 06.11.2026, 23:44</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isEmptyAll }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:56px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+      <span style="width:48px;height:48px;border-radius:12px;background:var(--info-bg);color:var(--info-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-users" aria-hidden="true" style="font-size:22px;"></i></span>
+      <h2 style="margin:0;font:var(--type-h3);">Hali sotuvchi yo‘q</h2>
+      <p style="margin:0;max-width:420px;color:var(--text-secondary);text-wrap:pretty;">Sotuvchi botda /start bosgach, u shu ro‘yxatda «Ro‘yxatdan o‘tmoqda» holatida paydo bo‘ladi.</p>
+      <a href="https://t.me/SellerFlowBot" target="_blank" rel="noopener" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;text-decoration:none;" style-hover="background:var(--primary-hover);color:var(--primary-fg);"><i class="icon-send" aria-hidden="true" style="font-size:16px;"></i>Botni ochish</a>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showTable }}" hint-placeholder-val="{{ true }}">
+    <div style="border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);overflow:hidden;display:flex;flex-direction:column;">
+      <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
+        <div style="overflow:auto;max-height:{{ tableMaxH }}px;">
+          <table aria-label="Sotuvchilar" aria-busy="{{ isLoading }}" style="width:100%;min-width:{{ tableMinW }}px;border-collapse:separate;border-spacing:0;font-size:13px;">
+            <thead>
+              <tr>
+                <sc-for list="{{ heads }}" as="h" hint-placeholder-count="7">
+                  <th scope="col" aria-sort="{{ h.ariaSort }}" style="position:sticky;top:0;z-index:2;height:40px;padding:0 {{ h.padX }};background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:{{ h.align }};font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap;width:{{ h.w }};">
+                    <sc-if value="{{ h.sortable }}" hint-placeholder-val="{{ true }}">
+                      <button type="button" onClick="{{ h.onSort }}" aria-label="{{ h.sortAria }}" style="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 6px;margin:0 -6px;border:0;border-radius:4px;background:transparent;color:{{ h.fg }};font-size:12px;font-weight:600;cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);">{{ h.label }}<i class="icon-{{ h.icon }}" aria-hidden="true" style="font-size:13px;color:{{ h.iconFg }};"></i></button>
+                    </sc-if>
+                    <sc-if value="{{ h.plain }}" hint-placeholder-val="{{ false }}"><span>{{ h.label }}</span></sc-if>
+                  </th>
+                </sc-for>
+              </tr>
+            </thead>
+            <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+              <tbody>
+                <sc-for list="{{ skelRows }}" as="sr" hint-placeholder-count="10">
+                  <tr>
+                    <sc-for list="{{ sr.cells }}" as="sc" hint-placeholder-count="6">
+                      <td style="height:{{ rowH }}px;padding:0 16px;border-bottom:1px solid var(--border-default);"><div style="width:{{ sc.w }};height:12px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </sc-if>
+            <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+              <tbody>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+                  <tr tabIndex="0" aria-label="Sotuvchi {{ r.idText }}, {{ r.status }}. Kartani ochish" onClick="{{ r.open }}" onKeyDown="{{ r.onKey }}" onMouseEnter="{{ r.enter }}" onMouseLeave="{{ r.leave }}" style="cursor:pointer;background:{{ r.bg }};">
+                    <td style="height:{{ rowH }}px;padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;">
+                      <span style="display:inline-flex;align-items:center;gap:4px;">
+                        <span style="font-family:var(--font-mono);font-size:13px;font-weight:500;">{{ r.idText }}</span>
+                        <button type="button" aria-label="Telegram ID’dan nusxa olish: {{ r.idText }}" onClick="{{ r.copy }}" onKeyDown="{{ stop }}" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:{{ r.copyFg }};cursor:pointer;opacity:{{ r.copyOp }};" style-hover="background:var(--bg-active);color:var(--text-primary);" style-focus="opacity:1;"><i class="icon-{{ r.copyIcon }}" aria-hidden="true" style="font-size:13px;"></i></button>
+                      </span>
+                    </td>
+                    <sc-if value="{{ col.status }}" hint-placeholder-val="{{ true }}">
+                      <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;">
+                        <span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;">
+                          <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:18px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.sbg }};border:1px solid {{ r.sborder }};color:{{ r.sfg }};"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ r.sdot }};"></span>{{ r.status }}</span>
+                          <sc-if value="{{ r.hasLeft }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;line-height:14px;color:var(--orange-text);">{{ r.left }}</span></sc-if>
+                        </span>
+                      </td>
+                    </sc-if>
+                    <sc-if value="{{ col.channel }}" hint-placeholder-val="{{ true }}">
+                      <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:8px;"><span aria-hidden="true" style="width:8px;height:8px;border-radius:2px;background:{{ r.chColor }};"></span>{{ r.channel }}</span></td>
+                    </sc-if>
+                    <sc-if value="{{ col.tariff }}" hint-placeholder-val="{{ true }}">
+                      <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;color:var(--text-secondary);">Free (Beta)</td>
+                    </sc-if>
+                    <sc-if value="{{ col.activated }}" hint-placeholder-val="{{ true }}">
+                      <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;color:{{ r.actFg }};">{{ r.activated }}</td>
+                    </sc-if>
+                    <sc-if value="{{ col.started }}" hint-placeholder-val="{{ true }}">
+                      <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;color:var(--text-secondary);">{{ r.started }}</td>
+                    </sc-if>
+                    <td onClick="{{ stop }}" style="padding:0 8px;border-bottom:1px solid var(--border-default);text-align:right;position:relative;">
+                      <button type="button" aria-label="Amallar: {{ r.idText }}" aria-haspopup="menu" aria-expanded="{{ r.menuOpen }}" onClick="{{ r.toggleMenu }}" onKeyDown="{{ stop }}" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:{{ r.menuBg }};color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-active);color:var(--text-primary);"><i class="icon-ellipsis" aria-hidden="true" style="font-size:16px;"></i></button>
+                      <sc-if value="{{ r.menuOpen }}" hint-placeholder-val="{{ false }}">
+                        <div role="menu" aria-label="Amallar: {{ r.idText }}" onKeyDown="{{ menuKey }}" style="position:absolute;right:8px;top:{{ r.menuTop }};bottom:{{ r.menuBottom }};z-index:20;width:236px;padding:4px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;text-align:left;">
+                          <sc-for list="{{ r.actions }}" as="a" hint-placeholder-count="3">
+                            <sc-if value="{{ a.sep }}" hint-placeholder-val="{{ false }}"><div role="separator" style="height:1px;background:var(--border-default);margin:2px 0;"></div></sc-if>
+                            <button type="button" role="menuitem" onClick="{{ a.run }}" style="height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:{{ a.fg }};font-size:13px;cursor:pointer;text-align:left;white-space:nowrap;" style-hover="background:{{ a.hover }};"><i class="icon-{{ a.icon }}" aria-hidden="true" style="font-size:15px;color:{{ a.iconFg }};"></i>{{ a.label }}</button>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </sc-if>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+        <ul aria-label="Sotuvchilar" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;">
+          <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+            <sc-for list="{{ skelRows }}" as="sr" hint-placeholder-count="6">
+              <li style="padding:14px 16px;border-bottom:1px solid var(--border-default);display:flex;flex-direction:column;gap:8px;">
+                <div style="width:46%;height:14px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+                <div style="width:70%;height:10px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+              </li>
+            </sc-for>
+          </sc-if>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+            <li style="position:relative;border-bottom:1px solid var(--border-default);">
+              <button type="button" onClick="{{ r.open }}" aria-label="Sotuvchi {{ r.idText }}, {{ r.status }}. Kartani ochish" style="width:100%;display:flex;flex-direction:column;gap:6px;padding:12px 56px 12px 16px;border:0;background:transparent;text-align:left;cursor:pointer;color:var(--text-primary);" style-hover="background:var(--bg-hover);">
+                <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-family:var(--font-mono);font-size:14px;font-weight:500;">{{ r.idText }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:18px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ r.sbg }};border:1px solid {{ r.sborder }};color:{{ r.sfg }};"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ r.sdot }};"></span>{{ r.status }}</span>
+                  <sc-if value="{{ r.hasLeft }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--orange-text);">{{ r.left }}</span></sc-if>
+                </span>
+                <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;line-height:16px;color:var(--text-secondary);">
+                  <span aria-hidden="true" style="width:8px;height:8px;border-radius:2px;background:{{ r.chColor }};"></span>{{ r.channel }}<span aria-hidden="true">·</span>Boshladi {{ r.started }}<span aria-hidden="true">·</span>Faol {{ r.activated }}
+                </span>
+              </button>
+              <button type="button" aria-label="Amallar: {{ r.idText }}" aria-haspopup="menu" aria-expanded="{{ r.menuOpen }}" onClick="{{ r.toggleMenu }}" style="position:absolute;right:6px;top:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:{{ r.menuBg }};color:var(--text-secondary);cursor:pointer;"><i class="icon-ellipsis" aria-hidden="true" style="font-size:18px;"></i></button>
+              <sc-if value="{{ r.menuOpen }}" hint-placeholder-val="{{ false }}">
+                <div role="menu" aria-label="Amallar: {{ r.idText }}" onKeyDown="{{ menuKey }}" style="position:absolute;right:8px;top:52px;z-index:20;width:236px;padding:4px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;">
+                  <sc-for list="{{ r.actions }}" as="a" hint-placeholder-count="3">
+                    <sc-if value="{{ a.sep }}" hint-placeholder-val="{{ false }}"><div role="separator" style="height:1px;background:var(--border-default);margin:2px 0;"></div></sc-if>
+                    <button type="button" role="menuitem" onClick="{{ a.run }}" style="height:40px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:{{ a.fg }};font-size:14px;cursor:pointer;text-align:left;" style-hover="background:{{ a.hover }};"><i class="icon-{{ a.icon }}" aria-hidden="true" style="font-size:16px;color:{{ a.iconFg }};"></i>{{ a.label }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </li>
+          </sc-for>
+        </ul>
+      </sc-if>
+
+      <sc-if value="{{ isNoResults }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:48px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;">
+          <span style="width:44px;height:44px;border-radius:12px;background:var(--neutral-bg);color:var(--neutral-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-search-x" aria-hidden="true" style="font-size:20px;"></i></span>
+          <h2 style="margin:0;font:var(--type-h3);">Filtr bo‘yicha natija yo‘q</h2>
+          <p style="margin:0;max-width:380px;color:var(--text-secondary);text-wrap:pretty;">Telegram ID’ni tekshiring yoki ayrim filtrlarni olib tashlang.</p>
+          <button type="button" onClick="{{ clearAll }}" style="height:34px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-filter-x" aria-hidden="true" style="font-size:14px;"></i>Filtrlarni tozalash</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showPager }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--border-default);font-size:13px;color:var(--text-secondary);">
+          <label style="display:flex;align-items:center;gap:8px;">Qatorlar:
+            <select value="{{ pageSize }}" onChange="{{ onPageSize }}" aria-label="Sahifadagi qatorlar soni" style="height:30px;padding:0 6px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;">
+              <option value="25">25</option><option value="50">50</option><option value="100">100</option>
+            </select>
+          </label>
+          <span aria-live="polite">{{ rangeText }}</span>
+          <div style="flex:1;"></div>
+          <nav aria-label="Sahifalash" style="display:flex;align-items:center;gap:2px;">
+            <button type="button" aria-label="Oldingi sahifa" disabled="{{ prevDis }}" onClick="{{ prev }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ prevOp }};"><i class="icon-chevron-left" aria-hidden="true" style="font-size:16px;"></i></button>
+            <sc-for list="{{ pages }}" as="pg" hint-placeholder-count="5">
+              <sc-if value="{{ pg.gap }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:24px;text-align:center;color:var(--text-tertiary);">…</span></sc-if>
+              <sc-if value="{{ pg.btn }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="{{ pg.aria }}" aria-current="{{ pg.current }}" onClick="{{ pg.go }}" style="min-width:32px;height:32px;padding:0 6px;border:1px solid {{ pg.border }};border-radius:6px;background:{{ pg.bg }};color:{{ pg.fg }};font-size:13px;font-weight:{{ pg.weight }};cursor:pointer;" style-hover="border-color:var(--border-strong);">{{ pg.n }}</button></sc-if>
+            </sc-for>
+            <button type="button" aria-label="Keyingi sahifa" disabled="{{ nextDis }}" onClick="{{ next }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ nextOp }};"><i class="icon-chevron-right" aria-hidden="true" style="font-size:16px;"></i></button>
+          </nav>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSupport }}" hint-placeholder-val="{{ false }}">
+    <p style="margin:0;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-tertiary);"><i class="icon-info" aria-hidden="true" style="font-size:13px;"></i>SUPPORT roli: bloklash, qayta faollashtirish va CSV eksport faqat SUPERADMIN uchun.</p>
+  </sc-if>
+
+  <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" aria-hidden="true" style="position:absolute;inset:0;background:var(--bg-overlay);z-index:110;"></div>
+    <div style="position:absolute;inset:0;z-index:111;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;">
+      <form role="alertdialog" aria-modal="true" aria-labelledby="sfs-mt" aria-describedby="sfs-md" onSubmit="{{ submitModal }}" style="pointer-events:auto;width:480px;max-width:100%;max-height:100%;overflow:auto;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);box-sizing:border-box;display:flex;flex-direction:column;">
+        <div style="padding:20px 20px 0;display:flex;gap:14px;align-items:flex-start;">
+          <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:{{ m.iconBg }};color:{{ m.iconFg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ m.icon }}" aria-hidden="true" style="font-size:20px;"></i></span>
+          <div style="flex:1;min-width:0;">
+            <h2 id="sfs-mt" style="margin:0;font:var(--type-h3);"><span style="font-family:var(--font-mono);">{{ m.id }}</span> {{ m.titleRest }}</h2>
+            <p id="sfs-md" style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">{{ m.desc }}</p>
+          </div>
+          <button type="button" aria-label="Yopish" onClick="{{ closeModal }}" style="width:32px;height:32px;margin:-6px -6px 0 0;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:16px;"></i></button>
+        </div>
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+          <ul style="margin:0;padding:12px 14px;list-style:none;border-radius:8px;background:{{ m.listBg }};border:1px solid {{ m.listBorder }};display:flex;flex-direction:column;gap:8px;font-size:13px;">
+            <sc-for list="{{ m.items }}" as="it" hint-placeholder-count="3">
+              <li style="display:flex;gap:8px;align-items:flex-start;"><i class="icon-{{ it.icon }}" aria-hidden="true" style="font-size:14px;margin-top:3px;color:{{ it.fg }};"></i><span style="text-wrap:pretty;">{{ it.text }}</span></li>
+            </sc-for>
+          </ul>
+          <label style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:13px;font-weight:500;">Sabab <span style="color:var(--danger-text);">*</span><span style="font-weight:400;color:var(--text-tertiary);"> — auditga yoziladi</span></span>
+            <textarea ref="{{ reasonRef }}" value="{{ reason }}" onChange="{{ onReason }}" required="{{ true }}" aria-invalid="{{ reasonInvalid }}" aria-describedby="sfs-rerr" rows="3" placeholder="{{ m.placeholder }}" style="resize:vertical;min-height:76px;padding:8px 10px;border:1px solid {{ reasonBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;line-height:20px;outline:none;" style-focus="border-color:var(--border-focus);"></textarea>
+            <span style="display:flex;justify-content:space-between;gap:8px;font-size:12px;line-height:16px;">
+              <span id="sfs-rerr" role="alert" style="color:var(--danger-text);">{{ reasonErr }}</span>
+              <span style="color:var(--text-tertiary);">{{ reasonCount }}/500</span>
+            </span>
+          </label>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-radius:0 0 12px 12px;">
+          <button type="button" onClick="{{ closeModal }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Bekor qilish</button>
+          <button type="submit" disabled="{{ busy }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:{{ m.btnBg }};color:#fff;font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:{{ m.btnHover }};"><i class="icon-{{ m.btnIcon }}" aria-hidden="true" style="font-size:16px;animation:{{ m.btnAnim }};"></i>{{ m.btnLabel }}</button>
+        </div>
+      </form>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ mobileBar }}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="height:64px;"></div>
+    <div style="position:fixed;left:0;right:0;bottom:0;z-index:40;padding:10px 16px 14px;background:var(--bg-surface);border-top:1px solid var(--border-default);box-shadow:0 -8px 24px rgba(12,10,9,.08);">
+      <button type="button" aria-haspopup="dialog" aria-expanded="{{ sheetOpen }}" onClick="{{ openSheet }}" style="width:100%;height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:8px;background:var(--primary);color:var(--primary-fg);font-size:15px;font-weight:600;cursor:pointer;"><i class="icon-sliders-horizontal" aria-hidden="true" style="font-size:17px;"></i>Filtrlar<sc-if value="{{ sheetHasCount }}" hint-placeholder-val="{{ false }}"><span style="min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:11px;background:var(--primary-fg);color:var(--primary);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">{{ sheetCount }}</span></sc-if></button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" aria-hidden="true" style="position:fixed;inset:0;z-index:90;background:var(--bg-overlay);"></div>
+    <div role="dialog" aria-modal="true" aria-labelledby="sfs-sheet-t" style="position:fixed;left:0;right:0;bottom:0;z-index:91;max-height:86%;display:flex;flex-direction:column;background:var(--bg-surface);border-radius:16px 16px 0 0;box-shadow:0 -16px 48px rgba(12,10,9,.24);">
+      <div aria-hidden="true" style="display:flex;justify-content:center;padding:8px 0 0;"><span style="width:40px;height:4px;border-radius:2px;background:var(--border-strong);"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 8px 8px 20px;border-bottom:1px solid var(--border-default);">
+        <h2 id="sfs-sheet-t" style="margin:0;flex:1;font-size:17px;line-height:24px;font-weight:600;">Filtrlar</h2>
+        <button type="button" aria-label="Filtrlarni yopish" onClick="{{ closeSheet }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--text-secondary);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:20px;"></i></button>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:22px;">
+        <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:10px;">
+          <legend style="padding:0;margin-bottom:10px;font-size:13px;font-weight:600;color:var(--text-secondary);">Holat</legend>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="5">
+              <button type="button" aria-pressed="{{ c.on }}" onClick="{{ c.onClick }}" style="height:40px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid {{ c.border }};border-radius:20px;background:{{ c.bg }};color:{{ c.fg }};font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;"><i class="icon-{{ c.icon }}" aria-hidden="true" style="font-size:14px;color:{{ c.iconFg }};"></i>{{ c.label }}<span style="font-size:12px;color:{{ c.countFg }};font-weight:400;">{{ c.count }}</span></button>
+            </sc-for>
+          </div>
+        </fieldset>
+        <fieldset style="margin:0;padding:0;border:0;">
+          <legend style="padding:0;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">Asosiy kanal</legend>
+          <sc-for list="{{ chanOpts }}" as="c" hint-placeholder-count="7">
+            <label style="min-height:44px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border-default);cursor:pointer;font-size:14px;">
+              <input type="checkbox" checked="{{ c.on }}" onChange="{{ c.onChange }}" style="width:20px;height:20px;margin:0;accent-color:var(--primary);">
+              <span aria-hidden="true" style="width:10px;height:10px;border-radius:2px;background:{{ c.color }};"></span>
+              <span style="flex:1;">{{ c.name }}</span>
+              <span style="font-size:13px;color:var(--text-tertiary);">{{ c.count }}</span>
+            </label>
+          </sc-for>
+        </fieldset>
+        <fieldset style="margin:0;padding:0;border:0;">
+          <legend style="padding:0;margin-bottom:10px;font-size:13px;font-weight:600;color:var(--text-secondary);">Ro‘yxatdan o‘tgan sana</legend>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <sc-for list="{{ datePresets }}" as="dp" hint-placeholder-count="4">
+              <button type="button" aria-pressed="{{ dp.on }}" onClick="{{ dp.onClick }}" style="height:44px;border:1px solid {{ dp.border }};border-radius:8px;background:{{ dp.bg }};color:{{ dp.fg }};font-size:14px;font-weight:500;cursor:pointer;">{{ dp.label }}</button>
+            </sc-for>
+          </div>
+        </fieldset>
+      </div>
+      <div style="display:flex;gap:8px;padding:12px 16px 16px;border-top:1px solid var(--border-default);">
+        <button type="button" onClick="{{ clearAll }}" style="height:48px;padding:0 16px;border:1px solid var(--border-strong);border-radius:8px;background:var(--bg-surface);color:var(--text-primary);font-size:15px;font-weight:500;cursor:pointer;">Tozalash</button>
+        <button type="button" onClick="{{ closeSheet }}" style="flex:1;height:48px;border:0;border-radius:8px;background:var(--primary);color:var(--primary-fg);font-size:15px;font-weight:600;cursor:pointer;">{{ sheetResult }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:absolute;left:{{ toastLeft }};right:{{ toastRight }};bottom:20px;z-index:120;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;max-width:440px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.28);font-size:14px;">
+      <i class="icon-{{ toast.icon }}" aria-hidden="true" style="font-size:16px;color:{{ toast.iconFg }};"></i>
+      <span style="flex:1;min-width:0;"><strong style="font-weight:600;">{{ toast.title }}</strong><span style="opacity:.75;"> · {{ toast.sub }}</span></span>
+      <button type="button" aria-label="Xabarni yopish" onClick="{{ closeToast }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-inverse);cursor:pointer;opacity:.7;" style-hover="opacity:1;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1100},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;SUPERADMIN&quot;,&quot;SUPPORT&quot;],&quot;default&quot;:&quot;SUPERADMIN&quot;,&quot;tsType&quot;:&quot;'SUPERADMIN'|'SUPPORT'&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;noResults&quot;,&quot;empty&quot;,&quot;error&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;menu&quot;,&quot;block&quot;,&quot;reactivate&quot;,&quot;toast&quot;,&quot;compact&quot;,&quot;filtered&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(page: string, id?: string) =&gt; void&quot;}}">
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const nf = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+const pad = n => String(n).padStart(2, '0');
+const dmy = t => { const d = new Date(t); return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); };
+const parseD = s => { const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s || ''); if (!m) return null; const d = new Date(+m[3], +m[2] - 1, +m[1]); return d.getMonth() === +m[2] - 1 ? d.getTime() : null; };
+const TODAY = new Date(2026, 10, 6).getTime(), DAY = 864e5;
+
+const STATUSES = [
+  { id: 'active', label: 'Faol', count: 1284, tone: 'success', icon: 'circle-check' },
+  { id: 'onboarding', label: 'Ro‘yxatdan o‘tmoqda', count: 96, tone: 'info', icon: 'loader-circle' },
+  { id: 'blocked', label: 'Bloklangan', count: 12, tone: 'danger', icon: 'ban' },
+  { id: 'deletion', label: 'O‘chirish so‘ralgan', count: 7, tone: 'orange', icon: 'user-x' },
+  { id: 'closed', label: 'Yopilgan', count: 13, tone: 'neutral', icon: 'archive' },
+];
+const SMAP = Object.fromEntries(STATUSES.map(s => [s.id, s]));
+const CHANNELS = [['uzum', 'Uzum Market', 1, .36], ['instagram', 'Instagram', 4, .21], ['tgshop', 'Telegram savdo', 5, .15], ['wb', 'Wildberries', 2, .11], ['offline', 'Offline do‘kon', 6, .08], ['ozon', 'Ozon', 3, .05], ['other', 'Boshqa', 7, .04]];
+const CMAP = Object.fromEntries(CHANNELS.map(c => [c[0], { id: c[0], name: c[1], color: `var(--chart-${c[2]})` }]));
+
+const SELLERS = (() => {
+  const r = rng(1412);
+  const pool = STATUSES.flatMap(s => Array(s.count).fill(s.id));
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const pick = () => { let x = r(); for (const c of CHANNELS) { if ((x -= c[3]) <= 0) return c[0]; } return 'other'; };
+  const fixed = { 0: ['517334902', 'active', 'uzum'], 1: ['402118775', 'active', 'instagram'], 3: ['388902114', 'deletion', 'wb'], 6: ['388102557', 'blocked', 'tgshop'], 9: ['611908233', 'active', 'ozon'] };
+  const seen = new Set();
+  return pool.map((status, i) => {
+    let id = String(Math.floor(2e8 + r() * 7.9e8)), ch = pick();
+    if (fixed[i]) { [id, , ch] = fixed[i]; status = fixed[i][1]; }
+    while (seen.has(id)) id = String(+id + 1); seen.add(id);
+    const age = status === 'onboarding' ? Math.floor(r() * 14) : Math.floor(Math.pow(r(), .8) * 250) + (i < 12 ? 0 : 1);
+    const started = TODAY - age * DAY - Math.floor(r() * 20) * 36e5;
+    const activated = status === 'onboarding' ? null : started + Math.floor(r() * 3) * DAY + Math.floor(r() * 6) * 36e5;
+    return { id, status, channel: ch, started, activated, left: status === 'deletion' ? 1 + Math.floor(r() * 29) : null };
+  }).map((s, i) => i === 3 ? { ...s, left: 12 } : s);
+})();
+const SWAP = [...SELLERS];
+const COLS = [['status', 'Holat'], ['channel', 'Asosiy kanal'], ['tariff', 'Tarif'], ['activated', 'Faollashtirilgan'], ['started', 'Boshlagan sana']];
+const tone = t => ({ bg: `var(--${t}-bg)`, border: `var(--${t}-border)`, fg: `var(--${t}-text)`, dot: `var(--${t}-icon)` });
+const fmtId = id => id.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const VIEWS = [
+  { id: 'all', label: 'Barchasi', icon: 'list', st: [] },
+  { id: 'blocked', label: 'Bloklanganlar', icon: 'ban', st: ['blocked'] },
+  { id: 'deletion', label: 'O‘chirish kutilmoqda', icon: 'user-x', st: ['deletion'] },
+];
+const PRESETS = [['7', 'Oxirgi 7 kun'], ['30', 'Oxirgi 30 kun'], ['90', 'Oxirgi 90 kun'], ['all', 'Barcha vaqt']];
+
+class Component extends DCLogic {
+  state = {
+    q: '', st: [], ch: [], dFrom: '', dTo: '', dDraftFrom: '', dDraftTo: '', dPreset: 'all', dErr: false,
+    pop: null, sort: ['started', 'desc'], cols: { status: true, channel: true, tariff: true, activated: true, started: true },
+    density: null, pageSize: 25, page: 1, hoverRow: null, menu: undefined, copied: null,
+    modal: undefined, reason: '', reasonTouched: false, busy: false, overrides: {}, toast: undefined, view: null,
+  };
+  rootRef = React.createRef(); chanRef = React.createRef(); dateRef = React.createRef(); colsRef = React.createRef(); reasonRef = React.createRef();
+
+  componentDidMount() {
+    if (this.props.view === 'noResults') this.setState({ q: '999 000', st: ['blocked'], view: 'default' });
+    if (this.props.demo === 'filtered') this.setState({ st: ['active', 'deletion'], ch: ['uzum', 'wb'], dPreset: '90' });
+    this.md = e => {
+      const p = this.state.pop; if (!p) return;
+      const ref = { chan: this.chanRef, date: this.dateRef, cols: this.colsRef }[p];
+      if (ref && ref.current && !ref.current.contains(e.target)) this.setState({ pop: null });
+    };
+    document.addEventListener('mousedown', this.md);
+    this.md2 = e => { if (this.state.menu != null && !(e.target.closest && e.target.closest('[role="menu"],[aria-haspopup="menu"]'))) this.setState({ menu: null }); };
+    document.addEventListener('mousedown', this.md2);
+  }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.md); document.removeEventListener('mousedown', this.md2); clearTimeout(this.tt); clearTimeout(this.tb); clearTimeout(this.tc); clearTimeout(this.tr); }
+
+  nav = (...a) => this.props.onNavigate && this.props.onNavigate(...a);
+  set = (patch) => this.setState({ ...patch, page: 1, menu: null });
+  showToast = toast => { clearTimeout(this.tt); this.setState({ toast }); this.tt = setTimeout(() => this.setState({ toast: null }), 5000); };
+  openModal = (kind, id) => this.setState({ modal: { kind, id }, reason: '', reasonTouched: false, busy: false, menu: null }, () => setTimeout(() => this.reasonRef.current && this.reasonRef.current.focus({ preventScroll: true }), 30));
+  closeModal = () => { if (!this.state.busy) this.setState({ modal: null }); };
+  statusOf = s => this.state.overrides[s.id] || s.status;
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const isSuper = p.role !== 'SUPPORT';
+    const cw = p.contentWidth ?? 1136;
+    const mobile = cw < 640;
+    const view = s.view ?? p.view ?? 'default';
+    const demo = p.demo || 'none';
+    const density = s.density ?? (demo === 'compact' ? 'compact' : 'comfortable');
+    const st = s.st;
+    const menuIdx = s.menu === undefined ? (demo === 'menu' ? 0 : null) : s.menu;
+    const modal = s.modal === undefined ? (demo === 'block' ? { kind: 'block', id: '517334902' } : demo === 'reactivate' ? { kind: 'reactivate', id: '388102557' } : null) : s.modal;
+    const toast = s.toast === undefined ? (demo === 'toast' ? { icon: 'circle-check', iconFg: 'var(--success-icon)', title: 'Sotuvchi bloklandi', sub: 'auditga yozildi' } : null) : s.toast;
+
+    const digits = s.q.replace(/\s/g, '');
+    const qBad = /[^\d]/.test(digits);
+    let dFromT = parseD(s.dFrom), dToT = parseD(s.dTo);
+    if (s.dPreset !== 'all' && s.dPreset !== 'custom') { dFromT = TODAY - (+s.dPreset - 1) * DAY; dToT = null; }
+    const all = view === 'empty' ? [] : SELLERS;
+    const filtered = all.filter(x => {
+      const xs = this.statusOf(x);
+      if (digits && !qBad && !x.id.includes(digits)) return false;
+      if (qBad && digits) return false;
+      if (st.length && !st.includes(xs)) return false;
+      if (s.ch.length && !s.ch.includes(x.channel)) return false;
+      if (dFromT != null && x.started < dFromT) return false;
+      if (dToT != null && x.started >= dToT + DAY) return false;
+      return true;
+    });
+    const [sk, sd] = s.sort, dir = sd === 'asc' ? 1 : -1;
+    const sortVal = x => sk === 'id' ? +x.id : sk === 'status' ? STATUSES.findIndex(q => q.id === this.statusOf(x)) : sk === 'channel' ? CMAP[x.channel].name : sk === 'activated' ? (x.activated ?? -1) : x.started;
+    const sorted = [...filtered].sort((a, b) => { const va = sortVal(a), vb = sortVal(b); return (va < vb ? -1 : va > vb ? 1 : 0) * dir; });
+    const total = sorted.length, ps = s.pageSize, pagesN = Math.max(1, Math.ceil(total / ps)), page = Math.min(s.page, pagesN);
+    const pageRows = sorted.slice((page - 1) * ps, page * ps);
+
+    const counts = Object.fromEntries(STATUSES.map(x => [x.id, 0]));
+    SELLERS.forEach(x => counts[this.statusOf(x)]++);
+    const statusChips = STATUSES.map(x => {
+      const on = st.includes(x.id), t = tone(x.tone);
+      return { label: x.label, count: nf(view === 'empty' ? 0 : counts[x.id]), icon: on ? 'check' : x.icon, on,
+        bg: on ? t.bg : 'var(--bg-surface)', border: on ? t.dot : 'var(--border-default)', fg: on ? t.fg : 'var(--text-primary)', iconFg: on ? t.dot : 'var(--text-tertiary)', countFg: on ? t.fg : 'var(--text-tertiary)', hover: on ? t.dot : 'var(--border-strong)',
+        onClick: () => this.set({ st: on ? st.filter(i => i !== x.id) : [...st, x.id] }) };
+    });
+    const chCounts = Object.fromEntries(CHANNELS.map(c => [c[0], 0])); SELLERS.forEach(x => chCounts[x.channel]++);
+    const chanOpts = CHANNELS.map(([id, name, col]) => ({ name, color: `var(--chart-${col})`, count: nf(chCounts[id]), on: s.ch.includes(id), onChange: () => this.set({ ch: s.ch.includes(id) ? s.ch.filter(i => i !== id) : [...s.ch, id] }) }));
+
+    const dateLabel = s.dPreset === 'custom' ? `${s.dFrom || '…'} – ${s.dTo || '…'}` : s.dPreset !== 'all' ? PRESETS.find(x => x[0] === s.dPreset)[1] : null;
+    const activeChips = [
+      ...(digits ? [{ k: 'Telegram ID', v: digits, font: 'var(--font-mono)', remove: () => this.set({ q: '' }) }] : []),
+      ...st.map(id => ({ k: 'Holat', v: SMAP[id].label, font: 'inherit', remove: () => this.set({ st: st.filter(i => i !== id) }) })),
+      ...s.ch.map(id => ({ k: 'Kanal', v: CMAP[id].name, font: 'inherit', remove: () => this.set({ ch: s.ch.filter(i => i !== id) }) })),
+      ...(dateLabel ? [{ k: 'Sana', v: dateLabel, font: 'inherit', remove: () => this.set({ dPreset: 'all', dFrom: '', dTo: '' }) }] : []),
+    ];
+    const clearAll = () => this.set({ q: '', st: [], ch: [], dPreset: 'all', dFrom: '', dTo: '' });
+
+    const curView = !digits && !s.ch.length && s.dPreset === 'all' ? VIEWS.find(v => v.st.length === st.length && v.st.every(i => st.includes(i))) : null;
+    const views = VIEWS.map(v => { const on = curView && curView.id === v.id; return { label: v.label, icon: v.icon, on, count: nf(view === 'empty' ? 0 : v.st.length ? counts[v.st[0]] : SELLERS.length), line: on ? 'var(--primary)' : 'transparent', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', weight: on ? 600 : 500, onClick: () => this.set({ st: v.st, q: '', ch: [], dPreset: 'all', dFrom: '', dTo: '' }) }; });
+
+    const visibleCols = COLS.filter(([k]) => s.cols[k]);
+    const sortable = { id: 1, status: 1, channel: 1, activated: 1, started: 1 };
+    const heads = [['id', 'Telegram ID'], ...visibleCols, ['actions', '']].map(([k, label]) => {
+      const on = sk === k, can = !!sortable[k];
+      return { label, sortable: can, plain: !can, padX: k === 'actions' ? '8px' : '16px', align: k === 'actions' ? 'right' : 'left', w: k === 'actions' ? '56px' : 'auto',
+        ariaSort: can ? (on ? (sd === 'asc' ? 'ascending' : 'descending') : 'none') : undefined,
+        icon: on ? (sd === 'asc' ? 'arrow-up' : 'arrow-down') : 'arrow-up-down', iconFg: on ? 'var(--text-primary)' : 'var(--text-disabled)', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)',
+        sortAria: `${label} bo‘yicha saralash` + (on ? (sd === 'asc' ? ', o‘sish tartibida' : ', kamayish tartibida') : ''),
+        onSort: () => this.setState({ sort: [k, on && sd === 'desc' ? 'asc' : 'desc'], page: 1 }) };
+    });
+
+    const rowH = density === 'compact' ? 36 : 52;
+    const rows = pageRows.map((x, i) => {
+      const xs = this.statusOf(x), S = SMAP[xs], t = tone(S.tone), idText = fmtId(x.id);
+      const hov = s.hoverRow === x.id, mOpen = menuIdx === i;
+      const actions = [
+        { label: 'Batafsil', icon: 'arrow-up-right', run: () => this.nav('seller', x.id) },
+        { label: 'Kirish so‘rovi yuborish', icon: 'key-round', run: () => { this.setState({ menu: null }); this.showToast({ icon: 'send', iconFg: 'var(--info-icon)', title: `So‘rov ${idText} ga yuborildi`, sub: 'sotuvchi botda tasdiqlashi kerak' }); } },
+      ];
+      if (isSuper && (xs === 'active' || xs === 'onboarding')) actions.push({ sep: true, label: 'Bloklash', icon: 'ban', danger: true, run: () => this.openModal('block', x.id) });
+      if (isSuper && xs === 'blocked') actions.push({ sep: true, label: 'Qayta faollashtirish', icon: 'rotate-ccw', run: () => this.openModal('reactivate', x.id) });
+      return {
+        idText, status: S.label, sbg: t.bg, sborder: t.border, sfg: t.fg, sdot: t.dot,
+        hasLeft: xs === 'deletion' && x.left != null, left: `${x.left} kun qoldi`,
+        channel: CMAP[x.channel].name, chColor: CMAP[x.channel].color,
+        activated: x.activated ? dmy(x.activated) : '—', actFg: x.activated ? 'var(--text-secondary)' : 'var(--text-tertiary)',
+        started: dmy(x.started),
+        bg: hov || mOpen ? 'var(--bg-hover)' : 'transparent',
+        copyOp: hov || s.copied === x.id ? 1 : 0, copyIcon: s.copied === x.id ? 'check' : 'copy', copyFg: s.copied === x.id ? 'var(--success-icon)' : 'var(--text-tertiary)',
+        copy: e => { e.stopPropagation(); try { navigator.clipboard && navigator.clipboard.writeText(x.id); } catch (_) {} clearTimeout(this.tc); this.setState({ copied: x.id }); this.tc = setTimeout(() => this.setState({ copied: null }), 1500); },
+        open: () => this.nav('seller', x.id),
+        onKey: e => { if (e.target !== e.currentTarget) return; if (e.key === 'Enter') { e.preventDefault(); this.nav('seller', x.id); } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const sib = e.key === 'ArrowDown' ? e.currentTarget.nextElementSibling : e.currentTarget.previousElementSibling; sib && sib.focus(); } },
+        enter: () => this.state.hoverRow !== x.id && this.setState({ hoverRow: x.id }),
+        leave: () => this.setState({ hoverRow: null }),
+        menuOpen: mOpen, menuBg: mOpen ? 'var(--bg-active)' : 'transparent',
+        toggleMenu: e => { e.stopPropagation(); this.setState({ menu: mOpen ? null : i }, () => { if (!mOpen) setTimeout(() => { const m = this.rootRef.current && this.rootRef.current.querySelector('[role="menu"] [role="menuitem"]'); m && m.focus({ preventScroll: true }); }, 0); }); },
+        menuTop: i >= pageRows.length - 3 && pageRows.length > 4 ? 'auto' : 'calc(100% - 6px)', menuBottom: i >= pageRows.length - 3 && pageRows.length > 4 ? 'calc(100% - 6px)' : 'auto',
+        actions: actions.map(a => ({ ...a, sep: !!a.sep, fg: a.danger ? 'var(--danger-text)' : 'var(--text-primary)', iconFg: a.danger ? 'var(--danger-icon)' : 'var(--text-tertiary)', hover: a.danger ? 'var(--danger-bg)' : 'var(--bg-hover)' })),
+      };
+    });
+
+    // pagination
+    const nums = new Set([1, pagesN, page - 1, page, page + 1].filter(n => n >= 1 && n <= pagesN));
+    const pages = []; let last = 0;
+    [...nums].sort((a, b) => a - b).forEach(n => { if (n - last > 1) pages.push({ gap: true, btn: false }); const cur = n === page; pages.push({ gap: false, btn: true, n, aria: `${n}-sahifa`, current: cur ? 'page' : undefined, bg: cur ? 'var(--primary-subtle)' : 'var(--bg-surface)', fg: cur ? 'var(--primary-subtle-fg)' : 'var(--text-primary)', border: cur ? 'var(--primary)' : 'var(--border-default)', weight: cur ? 600 : 400, go: () => this.setState({ page: n, menu: null }) }); last = n; });
+
+    // modal
+    let m = {};
+    if (modal) {
+      const idText = fmtId(modal.id), block = modal.kind === 'block';
+      m = block ? {
+        id: idText, titleRest: 'bloklansinmi?', icon: 'ban', iconBg: 'var(--danger-bg)', iconFg: 'var(--danger-icon)',
+        desc: 'Bloklash darhol kuchga kiradi. Istalgan vaqtda qayta faollashtirish mumkin.',
+        listBg: 'var(--danger-bg)', listBorder: 'var(--danger-border)',
+        items: [
+          { icon: 'circle-pause', fg: 'var(--danger-icon)', text: 'Botda biznes amallari to‘xtaydi: hisoblash va saqlash ishlamaydi.' },
+          { icon: 'database', fg: 'var(--text-tertiary)', text: 'Ma’lumot o‘chmaydi — sotuvchining saqlangan hisoblari joyida qoladi.' },
+          { icon: 'key-round', fg: 'var(--text-tertiary)', text: 'Faol kirish ruxsatlari bekor qilinadi.' },
+          { icon: 'scroll-text', fg: 'var(--text-tertiary)', text: 'Amal va sabab audit jurnaliga yoziladi.' },
+        ],
+        placeholder: 'Masalan: Firibgarlik shikoyati, murojaat #4821',
+        btnBg: 'var(--danger-solid)', btnHover: 'var(--danger-solid-hover)', btnIcon: s.busy ? 'loader-circle' : 'ban', btnLabel: s.busy ? 'Bloklanmoqda…' : 'Bloklash',
+      } : {
+        id: idText, titleRest: 'qayta faollashtirilsinmi?', icon: 'rotate-ccw', iconBg: 'var(--success-bg)', iconFg: 'var(--success-icon)',
+        desc: 'Sotuvchi botdan yana to‘liq foydalana oladi.',
+        listBg: 'var(--bg-subtle)', listBorder: 'var(--border-default)',
+        items: [
+          { icon: 'circle-play', fg: 'var(--success-icon)', text: 'Hisoblash va saqlash amallari tiklanadi.' },
+          { icon: 'send', fg: 'var(--text-tertiary)', text: 'Sotuvchiga botda xabar yuboriladi.' },
+          { icon: 'scroll-text', fg: 'var(--text-tertiary)', text: 'Amal va sabab audit jurnaliga yoziladi.' },
+        ],
+        placeholder: 'Masalan: Shikoyat tekshirildi, asossiz',
+        btnBg: 'var(--primary)', btnHover: 'var(--primary-hover)', btnIcon: s.busy ? 'loader-circle' : 'rotate-ccw', btnLabel: s.busy ? 'Tekshirilmoqda…' : 'Qayta faollashtirish',
+      };
+      m.btnAnim = s.busy ? 'sfSpin .8s linear infinite' : 'none';
+    }
+    const reasonEmpty = !s.reason.trim();
+    const reasonInvalid = s.reasonTouched && reasonEmpty;
+
+    const loading = view === 'loading';
+    const isError = view === 'error';
+    const isEmptyAll = view === 'empty';
+    const noRes = view === 'noResults' || (!loading && !isError && !isEmptyAll && total === 0);
+    const showTable = !isError && !isEmptyAll;
+
+    return {
+      rootRef: this.rootRef, chanRef: this.chanRef, dateRef: this.dateRef, colsRef: this.colsRef, reasonRef: this.reasonRef,
+      isSuper, isSupport: !isSuper, notMobile: !mobile,
+      totalText: nf(view === 'empty' ? 0 : SELLERS.length),
+      exportCsv: () => this.showToast({ icon: 'file-down', iconFg: 'var(--success-icon)', title: `CSV tayyor: ${nf(total)} qator`, sub: 'faqat metadata · auditga yozildi' }),
+      views,
+      q: s.q, hasQ: !!s.q, qBad, qBorder: qBad ? 'var(--danger-icon)' : 'var(--border-input)', searchMax: mobile ? '100%' : '320px',
+      onQ: e => this.set({ q: e.target.value.slice(0, 16) }), clearQ: () => this.set({ q: '' }),
+      chanOpen: s.pop === 'chan', toggleChan: () => this.setState({ pop: s.pop === 'chan' ? null : 'chan' }), chanOpts,
+      chanHasSel: s.ch.length > 0, chanSelCount: s.ch.length, chanBorder: s.ch.length ? 'var(--primary)' : 'var(--border-strong)', chanBorderStyle: 'solid', chanBg: s.ch.length ? 'var(--primary-subtle)' : 'var(--bg-surface)',
+      dateOpen: s.pop === 'date', dateBtnLabel: dateLabel || 'Ro‘yxatdan o‘tgan sana',
+      dateBorder: dateLabel ? 'var(--primary)' : 'var(--border-strong)', dateBorderStyle: 'solid', dateBg: dateLabel ? 'var(--primary-subtle)' : 'var(--bg-surface)',
+      datePopLeft: mobile ? 'auto' : '0', datePopRight: mobile ? '0' : 'auto',
+      toggleDate: () => this.setState({ pop: s.pop === 'date' ? null : 'date', dDraftFrom: s.dFrom, dDraftTo: s.dTo, dErr: false }),
+      datePresets: PRESETS.map(([id, label]) => { const on = s.dPreset === id; return { label, on, bg: on ? 'var(--primary-subtle)' : 'var(--bg-surface)', fg: on ? 'var(--primary-subtle-fg)' : 'var(--text-primary)', border: on ? 'var(--primary)' : 'var(--border-default)', onClick: () => this.set({ dPreset: id, dFrom: '', dTo: '', dDraftFrom: '', dDraftTo: '', pop: null }) }; }),
+      dFrom: s.dDraftFrom, dTo: s.dDraftTo,
+      onDFrom: e => this.setState({ dDraftFrom: e.target.value, dErr: false }), onDTo: e => this.setState({ dDraftTo: e.target.value, dErr: false }),
+      dFromBorder: s.dErr && s.dDraftFrom && parseD(s.dDraftFrom) == null ? 'var(--danger-icon)' : 'var(--border-input)',
+      dToBorder: s.dErr && s.dDraftTo && parseD(s.dDraftTo) == null ? 'var(--danger-icon)' : 'var(--border-input)',
+      dateErr: s.dErr,
+      resetDate: () => this.set({ dPreset: 'all', dFrom: '', dTo: '', dDraftFrom: '', dDraftTo: '', pop: null }),
+      applyDate: () => {
+        const f = s.dDraftFrom.trim(), t = s.dDraftTo.trim();
+        if ((f && parseD(f) == null) || (t && parseD(t) == null)) return this.setState({ dErr: true });
+        this.set({ dFrom: f, dTo: t, dPreset: f || t ? 'custom' : 'all', pop: null });
+      },
+      colsOpen: s.pop === 'cols', toggleCols: () => this.setState({ pop: s.pop === 'cols' ? null : 'cols' }),
+      colOpts: COLS.map(([k, label]) => ({ label, on: s.cols[k], onChange: () => this.setState({ cols: { ...s.cols, [k]: !s.cols[k] } }) })),
+      densOpts: [['comfortable', 'Keng', 'rows-3'], ['compact', 'Ixcham', 'rows-4']].map(([id, label, icon]) => { const on = density === id; return { label, icon, on, bg: on ? 'var(--bg-surface)' : 'transparent', shadow: on ? '0 1px 2px rgba(12,10,9,.12)' : 'none', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', onClick: () => this.setState({ density: id }) }; }),
+      statusChips, activeChips, hasActive: activeChips.length > 0 && !isEmptyAll, clearAll,
+      resultText: `${nf(total)} ta natija`,
+      isError, isEmptyAll, showTable, isLoading: loading,
+      isTable: !mobile, isCards: mobile, deskDisp: mobile ? 'none' : 'block', deskFlex: mobile ? 'none' : 'flex', mobileBar: mobile && !isEmptyAll && !isError, sheetOpen: mobile && (s.sheet ?? demo === 'sheet'), openSheet: () => this.setState({ sheet: true, pop: null }), closeSheet: () => this.setState({ sheet: false }), sheetCount: activeChips.length, sheetHasCount: activeChips.length > 0, sheetResult: nf(total) + ' ta natijani ko‘rsatish',
+      tableMaxH: density === 'compact' ? 700 : 660, tableMinW: 60 + 160 + visibleCols.length * 150,
+      heads, col: s.cols, rowH,
+      skelRows: Array.from({ length: mobile ? 6 : 10 }, (_, i) => ({ cells: Array.from({ length: visibleCols.length + 1 }, (_, j) => ({ w: ['60%', '70%', '55%', '45%', '50%', '65%'][(i + j) % 6] })) })),
+      rows: loading || noRes ? [] : rows, hasRows: !loading && !noRes,
+      isNoResults: noRes && !loading,
+      stop: e => e.stopPropagation(),
+      menuKey: e => {
+        const items = [...e.currentTarget.querySelectorAll('[role="menuitem"]')], i = items.indexOf(document.activeElement);
+        if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.setState({ menu: null }); }
+      },
+      showPager: !loading && !noRes, pageSize: String(ps),
+      onPageSize: e => this.setState({ pageSize: +e.target.value, page: 1 }),
+      rangeText: total ? `${nf((page - 1) * ps + 1)}–${nf(Math.min(page * ps, total))} / ${nf(total)}` : '0',
+      pages, prevDis: page <= 1, nextDis: page >= pagesN, prevOp: page <= 1 ? .4 : 1, nextOp: page >= pagesN ? .4 : 1,
+      prev: () => this.setState({ page: Math.max(1, page - 1), menu: null }), next: () => this.setState({ page: Math.min(pagesN, page + 1), menu: null }),
+      retry: () => { this.setState({ view: 'loading' }); clearTimeout(this.tr); this.tr = setTimeout(() => this.setState({ view: 'default' }), 1100); },
+      modalOpen: !!modal, m, closeModal: this.closeModal,
+      reason: s.reason, onReason: e => this.setState({ reason: e.target.value.slice(0, 500) }), reasonCount: s.reason.length,
+      reasonInvalid, reasonErr: reasonInvalid ? 'Sababni kiriting — u audit jurnaliga yoziladi.' : '', reasonBorder: reasonInvalid ? 'var(--danger-icon)' : 'var(--border-input)',
+      busy: s.busy,
+      submitModal: e => {
+        e.preventDefault();
+        if (reasonEmpty) { this.setState({ reasonTouched: true, modal }); this.reasonRef.current && this.reasonRef.current.focus(); return; }
+        this.setState({ busy: true, modal });
+        clearTimeout(this.tb);
+        this.tb = setTimeout(() => {
+          const block = modal.kind === 'block';
+          this.setState({ busy: false, modal: null, overrides: { ...this.state.overrides, [modal.id]: block ? 'blocked' : 'active' } });
+          this.showToast(block ? { icon: 'circle-check', iconFg: 'var(--success-icon)', title: 'Sotuvchi bloklandi', sub: 'auditga yozildi' } : { icon: 'circle-check', iconFg: 'var(--success-icon)', title: 'Sotuvchi qayta faollashtirildi', sub: 'auditga yozildi' });
+        }, 900);
+      },
+      onRootKey: e => { if (e.key === 'Escape') { if (modal) { e.stopPropagation(); this.closeModal(); } else if (s.pop) this.setState({ pop: null }); else if (menuIdx != null) this.setState({ menu: null }); } },
+      hasToast: !!toast, toast: toast || {}, closeToast: () => this.setState({ toast: null }),
+      toastLeft: mobile ? '12px' : 'auto', toastRight: mobile ? '12px' : '24px',
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+html,body{margin:0;height:100%;}
+a{color:var(--text-link);} a:hover{color:var(--primary-hover);}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfa] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfa] button,[data-sfa] input{font-family:inherit;}
+[data-sfa] [class^="icon-"]{line-height:1;display:inline-flex;}
+[data-sfa] input::placeholder{color:var(--text-tertiary);}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" data-sfa="" data-theme="{{ theme }}" style="display:flex;width:100%;height:100%;min-height:600px;background:var(--bg-app);color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased;overflow:hidden;">
+
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+    <aside style="width:44%;min-width:480px;max-width:620px;flex-shrink:0;background:{{ panelBg }};border-right:1px solid {{ panelBorder }};color:#f5f5f4;display:flex;flex-direction:column;justify-content:space-between;padding:40px 56px;box-sizing:border-box;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <img src="../../assets/logo-mark.svg" alt="" width="32" height="32" style="display:block;border-radius:6px;">
+        <span style="font-size:16px;font-weight:600;">SellerFlow Admin</span>
+        <span style="font-size:10px;line-height:14px;font-weight:600;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:rgba(248,113,113,.14);color:#fca5a5;border:1px solid rgba(248,113,113,.32);">PRODUCTION</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:32px;">
+        <h2 style="margin:0;font-size:30px;line-height:38px;font-weight:600;letter-spacing:-.015em;max-width:420px;text-wrap:pretty;">Platforma xodimlari uchun boshqaruv paneli</h2>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px;">
+          <li style="display:flex;align-items:center;gap:14px;font-size:16px;line-height:24px;"><span style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#78c9a0;"><i class="icon-shield-check" aria-hidden="true" style="font-size:18px;"></i></span>Majburiy 2FA</li>
+          <li style="display:flex;align-items:center;gap:14px;font-size:16px;line-height:24px;"><span style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#78c9a0;"><i class="icon-scroll-text" aria-hidden="true" style="font-size:18px;"></i></span>Har amal auditga yoziladi</li>
+          <li style="display:flex;align-items:center;gap:14px;font-size:16px;line-height:24px;"><span style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#ac9fd0;"><i class="icon-lock" aria-hidden="true" style="font-size:18px;"></i></span>Tijoriy ma’lumot faqat rozilik bilan</li>
+        </ul>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:16px;font-size:12px;line-height:16px;color:#a8a29e;">
+        <span>© 2026 SellerFlow</span><span style="font-family:var(--font-mono);">v1.4.0 · Asia/Tashkent</span>
+      </div>
+    </aside>
+  </sc-if>
+
+  <main style="flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:{{ mainPad }};box-sizing:border-box;">
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%;max-width:400px;display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+        <img src="../../assets/logo-mark.svg" alt="" width="28" height="28" style="display:block;border-radius:6px;">
+        <span style="font-size:15px;font-weight:600;">SellerFlow Admin</span>
+        <span style="font-size:10px;line-height:14px;font-weight:600;letter-spacing:.06em;padding:0 5px;border-radius:4px;background:var(--danger-bg);color:var(--danger-text);border:1px solid var(--danger-border);">PROD</span>
+      </div>
+    </sc-if>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:{{ cardJustify }};width:100%;max-width:400px;">
+      <div style="width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 1px 2px rgba(12,10,9,.04),0 8px 24px rgba(12,10,9,.06);padding:{{ cardPad }};box-sizing:border-box;display:flex;flex-direction:column;gap:20px;">
+
+        <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ false }}">
+          <ol aria-label="2FA ulash qadamlari" style="list-style:none;margin:0;padding:0;display:flex;align-items:center;gap:8px;">
+            <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+              <li aria-current="{{ st.current }}" style="display:flex;align-items:center;gap:8px;flex:{{ st.flex }};min-width:0;">
+                <span style="width:24px;height:24px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ st.bg }};color:{{ st.fg }};border:1px solid {{ st.border }};box-sizing:border-box;">
+                  <sc-if value="{{ st.done }}" hint-placeholder-val="{{ false }}"><i class="icon-check" aria-hidden="true" style="font-size:13px;"></i></sc-if>
+                  <sc-if value="{{ st.notDone }}" hint-placeholder-val="{{ true }}">{{ st.n }}</sc-if>
+                </span>
+                <span style="font-size:12px;font-weight:{{ st.weight }};color:{{ st.label }};white-space:nowrap;">{{ st.text }}<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">{{ st.sr }}</span></span>
+                <sc-if value="{{ st.line }}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="flex:1;height:1px;min-width:8px;background:{{ st.lineColor }};"></span></sc-if>
+              </li>
+            </sc-for>
+          </ol>
+        </sc-if>
+
+        <div style="display:flex;flex-direction:column;align-items:{{ hdr.align }};text-align:{{ hdr.textAlign }};gap:6px;">
+          <sc-if value="{{ hdr.icon }}" hint-placeholder-val="{{ false }}">
+            <span style="width:48px;height:48px;border-radius:12px;background:{{ hdr.iconBg }};border:1px solid {{ hdr.iconBorder }};color:{{ hdr.iconFg }};display:flex;align-items:center;justify-content:center;margin-bottom:8px;"><i class="icon-{{ hdr.icon }}" aria-hidden="true" style="font-size:22px;"></i></span>
+          </sc-if>
+          <h1 style="margin:0;font:var(--type-h2);letter-spacing:var(--tracking-tight);">{{ hdr.title }}</h1>
+          <p style="margin:0;color:var(--text-secondary);text-wrap:pretty;">{{ hdr.desc }}</p>
+        </div>
+
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+          <form onSubmit="{{ onLogin }}" novalidate="" style="display:flex;flex-direction:column;gap:16px;margin:0;">
+            <sc-if value="{{ loginErr }}" hint-placeholder-val="{{ false }}">
+              <div role="alert" style="display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:8px;background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger-text);">
+                <i class="icon-circle-alert" aria-hidden="true" style="font-size:18px;color:var(--danger-icon);margin-top:1px;"></i>
+                <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-weight:600;">Email yoki parol noto‘g‘ri</span><span style="font-size:13px;line-height:18px;">Tekshirib, qayta urinib ko‘ring. {{ attemptsText }}</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ locked }}" hint-placeholder-val="{{ false }}">
+              <div role="alert" style="display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:8px;background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger-text);">
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <i class="icon-lock" aria-hidden="true" style="font-size:18px;color:var(--danger-icon);margin-top:1px;"></i>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-weight:600;">Ko‘p marta xato kiritildi</span><span style="font-size:13px;line-height:18px;">15 daqiqadan keyin urinib ko‘ring.</span></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <span style="font-size:12px;">Qolgan vaqt</span>
+                  <div role="progressbar" aria-label="Bloklash tugashigacha" aria-valuemin="0" aria-valuemax="900" aria-valuenow="{{ lockLeft }}" style="flex:1;height:4px;border-radius:2px;background:var(--danger-border);overflow:hidden;"><div style="height:100%;width:{{ lockPct }}%;background:var(--danger-icon);"></div></div>
+                  <span aria-live="off" style="font-family:var(--font-mono);font-size:16px;font-weight:500;">{{ lockClock }}</span>
+                </div>
+              </div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label for="{{ uid }}-email" style="font-size:13px;font-weight:500;">Email</label>
+              <input id="{{ uid }}-email" ref="{{ firstRef }}" type="email" autocomplete="username" inputmode="email" placeholder="ism@sellerflow.uz" value="{{ email }}" onChange="{{ onEmail }}" disabled="{{ locked }}" aria-invalid="{{ emailInvalid }}" aria-describedby="{{ uid }}-email-err" style="height:40px;padding:0 12px;border:1px solid {{ emailBorder }};border-radius:6px;background:{{ inputBg }};color:var(--text-primary);font-size:14px;box-sizing:border-box;width:100%;">
+              <sc-if value="{{ emailErr }}" hint-placeholder-val="{{ false }}"><span id="{{ uid }}-email-err" style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--danger-text);"><i class="icon-circle-alert" aria-hidden="true" style="font-size:13px;"></i>{{ emailErr }}</span></sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label for="{{ uid }}-pw" style="font-size:13px;font-weight:500;">Parol</label>
+              <div style="position:relative;">
+                <input id="{{ uid }}-pw" type="{{ pwType }}" autocomplete="current-password" value="{{ password }}" onChange="{{ onPassword }}" disabled="{{ locked }}" aria-invalid="{{ pwInvalid }}" aria-describedby="{{ uid }}-pw-err" style="height:40px;padding:0 44px 0 12px;border:1px solid {{ pwBorder }};border-radius:6px;background:{{ inputBg }};color:var(--text-primary);font-size:14px;box-sizing:border-box;width:100%;">
+                <button type="button" onClick="{{ toggleShowPw }}" aria-label="{{ eyeLabel }}" aria-pressed="{{ showPw }}" disabled="{{ locked }}" style="position:absolute;right:4px;top:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="color:var(--text-primary);background:var(--bg-hover);"><i class="icon-{{ eyeIcon }}" aria-hidden="true" style="font-size:16px;"></i></button>
+              </div>
+              <sc-if value="{{ pwErr }}" hint-placeholder-val="{{ false }}"><span id="{{ uid }}-pw-err" style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--danger-text);"><i class="icon-circle-alert" aria-hidden="true" style="font-size:13px;"></i>{{ pwErr }}</span></sc-if>
+            </div>
+            <button type="submit" disabled="{{ submitDisabled }}" aria-busy="{{ loading }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:{{ submitBg }};color:{{ submitFg }};font-size:14px;font-weight:500;cursor:{{ submitCursor }};" style-hover="filter:brightness(.94);">
+              <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sfSpin .7s linear infinite;box-sizing:border-box;"></span></sc-if>
+              {{ loginLabel }}
+            </button>
+            <p style="margin:0;display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:18px;color:var(--text-secondary);"><i class="icon-info" aria-hidden="true" style="font-size:15px;color:var(--text-tertiary);margin-top:1px;"></i>Parolni tiklash uchun SUPERADMIN’ga murojaat qiling.</p>
+          </form>
+        </sc-if>
+
+        <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--border-default);border-radius:8px;">
+              <li style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border-default);"><span style="width:32px;height:32px;border-radius:8px;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);"><i class="icon-smartphone" aria-hidden="true" style="font-size:16px;"></i></span><span style="flex:1;font-weight:500;">Google Authenticator</span><span style="font-size:12px;color:var(--text-tertiary);">iOS · Android</span></li>
+              <li style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border-default);"><span style="width:32px;height:32px;border-radius:8px;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);"><i class="icon-smartphone" aria-hidden="true" style="font-size:16px;"></i></span><span style="flex:1;font-weight:500;">Microsoft Authenticator</span><span style="font-size:12px;color:var(--text-tertiary);">iOS · Android</span></li>
+              <li style="display:flex;align-items:center;gap:12px;padding:12px 14px;"><span style="width:32px;height:32px;border-radius:8px;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);"><i class="icon-smartphone" aria-hidden="true" style="font-size:16px;"></i></span><span style="flex:1;font-weight:500;">Authy</span><span style="font-size:12px;color:var(--text-tertiary);">iOS · Android · Desktop</span></li>
+            </ul>
+            <button type="button" ref="{{ firstRef }}" onClick="{{ toStep2 }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">Ilova o‘rnatildi, davom etish<i class="icon-arrow-right" aria-hidden="true" style="font-size:16px;"></i></button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:20px;align-items:center;">
+            <div style="width:200px;height:200px;background:#ffffff;border:1px solid var(--border-default);border-radius:8px;padding:8px;box-sizing:border-box;">
+              <svg role="img" aria-label="2FA ulash uchun QR kod" viewBox="0 0 29 29" width="182" height="182" shape-rendering="crispEdges" style="display:block;"><path d="{{ qrPath }}" fill="#0c0a09"></path></svg>
+            </div>
+            <div style="width:100%;display:flex;flex-direction:column;gap:6px;">
+              <span id="{{ uid }}-secret-l" style="font-size:13px;font-weight:500;">Kodni qo‘lda kiritish</span>
+              <div style="display:flex;align-items:center;gap:8px;padding:4px 4px 4px 12px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-subtle);">
+                <code aria-labelledby="{{ uid }}-secret-l" style="flex:1;font-family:var(--font-mono);font-size:13px;letter-spacing:0;min-width:0;color:var(--text-primary);">{{ secret }}</code>
+                <button type="button" ref="{{ firstRef }}" onClick="{{ copySecret }}" aria-label="Kalitni nusxalash" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 10px;border:1px solid var(--border-strong);border-radius:4px;background:var(--bg-surface);color:{{ copyFg }};font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);"><i class="icon-{{ copyIcon }}" aria-hidden="true" style="font-size:14px;"></i>{{ copyLabel }}</button>
+              </div>
+              <span role="status" style="font-size:12px;color:var(--text-tertiary);">{{ copyStatus }}</span>
+            </div>
+            <div style="width:100%;display:grid;grid-template-columns:1fr 2fr;gap:8px;">
+              <button type="button" onClick="{{ toStep1 }}" style="height:40px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Ortga</button>
+              <button type="button" onClick="{{ toStep3 }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">Davom etish<i class="icon-arrow-right" aria-hidden="true" style="font-size:16px;"></i></button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showOtp }}" hint-placeholder-val="{{ false }}">
+          <form onSubmit="{{ onOtpSubmit }}" style="display:flex;flex-direction:column;gap:16px;margin:0;">
+            <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
+              <legend style="font-size:13px;font-weight:500;margin-bottom:6px;padding:0;">6 xonali kod</legend>
+              <div onPaste="{{ onOtpPaste }}" style="display:flex;gap:8px;justify-content:space-between;">
+                <sc-for list="{{ otpCells }}" as="c" hint-placeholder-count="6">
+                  <input ref="{{ c.ref }}" value="{{ c.value }}" onChange="{{ c.onChange }}" onKeyDown="{{ c.onKeyDown }}" onFocus="{{ c.onFocus }}" disabled="{{ loading }}" inputmode="numeric" autocomplete="{{ c.ac }}" maxlength="6" aria-label="{{ c.label }}" aria-invalid="{{ otpErr }}" aria-describedby="{{ uid }}-otp-msg" style="flex:1;min-width:0;max-width:48px;height:52px;text-align:center;font-family:var(--font-mono);font-size:22px;font-weight:500;border:{{ c.borderW }} solid {{ c.border }};border-radius:8px;background:{{ c.bg }};color:var(--text-primary);box-sizing:border-box;padding:0;">
+                </sc-for>
+              </div>
+              <sc-if value="{{ otpErr }}" hint-placeholder-val="{{ false }}">
+                <span id="{{ uid }}-otp-msg" role="alert" style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--danger-text);"><i class="icon-circle-alert" aria-hidden="true" style="font-size:14px;"></i>Kod noto‘g‘ri yoki eskirgan</span>
+              </sc-if>
+              <sc-if value="{{ otpOk }}" hint-placeholder-val="{{ true }}">
+                <span id="{{ uid }}-otp-msg" style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text-secondary);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:13px;color:var(--text-tertiary);"></i>Kod har 30 soniyada yangilanadi<span style="font-family:var(--font-mono);color:var(--text-tertiary);white-space:nowrap;flex-shrink:0;">· {{ otpTick }} s</span></span>
+              </sc-if>
+            </fieldset>
+            <button type="submit" disabled="{{ loading }}" aria-busy="{{ loading }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">
+              <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sfSpin .7s linear infinite;box-sizing:border-box;"></span></sc-if>
+              {{ otpLabel }}
+            </button>
+            <button type="button" onClick="{{ otpBack }}" style="align-self:center;height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-arrow-left" aria-hidden="true" style="font-size:16px;"></i>Ortga</button>
+          </form>
+        </sc-if>
+
+        <sc-if value="{{ isChangePw }}" hint-placeholder-val="{{ false }}">
+          <form onSubmit="{{ onChangePw }}" novalidate="" style="display:flex;flex-direction:column;gap:16px;margin:0;">
+            <sc-if value="{{ cpErr }}" hint-placeholder-val="{{ false }}">
+              <div role="alert" style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger-text);font-size:13px;line-height:18px;"><i class="icon-circle-alert" aria-hidden="true" style="font-size:16px;color:var(--danger-icon);margin-top:1px;"></i>{{ cpErr }}</div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label for="{{ uid }}-cur" style="font-size:13px;font-weight:500;">Joriy (vaqtinchalik) parol</label>
+              <input id="{{ uid }}-cur" ref="{{ firstRef }}" type="password" autocomplete="current-password" value="{{ cur }}" onChange="{{ onCur }}" style="height:40px;padding:0 12px;border:1px solid var(--border-input);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;box-sizing:border-box;width:100%;">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label for="{{ uid }}-new" style="font-size:13px;font-weight:500;">Yangi parol</label>
+              <div style="position:relative;">
+                <input id="{{ uid }}-new" type="{{ newType }}" autocomplete="new-password" value="{{ nw }}" onChange="{{ onNew }}" aria-describedby="{{ uid }}-str {{ uid }}-req" style="height:40px;padding:0 44px 0 12px;border:1px solid var(--border-input);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;box-sizing:border-box;width:100%;">
+                <button type="button" onClick="{{ toggleShowNew }}" aria-label="{{ newEyeLabel }}" aria-pressed="{{ showNew }}" style="position:absolute;right:4px;top:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="color:var(--text-primary);background:var(--bg-hover);"><i class="icon-{{ newEyeIcon }}" aria-hidden="true" style="font-size:16px;"></i></button>
+              </div>
+              <div id="{{ uid }}-str" style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+                <div aria-hidden="true" style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+                  <sc-for list="{{ strengthBars }}" as="b" hint-placeholder-count="4"><span style="height:4px;border-radius:2px;background:{{ b.bg }};"></span></sc-for>
+                </div>
+                <span style="font-size:12px;font-weight:500;color:{{ strength.fg }};min-width:72px;text-align:right;">{{ strength.label }}</span>
+              </div>
+              <ul id="{{ uid }}-req" style="list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 12px;">
+                <sc-for list="{{ reqs }}" as="r" hint-placeholder-count="4">
+                  <li style="display:flex;align-items:center;gap:6px;font-size:12px;line-height:16px;color:{{ r.fg }};"><i class="icon-{{ r.icon }}" aria-hidden="true" style="font-size:13px;color:{{ r.iconFg }};"></i>{{ r.text }}<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">{{ r.sr }}</span></li>
+                </sc-for>
+              </ul>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label for="{{ uid }}-cf" style="font-size:13px;font-weight:500;">Yangi parolni takrorlang</label>
+              <input id="{{ uid }}-cf" type="{{ newType }}" autocomplete="new-password" value="{{ cf }}" onChange="{{ onCf }}" aria-invalid="{{ cfInvalid }}" style="height:40px;padding:0 12px;border:1px solid {{ cfBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;box-sizing:border-box;width:100%;">
+              <sc-if value="{{ cfMsg }}" hint-placeholder-val="{{ false }}"><span style="display:flex;gap:6px;align-items:center;font-size:12px;color:{{ cfMsgFg }};"><i class="icon-{{ cfMsgIcon }}" aria-hidden="true" style="font-size:13px;"></i>{{ cfMsg }}</span></sc-if>
+            </div>
+            <button type="submit" disabled="{{ loading }}" aria-busy="{{ loading }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">
+              <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sfSpin .7s linear infinite;box-sizing:border-box;"></span></sc-if>
+              {{ cpLabel }}
+            </button>
+          </form>
+        </sc-if>
+
+        <sc-if value="{{ isSession }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="font-family:var(--font-mono);font-size:12px;line-height:16px;color:var(--text-secondary);background:var(--bg-subtle);border-radius:6px;padding:8px 12px;text-align:center;">06.11.2026 · 06:30 – 14:30 · Asia/Tashkent</div>
+            <button type="button" ref="{{ firstRef }}" onClick="{{ toLogin }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-log-in" aria-hidden="true" style="font-size:16px;"></i>Qayta kirish</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDeleted }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;padding:12px;border:1px solid var(--border-default);border-radius:8px;font-size:13px;line-height:18px;">
+              <dt style="color:var(--text-tertiary);">Akkaunt</dt><dd style="margin:0;text-align:right;">d.aliyev@sellerflow.uz</dd>
+              <dt style="color:var(--text-tertiary);">Holat</dt><dd style="margin:0;display:flex;justify-content:flex-end;"><span style="font-size:12px;font-weight:500;padding:0 8px;border-radius:10px;background:var(--neutral-bg);color:var(--neutral-text);border:1px solid var(--neutral-border);">Yopilgan</span></dd>
+              <dt style="color:var(--text-tertiary);">Sana</dt><dd style="margin:0;text-align:right;">02.11.2026, 17:05</dd>
+            </dl>
+            <button type="button" ref="{{ firstRef }}" onClick="{{ toLogin }}" style="height:40px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Boshqa akkaunt bilan kirish</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSuccess }}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text-secondary);font-size:13px;">
+            <span aria-hidden="true" style="width:14px;height:14px;border:2px solid var(--primary);border-right-color:transparent;border-radius:50%;animation:sfSpin .7s linear infinite;box-sizing:border-box;"></span>Boshqaruv paneliga yo‘naltirilmoqda…
+          </div>
+          <button type="button" onClick="{{ toLogin }}" style="align-self:center;height:32px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--text-link);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Demoni boshidan boshlash</button>
+        </sc-if>
+      </div>
+    </div>
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%;max-width:400px;display:flex;justify-content:space-between;margin-top:24px;font-size:12px;color:var(--text-tertiary);"><span>© 2026 SellerFlow</span><span style="font-family:var(--font-mono);">v1.4.0</span></div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},
+&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;login&quot;,&quot;loginError&quot;,&quot;locked&quot;,&quot;setup1&quot;,&quot;setup2&quot;,&quot;setup3&quot;,&quot;otp&quot;,&quot;otpError&quot;,&quot;changePassword&quot;,&quot;sessionExpired&quot;,&quot;deleted&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;},
+&quot;autofocus&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},
+&quot;previewWidth&quot;:{&quot;editor&quot;:null,&quot;default&quot;:1440,&quot;tsType&quot;:&quot;number&quot;}}">
+const SECRET = 'JBSW Y3DP EHPK 3PXP K4ZQ 7M2A';
+const QR_PATH = (() => {
+  const N = 25; let seed = 20261106;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const m = Array.from({ length: N }, () => Array(N).fill(0));
+  const res = (x, y) => (x < 8 && y < 8) || (x >= N - 8 && y < 8) || (x < 8 && y >= N - 8) || (x >= 16 && x <= 20 && y >= 16 && y <= 20);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!res(x, y)) m[y][x] = rnd() > 0.5 ? 1 : 0;
+  for (let i = 8; i < N - 8; i++) { m[6][i] = i % 2 ? 0 : 1; m[i][6] = i % 2 ? 0 : 1; }
+  const finder = (ox, oy) => { for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) m[oy + y][ox + x] = (x === 0 || x === 6 || y === 0 || y === 6 || (x >= 2 && x <= 4 && y >= 2 && y <= 4)) ? 1 : 0; };
+  finder(0, 0); finder(N - 7, 0); finder(0, N - 7);
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) m[16 + y][16 + x] = (x === 0 || x === 4 || y === 0 || y === 4 || (x === 2 && y === 2)) ? 1 : 0;
+  let d = '';
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (m[y][x]) d += `M${x + 2} ${y + 2}h1v1h-1z`;
+  return d;
+})();
+const EMPTY6 = () => ['', '', '', '', '', ''];
+const STRENGTH = [
+  { label: 'Juda zaif', fg: 'var(--danger-text)', bar: 'var(--danger-icon)' },
+  { label: 'Zaif', fg: 'var(--orange-text)', bar: 'var(--orange-icon)' },
+  { label: 'O‘rtacha', fg: 'var(--warning-text)', bar: 'var(--warning-icon)' },
+  { label: 'Kuchli', fg: 'var(--success-text)', bar: 'var(--success-icon)' },
+];
+let UID = 0;
+
+class Component extends DCLogic {
+  uid = 'sfa' + (++UID);
+  rootRef = React.createRef();
+  firstRef = React.createRef();
+  otpRefs = Array.from({ length: 6 }, () => React.createRef());
+  state = this.initState(this.props.screen || 'login');
+
+  initState(scr) {
+    const filled = scr === 'loginError' || scr === 'locked';
+    const cp = scr === 'changePassword';
+    return {
+      w: this.state ? this.state.w : null, screen: scr,
+      email: filled ? 'd.aliyev@sellerflow.uz' : '', password: filled ? 'Parol2026' : '',
+      showPw: false, loading: false, loginErr: scr === 'loginError', attempts: scr === 'loginError' ? 3 : 0, fieldErr: null,
+      lockLeft: 852, otp: scr === 'otpError' ? '482913'.split('') : EMPTY6(), otpErr: scr === 'otpError',
+      copied: false, cur: cp ? 'Vaqtincha#41' : '', nw: cp ? 'Sotuv2026yil' : '', cf: '', showNew: false, cpErr: null, now: Date.now(),
+    };
+  }
+
+  componentDidMount() {
+    const el = this.rootRef.current;
+    if (el && window.ResizeObserver) {
+      this.ro = new ResizeObserver(e => { const w = Math.round(e[0].contentRect.width); if (w && w !== this.state.w) this.setState({ w }); });
+      this.ro.observe(el);
+    }
+    this.iv = setInterval(() => {
+      const s = this.state;
+      if (s.screen === 'locked') this.setState({ lockLeft: Math.max(0, s.lockLeft - 1) });
+      else if (['otp', 'otpError', 'setup3'].includes(s.screen)) this.setState({ now: Date.now() });
+    }, 1000);
+    if (this.props.autofocus) this.focusFirst();
+  }
+  componentWillUnmount() { this.ro && this.ro.disconnect(); clearInterval(this.iv); clearTimeout(this.t); }
+
+  focusFirst() {
+    setTimeout(() => {
+      const scr = this.state.screen;
+      const el = ['otp', 'otpError', 'setup3'].includes(scr) ? this.otpRefs[0].current : this.firstRef.current;
+      el && el.focus({ preventScroll: true });
+    }, 30);
+  }
+  go = scr => { clearTimeout(this.t); this.setState(this.initState(scr), () => this.focusFirst()); };
+
+  onLogin = e => {
+    e.preventDefault();
+    const s = this.state;
+    if (s.loading || s.screen === 'locked') return;
+    if (!s.email.trim()) return this.setState({ fieldErr: 'email' }, () => this.firstRef.current && this.firstRef.current.focus());
+    if (!/^\S+@\S+\.\S+$/.test(s.email.trim())) return this.setState({ fieldErr: 'emailFmt' });
+    if (!s.password) return this.setState({ fieldErr: 'password' });
+    this.setState({ loading: true, fieldErr: null });
+    this.t = setTimeout(() => {
+      if (s.password.length < 10) {
+        const attempts = this.state.attempts + 1;
+        if (attempts >= 5) this.setState({ ...this.initState('locked'), email: s.email, password: s.password, lockLeft: 900 });
+        else this.setState({ loading: false, loginErr: true, attempts, screen: 'loginError' });
+      } else this.go(/^new|^yangi/i.test(s.email) ? 'setup1' : /temp|vaqt/i.test(s.email) ? 'changePassword' : 'otp');
+    }, 1100);
+  };
+
+  submitOtp(digits) {
+    if (this.state.loading) return;
+    const code = digits.join('');
+    if (code.length < 6) { this.setState({ otpErr: true }); return; }
+    this.setState({ loading: true, otpErr: false });
+    this.t = setTimeout(() => {
+      if (code === '000000' || code === '482913' || code === '123456') {
+        this.setState({ loading: false, otpErr: true, screen: this.state.screen === 'setup3' ? 'setup3' : 'otpError' }, () => { const r = this.otpRefs[0].current; r && r.focus(); r && r.select(); });
+      } else this.setState({ loading: false, screen: this.state.screen === 'setup3' ? 'success2fa' : 'success' });
+    }, 1000);
+  }
+  fillOtp(start, str) {
+    const d = [...this.state.otp];
+    let i = start;
+    for (const ch of str) { if (i > 5) break; d[i++] = ch; }
+    this.setState({ otp: d, otpErr: false }, () => {
+      const next = this.otpRefs[Math.min(i, 5)].current; next && next.focus();
+      if (d.every(x => x)) this.submitOtp(d);
+    });
+  }
+
+  onChangePw = e => {
+    e.preventDefault();
+    const s = this.state;
+    if (s.loading) return;
+    let err = null;
+    if (!s.cur) err = 'Joriy parolni kiriting.';
+    else if (s.nw.length < 12) err = 'Yangi parol kamida 12 belgidan iborat bo‘lishi kerak.';
+    else if (s.nw === s.cur) err = 'Yangi parol joriy paroldan farq qilishi kerak.';
+    else if (s.cf !== s.nw) err = 'Parollar mos kelmadi.';
+    if (err) return this.setState({ cpErr: err });
+    this.setState({ loading: true, cpErr: null });
+    this.t = setTimeout(() => this.setState({ loading: false, screen: 'successPw' }), 1100);
+  };
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const w = s.w ?? p.previewWidth ?? 1440;
+    const isMobile = w < 900;
+    const scr = s.screen;
+    const isLogin = ['login', 'loginError', 'locked'].includes(scr);
+    const locked = scr === 'locked' && s.lockLeft > 0;
+    const isSetup = ['setup1', 'setup2', 'setup3'].includes(scr);
+    const showOtp = ['otp', 'otpError', 'setup3'].includes(scr);
+    const step = scr === 'setup1' ? 1 : scr === 'setup2' ? 2 : 3;
+
+    const HDR = {
+      login: { title: 'Kirish', desc: 'SellerFlow Admin hisobingizga kiring.' },
+      setup1: { title: 'Authenticator ilovasini o‘rnating', desc: '2FA majburiy. Telefoningizga quyidagi ilovalardan birini o‘rnating.' },
+      setup2: { title: 'QR kodni skanerlang', desc: 'Ilovada yangi akkaunt qo‘shing va kodni skanerlang yoki kalitni qo‘lda kiriting.' },
+      setup3: { title: 'Kodni tasdiqlang', desc: 'Ilovada paydo bo‘lgan 6 xonali kodni kiriting.' },
+      otp: { title: 'Ikki bosqichli tasdiqlash', desc: 'Authenticator ilovasidagi 6 xonali kodni kiriting.' },
+      changePassword: { title: 'Parolni almashtiring', desc: 'Siz vaqtinchalik parol bilan kirdingiz. Davom etish uchun yangi parol o‘rnating.' },
+      sessionExpired: { title: 'Xavfsizlik uchun sessiyangiz yopildi', desc: '8 soatlik sessiya muddati tugadi. Davom etish uchun qayta kiring.', icon: 'shield-alert', tone: 'privacy' },
+      deleted: { title: 'Akkauntingiz o‘chirilgan', desc: 'Kirish imkoni yo‘q. SUPERADMIN’ga murojaat qiling.', icon: 'user-x', tone: 'danger' },
+      success: { title: 'Muvaffaqiyatli kirdingiz', desc: 'Kirish audit jurnaliga yozildi.', icon: 'circle-check', tone: 'success' },
+      success2fa: { title: '2FA ulandi', desc: 'Endi har kirishda Authenticator kodi so‘raladi.', icon: 'shield-check', tone: 'success' },
+      successPw: { title: 'Parol almashtirildi', desc: 'Yangi parol saqlandi. Keyingi kirishda undan foydalaning.', icon: 'circle-check', tone: 'success' },
+    };
+    const key = isLogin ? 'login' : scr === 'otpError' ? 'otp' : scr;
+    const h = HDR[key] || HDR.login;
+    const tone = h.tone;
+    const hdr = {
+      ...h, icon: h.icon || '', align: tone ? 'center' : 'flex-start', textAlign: tone ? 'center' : 'left',
+      iconBg: tone ? `var(--${tone}-bg)` : 'transparent', iconBorder: tone ? `var(--${tone}-border)` : 'transparent',
+      iconFg: tone === 'privacy' ? 'var(--privacy-icon)' : tone ? `var(--${tone}-icon)` : 'inherit',
+    };
+
+    const steps = [['Ilova', 1], ['QR kod', 2], ['Tasdiqlash', 3]].map(([text, n]) => {
+      const done = n < step, cur = n === step;
+      return {
+        text, n, done, notDone: !done, current: cur ? 'step' : undefined, flex: n < 3 ? '1' : '0 0 auto', line: n < 3,
+        bg: done ? 'var(--primary)' : cur ? 'var(--primary-subtle)' : 'var(--bg-surface)',
+        fg: done ? 'var(--primary-fg)' : cur ? 'var(--primary-subtle-fg)' : 'var(--text-tertiary)',
+        border: done || cur ? 'var(--primary)' : 'var(--border-strong)',
+        label: cur ? 'var(--text-primary)' : 'var(--text-secondary)', weight: cur ? 600 : 500,
+        lineColor: done ? 'var(--primary)' : 'var(--border-default)',
+        sr: done ? ' (bajarildi)' : cur ? ' (joriy qadam)' : '',
+      };
+    });
+
+    const fe = s.fieldErr;
+    const emailErr = fe === 'email' ? 'Email kiriting' : fe === 'emailFmt' ? 'Email noto‘g‘ri formatda' : '';
+    const pwErr = fe === 'password' ? 'Parol kiriting' : '';
+    const errBorder = 'var(--danger-icon)';
+    const loginErrShown = s.loginErr && !locked;
+    const left = Math.max(0, 5 - s.attempts);
+    const lockClock = `${String(Math.floor(s.lockLeft / 60)).padStart(2, '0')}:${String(s.lockLeft % 60).padStart(2, '0')}`;
+
+    const otpCells = s.otp.map((v, i) => ({
+      ref: this.otpRefs[i], value: v, label: `${i + 1}-raqam`, ac: i === 0 ? 'one-time-code' : 'off',
+      border: s.otpErr ? 'var(--danger-icon)' : v ? 'var(--border-strong)' : 'var(--border-input)',
+      borderW: s.otpErr ? '2px' : '1px',
+      bg: s.otpErr ? 'var(--danger-bg)' : 'var(--bg-surface)',
+      onChange: e => {
+        const val = e.target.value.replace(/\D/g, '');
+        if (!val) { const d = [...this.state.otp]; d[i] = ''; this.setState({ otp: d }); return; }
+        this.fillOtp(i, val.length > 1 && this.state.otp[i] ? val.replace(this.state.otp[i], '') || val.slice(-1) : val);
+      },
+      onKeyDown: e => {
+        const d = [...this.state.otp];
+        if (e.key === 'Backspace' && !d[i] && i > 0) { e.preventDefault(); d[i - 1] = ''; this.setState({ otp: d, otpErr: false }); this.otpRefs[i - 1].current.focus(); }
+        else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); this.otpRefs[i - 1].current.focus(); }
+        else if (e.key === 'ArrowRight' && i < 5) { e.preventDefault(); this.otpRefs[i + 1].current.focus(); }
+      },
+      onFocus: e => e.target.select(),
+    }));
+    const otpTick = 30 - (Math.floor(s.now / 1000) % 30);
+
+    const nw = s.nw;
+    const reqOk = [nw.length >= 12, /[a-z]/.test(nw) && /[A-Z]/.test(nw), /\d/.test(nw), /[^A-Za-z0-9]/.test(nw)];
+    const reqs = ['Kamida 12 belgi', 'Katta va kichik harf', 'Kamida bitta raqam', 'Maxsus belgi (!@#…)'].map((text, i) => ({
+      text, icon: reqOk[i] ? 'circle-check' : 'circle', fg: reqOk[i] ? 'var(--text-primary)' : 'var(--text-secondary)',
+      iconFg: reqOk[i] ? 'var(--success-icon)' : 'var(--text-tertiary)', sr: reqOk[i] ? ' — bajarildi' : ' — bajarilmagan',
+    }));
+    let score = reqOk.filter(Boolean).length + (nw.length >= 16 ? 1 : 0);
+    if (!reqOk[0]) score = Math.min(score, 1);
+    const level = !nw ? -1 : score <= 1 ? 0 : score === 2 ? 1 : score === 3 ? 2 : 3;
+    const strength = level < 0 ? { label: 'Parol kuchi', fg: 'var(--text-tertiary)' } : STRENGTH[level];
+    const strengthBars = [0, 1, 2, 3].map(i => ({ bg: i <= level ? STRENGTH[level].bar : 'var(--bg-muted)' }));
+    const cfTyped = s.cf.length > 0;
+    const cfMatch = cfTyped && s.cf === nw;
+
+    return {
+      rootRef: this.rootRef, firstRef: this.firstRef, uid: this.uid,
+      theme: p.theme === 'dark' ? 'dark' : 'light',
+      isDesktop: !isMobile, isMobile,
+      panelBg: p.theme === 'dark' ? '#151210' : '#1c1917', panelBorder: p.theme === 'dark' ? 'var(--border-default)' : 'transparent',
+      mainPad: isMobile ? '20px 16px 24px' : '48px 32px',
+      cardJustify: isMobile ? 'flex-start' : 'center', cardPad: isMobile ? '24px 20px' : '32px',
+      hdr, steps, isSetup, isLogin, showOtp,
+      isStep1: scr === 'setup1', isStep2: scr === 'setup2', isChangePw: scr === 'changePassword',
+      isSession: scr === 'sessionExpired', isDeleted: scr === 'deleted', isSuccess: ['success', 'success2fa', 'successPw'].includes(scr),
+      email: s.email, password: s.password, showPw: s.showPw, locked, loading: s.loading,
+      onEmail: e => this.setState({ email: e.target.value, fieldErr: s.fieldErr && s.fieldErr !== 'password' ? null : s.fieldErr }),
+      onPassword: e => this.setState({ password: e.target.value, fieldErr: s.fieldErr === 'password' ? null : s.fieldErr }),
+      toggleShowPw: () => this.setState({ showPw: !s.showPw }),
+      pwType: s.showPw ? 'text' : 'password', eyeIcon: s.showPw ? 'eye-off' : 'eye', eyeLabel: s.showPw ? 'Parolni yashirish' : 'Parolni ko‘rsatish',
+      emailErr, pwErr, emailInvalid: !!emailErr || loginErrShown, pwInvalid: !!pwErr || loginErrShown,
+      emailBorder: emailErr || loginErrShown ? errBorder : 'var(--border-input)',
+      pwBorder: pwErr || loginErrShown ? errBorder : 'var(--border-input)',
+      inputBg: locked ? 'var(--bg-subtle)' : 'var(--bg-surface)',
+      loginErr: loginErrShown, attemptsText: left <= 2 ? `${left} ta urinish qoldi.` : '',
+      lockLeft: s.lockLeft, lockClock, lockPct: Math.round((s.lockLeft / 900) * 100),
+      submitDisabled: s.loading || locked,
+      submitBg: locked ? 'var(--bg-muted)' : 'var(--primary)', submitFg: locked ? 'var(--text-disabled)' : 'var(--primary-fg)',
+      submitCursor: locked ? 'not-allowed' : s.loading ? 'progress' : 'pointer',
+      loginLabel: s.loading ? 'Tekshirilmoqda…' : locked ? `Kirish · ${lockClock}` : 'Kirish',
+      onLogin: this.onLogin,
+      toStep1: () => this.go('setup1'), toStep2: () => this.go('setup2'), toStep3: () => this.go('setup3'),
+      qrPath: QR_PATH, secret: SECRET,
+      copySecret: () => { try { navigator.clipboard && navigator.clipboard.writeText(SECRET.replace(/\s/g, '')); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.ct); this.ct = setTimeout(() => this.setState({ copied: false }), 2000); },
+      copyIcon: s.copied ? 'check' : 'copy', copyLabel: s.copied ? 'Nusxalandi' : 'Nusxalash',
+      copyFg: s.copied ? 'var(--success-text)' : 'var(--text-primary)',
+      copyStatus: s.copied ? 'Kalit buferga nusxalandi.' : 'Probellarsiz kiritish ham mumkin.',
+      otpCells, otpErr: s.otpErr, otpOk: !s.otpErr, otpTick,
+      onOtpPaste: e => { const t = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6); if (!t) return; e.preventDefault(); const d = EMPTY6(); t.split('').forEach((c, i) => d[i] = c); this.setState({ otp: d, otpErr: false }, () => { this.otpRefs[Math.min(t.length, 5)].current.focus(); if (t.length === 6) this.submitOtp(d); }); },
+      onOtpSubmit: e => { e.preventDefault(); this.submitOtp(this.state.otp); },
+      otpLabel: s.loading ? 'Tekshirilmoqda…' : 'Tasdiqlash',
+      otpBack: () => this.go(scr === 'setup3' ? 'setup2' : 'login'),
+      cur: s.cur, nw, cf: s.cf, showNew: s.showNew,
+      onCur: e => this.setState({ cur: e.target.value, cpErr: null }),
+      onNew: e => this.setState({ nw: e.target.value, cpErr: null }),
+      onCf: e => this.setState({ cf: e.target.value, cpErr: null }),
+      toggleShowNew: () => this.setState({ showNew: !s.showNew }),
+      newType: s.showNew ? 'text' : 'password', newEyeIcon: s.showNew ? 'eye-off' : 'eye', newEyeLabel: s.showNew ? 'Parolni yashirish' : 'Parolni ko‘rsatish',
+      reqs, strength, strengthBars,
+      cfInvalid: cfTyped && !cfMatch, cfBorder: cfTyped && !cfMatch ? errBorder : 'var(--border-input)',
+      cfMsg: cfTyped ? (cfMatch ? 'Parollar mos' : 'Parollar mos kelmadi') : '',
+      cfMsgFg: cfMatch ? 'var(--success-text)' : 'var(--danger-text)', cfMsgIcon: cfMatch ? 'circle-check' : 'circle-alert',
+      cpErr: s.cpErr, onChangePw: this.onChangePw, cpLabel: s.loading ? 'Tekshirilmoqda…' : 'Parolni saqlash',
+      toLogin: () => this.go('login'),
+    };
+  }
+}
+</script>
+</body>
+</html>

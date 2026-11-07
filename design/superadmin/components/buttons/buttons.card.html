@@ -1,0 +1,44 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Buttons" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} .g{display:grid;grid-template-columns:80px repeat(6,auto);gap:10px 10px;align-items:center;justify-content:start}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Button, IconButton } = NS;
+const { useState } = React;
+
+const st = { hover: { primary:{background:'var(--primary-hover)'}, secondary:{background:'var(--bg-hover)'}, ghost:{background:'var(--bg-hover)'}, danger:{background:'var(--danger-solid-hover)'} },
+  active: { primary:{background:'var(--primary-active)'}, secondary:{background:'var(--bg-active)'}, ghost:{background:'var(--bg-active)'}, danger:{background:'var(--red-800)'} } };
+const labels = { primary:'Saqlash', secondary:'Eksport', ghost:'Bekor qilish', danger:'Bloklash' };
+const icons = { primary:'check', secondary:'download', ghost:null, danger:'ban' };
+function App(){ return <div className="c" style={{gap:16}}>
+  <div className="g">
+    <span />{['Default','Hover','Focus','Active','Disabled','Loading'].map(s=><span key={s} className="l">{s}</span>)}
+    {['primary','secondary','ghost','danger'].map(v=><React.Fragment key={v}>
+      <span className="l">{v}</span>
+      <Button variant={v} icon={icons[v]}>{labels[v]}</Button>
+      <Button variant={v} icon={icons[v]} style={st.hover[v]}>{labels[v]}</Button>
+      <Button variant={v} icon={icons[v]} style={{boxShadow:'var(--focus-ring)'}}>{labels[v]}</Button>
+      <Button variant={v} icon={icons[v]} style={st.active[v]}>{labels[v]}</Button>
+      <Button variant={v} icon={icons[v]} disabled>{labels[v]}</Button>
+      <Button variant={v} icon={icons[v]} loading>{labels[v]}</Button>
+    </React.Fragment>)}
+  </div>
+  <div className="r" style={{gap:16}}>
+    <span className="l" style={{width:80}}>sm / icon</span>
+    <Button size="sm" variant="primary" icon="plus">Admin qo‘shish</Button>
+    <Button size="sm" variant="secondary">Filtr</Button>
+    <Button variant="privacy" icon="send">Kirish so‘rash</Button>
+    <IconButton icon="ellipsis" label="Amallar" />
+    <IconButton icon="refresh-cw" label="Yangilash" variant="secondary" />
+    <IconButton icon="trash-2" label="O‘chirish" variant="danger" size="sm" />
+    <IconButton icon="settings" label="Sozlamalar" disabled />
+  </div>
+</div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

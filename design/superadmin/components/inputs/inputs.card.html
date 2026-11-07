@@ -1,0 +1,34 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Inputs" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../ds-loader.js"></script>
+<style>body{padding:20px;background:var(--bg-surface)} .l{font:var(--type-caption);color:var(--text-tertiary)} .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .c{display:flex;flex-direction:column;gap:8px} .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}</style></head><body><div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.loadSellerFlowDS();
+const { Field, Input, Textarea, Select, Combobox, OtpInput } = NS;
+const { useState } = React;
+
+const sellers=[{value:'1',label:'Dilnoza Karimova',hint:'482019377'},{value:'2',label:'Bekzod Tursunov',hint:'190334812'},{value:'3',label:'Madina Yusupova',hint:'733201945'},{value:'4',label:'Javohir Aliyev',hint:'560019283'}];
+function App(){ const [c,setC]=useState('1'); const [otp,setOtp]=useState('4821'); const [t,setT]=useState('');
+ return <div className="c" style={{gap:16}}>
+  <div className="g2">
+    <Field label="Telegram ID" hint="Faqat raqamlar"><Input icon="at-sign" placeholder="482019377" style={{fontFamily:'var(--font-mono)'}} /></Field>
+    <Field label="Qidirish (focus)"><Input icon="search" defaultValue="Karimova" style={{borderColor:'var(--border-focus)',boxShadow:'0 0 0 3px color-mix(in oklab, var(--brand-500) 22%, transparent)'}} /></Field>
+    <Field label="Email" error="Email noto‘g‘ri. «nom@domen.uz» ko‘rinishida kiriting."><Input icon="mail" defaultValue="aziz@sellerflow" /></Field>
+    <Field label="Rol (disabled)"><Input defaultValue="SUPPORT" disabled /></Field>
+    <Field label="Holat"><Select placeholder="Holatni tanlang" defaultValue="" options={[{value:'a',label:'Faol'},{value:'b',label:'Bloklangan'},{value:'c',label:'Yopilgan'}]} /></Field>
+    <Field label="Sotuvchi (Combobox)"><Combobox value={c} onChange={setC} options={sellers} /></Field>
+  </div>
+  <Field label="Izoh" optional><Textarea value={t} onChange={e=>setT(e.target.value)} maxLength={500} rows={2} placeholder="Ichki izoh — sotuvchiga ko‘rinmaydi" /></Field>
+  <div className="r" style={{gap:32,alignItems:'flex-start'}}>
+    <div className="c"><span className="l">OTP · default</span><OtpInput value={otp} onChange={setOtp} /></div>
+    <div className="c"><span className="l">OTP · error</span><OtpInput value="123456" invalid />
+      <span style={{font:'var(--type-small)',color:'var(--danger-text)'}}>Kod noto‘g‘ri. Ilovadagi yangi kodni kiriting.</span></div>
+  </div>
+</div>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();
+</script></body></html>

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes sfSpin{to{transform:rotate(360deg)}}
+[data-sfl] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfl] button,[data-sfl] input{font-family:inherit;}
+[data-sfl] [class^="icon-"]{line-height:1;display:inline-flex;}
+[data-sfl] tbody tr:focus-visible{outline-offset:-2px;}
+</style>
+</helmet>
+<div data-sfl="" ref="{{ rootRef }}" onKeyDown="{{ onRootKey }}" style="display:flex;flex-direction:column;gap:16px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;">
+
+  <div style="display:flex;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:260px;">
+      <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">Audit jurnali</h1>
+      <p style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;display:flex;gap:6px;align-items:flex-start;"><i class="icon-lock" aria-hidden="true" style="font-size:14px;margin-top:3px;color:var(--privacy-icon);"></i><span>Kim, qachon, nima qildi. Yozuvlar o‘zgartirilmaydi va o‘chirilmaydi. Narx, tannarx va foyda kabi tijoriy qiymatlar hech qachon yozilmaydi.</span></p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <button type="button" onClick="{{ openExport }}" disabled="{{ exportDisabled }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:{{ exportFg }};font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);"><i class="icon-download" aria-hidden="true" style="font-size:16px;"></i>CSV eksport</button>
+      <span style="font-size:12px;line-height:16px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px;"><i class="icon-scroll-text" aria-hidden="true" style="font-size:12px;"></i>Eksportning o‘zi ham auditga yoziladi</span>
+    </div>
+  </div>
+
+  <div role="search" aria-label="Audit filtrlari" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+    <div style="position:relative;">
+      <button type="button" aria-haspopup="dialog" aria-expanded="{{ dateOpen }}" onClick="{{ toggleDate }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 10px 0 12px;border:1px solid {{ dateTrig.border }};border-radius:6px;background:{{ dateTrig.bg }};color:var(--text-primary);font-size:13px;cursor:pointer;white-space:nowrap;" style-hover="border-color:var(--border-strong);"><i class="icon-calendar" aria-hidden="true" style="font-size:15px;color:var(--text-tertiary);"></i><span style="color:var(--text-secondary);">Sana:</span><span style="font-weight:500;">{{ dateLabel }}</span><i class="icon-chevron-down" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i></button>
+      <sc-if value="{{ dateOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closePops }}" aria-hidden="true" style="position:fixed;inset:0;z-index:40;"></div>
+        <div role="dialog" aria-label="Sana oralig‘i" style="position:absolute;left:0;top:42px;z-index:41;width:300px;padding:8px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;">
+          <div role="radiogroup" aria-label="Tayyor oraliqlar" style="display:flex;flex-direction:column;gap:2px;">
+            <sc-for list="{{ presets }}" as="pr" hint-placeholder-count="4">
+              <button type="button" role="radio" aria-checked="{{ pr.on }}" onClick="{{ pr.pick }}" style="height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:6px;background:{{ pr.bg }};color:var(--text-primary);font-size:13px;font-weight:{{ pr.weight }};cursor:pointer;text-align:left;" style-hover="background:var(--bg-hover);"><i class="icon-check" aria-hidden="true" style="font-size:14px;opacity:{{ pr.checkOp }};color:var(--primary);"></i>{{ pr.label }}</button>
+            </sc-for>
+          </div>
+          <div style="margin-top:6px;padding:10px 4px 2px;border-top:1px solid var(--border-default);display:flex;flex-direction:column;gap:8px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-secondary);padding:0 6px;">Boshqa oraliq</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 6px;">
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-secondary);">Dan<input value="{{ cFrom }}" onChange="{{ onFrom }}" placeholder="DD.MM.YYYY" inputMode="numeric" aria-invalid="{{ cErrOn }}" style="height:34px;min-width:0;padding:0 8px;border:1px solid {{ cBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:13px;outline:none;" style-focus="border-color:var(--border-focus);"></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-secondary);">Gacha<input value="{{ cTo }}" onChange="{{ onTo }}" placeholder="DD.MM.YYYY" inputMode="numeric" aria-invalid="{{ cErrOn }}" style="height:34px;min-width:0;padding:0 8px;border:1px solid {{ cBorder }};border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-family:var(--font-mono);font-size:13px;outline:none;" style-focus="border-color:var(--border-focus);"></label>
+            </div>
+            <span role="alert" style="min-height:16px;padding:0 6px;font-size:12px;line-height:16px;color:var(--danger-text);">{{ cErr }}</span>
+            <div style="display:flex;justify-content:flex-end;padding:0 6px 4px;"><button type="button" onClick="{{ applyCustom }}" style="height:32px;padding:0 12px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">Qo‘llash</button></div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div role="group" aria-label="Bajaruvchi turi" style="height:36px;box-sizing:border-box;display:flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-subtle);">
+      <sc-for list="{{ actorChips }}" as="ac" hint-placeholder-count="3">
+        <button type="button" aria-pressed="{{ ac.on }}" onClick="{{ ac.toggle }}" style="height:30px;display:flex;align-items:center;gap:6px;padding:0 10px;border:0;border-radius:4px;background:{{ ac.bg }};box-shadow:{{ ac.shadow }};color:{{ ac.fg }};font-size:13px;font-weight:{{ ac.weight }};cursor:pointer;white-space:nowrap;"><i class="icon-{{ ac.icon }}" aria-hidden="true" style="font-size:14px;"></i>{{ ac.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="position:relative;width:{{ comboW }};">
+      <i class="icon-user-round" aria-hidden="true" style="position:absolute;left:10px;top:10px;font-size:15px;color:var(--text-tertiary);pointer-events:none;"></i>
+      <input ref="{{ comboRef }}" role="combobox" aria-label="Admin" aria-expanded="{{ comboOpen }}" aria-controls="sfl-admins" aria-autocomplete="list" aria-activedescendant="{{ comboActive }}" value="{{ comboText }}" onChange="{{ onCombo }}" onFocus="{{ openCombo }}" onClick="{{ openCombo }}" onKeyDown="{{ comboKey }}" placeholder="Admin: hammasi" autoComplete="off" style="width:100%;box-sizing:border-box;height:36px;padding:0 32px 0 32px;border:1px solid {{ comboBorder }};border-radius:6px;background:{{ comboBg }};color:var(--text-primary);font-size:13px;outline:none;" style-focus="border-color:var(--border-focus);">
+      <sc-if value="{{ hasAdmin }}" hint-placeholder-val="{{ false }}">
+        <button type="button" aria-label="Admin filtrini olib tashlash" onClick="{{ clearAdmin }}" style="position:absolute;right:4px;top:4px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-tertiary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+      </sc-if>
+      <sc-if value="{{ noAdmin }}" hint-placeholder-val="{{ true }}"><i class="icon-chevrons-up-down" aria-hidden="true" style="position:absolute;right:10px;top:11px;font-size:14px;color:var(--text-tertiary);pointer-events:none;"></i></sc-if>
+      <sc-if value="{{ comboOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closePops }}" aria-hidden="true" style="position:fixed;inset:0;z-index:40;"></div>
+        <ul id="sfl-admins" role="listbox" aria-label="Adminlar" style="position:absolute;left:0;top:42px;z-index:41;width:300px;max-width:calc(100vw - 32px);margin:0;padding:4px;box-sizing:border-box;list-style:none;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;gap:2px;">
+          <sc-for list="{{ adminOpts }}" as="ao" hint-placeholder-count="5">
+            <li id="{{ ao.domId }}" role="option" aria-selected="{{ ao.sel }}" onMouseDown="{{ ao.pick }}" style="min-height:40px;display:flex;align-items:center;gap:10px;padding:4px 10px;border-radius:6px;background:{{ ao.bg }};cursor:pointer;" style-hover="background:var(--bg-hover);">
+              <span aria-hidden="true" style="width:24px;height:24px;flex-shrink:0;border-radius:50%;background:var(--bg-muted);color:var(--text-secondary);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ ao.ini }}</span>
+              <span style="flex:1;min-width:0;display:flex;flex-direction:column;"><span style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ao.email }}</span><span style="font-size:11px;line-height:14px;color:var(--text-tertiary);">{{ ao.meta }}</span></span>
+              <i class="icon-check" aria-hidden="true" style="font-size:14px;color:var(--primary);opacity:{{ ao.checkOp }};"></i>
+            </li>
+          </sc-for>
+          <sc-if value="{{ adminNone }}" hint-placeholder-val="{{ false }}"><li role="presentation" style="padding:10px;font-size:13px;color:var(--text-secondary);">Mos admin topilmadi</li></sc-if>
+        </ul>
+      </sc-if>
+    </div>
+
+    <div style="position:relative;">
+      <button type="button" aria-haspopup="dialog" aria-expanded="{{ actOpen }}" onClick="{{ toggleAct }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 10px 0 12px;border:1px solid {{ actTrig.border }};border-radius:6px;background:{{ actTrig.bg }};color:var(--text-primary);font-size:13px;cursor:pointer;white-space:nowrap;" style-hover="border-color:var(--border-strong);"><i class="icon-list-filter" aria-hidden="true" style="font-size:15px;color:var(--text-tertiary);"></i><span style="font-weight:500;">Amal turi</span><sc-if value="{{ actTrig.has }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:18px;padding:0 6px;border-radius:9px;background:var(--primary);color:var(--primary-fg);font-weight:600;">{{ actTrig.count }}</span></sc-if><i class="icon-chevron-down" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i></button>
+      <sc-if value="{{ actOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closePops }}" aria-hidden="true" style="position:fixed;inset:0;z-index:40;"></div>
+        <div role="dialog" aria-label="Amal turi" style="position:absolute;left:{{ actLeft }};right:{{ actRight }};top:42px;z-index:41;width:340px;max-width:calc(100vw - 32px);max-height:480px;box-sizing:border-box;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.16);display:flex;flex-direction:column;">
+          <div style="flex:1;min-height:0;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;">
+            <sc-for list="{{ actGroups }}" as="gp" hint-placeholder-count="5">
+              <div role="group" aria-label="{{ gp.label }}" style="display:flex;flex-direction:column;">
+                <button type="button" role="checkbox" aria-checked="{{ gp.aria }}" onClick="{{ gp.toggle }}" style="height:34px;display:flex;align-items:center;gap:10px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--text-primary);font-size:12px;font-weight:600;letter-spacing:.02em;cursor:pointer;text-align:left;" style-hover="background:var(--bg-hover);">
+                  <span aria-hidden="true" style="width:16px;height:16px;flex-shrink:0;box-sizing:border-box;border-radius:4px;border:1px solid {{ gp.boxBorder }};background:{{ gp.boxBg }};color:var(--primary-fg);display:flex;align-items:center;justify-content:center;"><i class="icon-{{ gp.boxIcon }}" style="font-size:12px;opacity:{{ gp.boxOp }};"></i></span>
+                  <span style="flex:1;">{{ gp.label }}</span><span style="font-weight:500;color:var(--text-tertiary);">{{ gp.countText }}</span>
+                </button>
+                <sc-for list="{{ gp.items }}" as="it" hint-placeholder-count="4">
+                  <button type="button" role="checkbox" aria-checked="{{ it.on }}" onClick="{{ it.toggle }}" style="min-height:34px;display:flex;align-items:center;gap:10px;padding:4px 8px 4px 34px;border:0;border-radius:6px;background:transparent;color:var(--text-primary);font-size:13px;cursor:pointer;text-align:left;" style-hover="background:var(--bg-hover);">
+                    <span aria-hidden="true" style="width:16px;height:16px;flex-shrink:0;box-sizing:border-box;border-radius:4px;border:1px solid {{ it.boxBorder }};background:{{ it.boxBg }};color:var(--primary-fg);display:flex;align-items:center;justify-content:center;"><i class="icon-check" style="font-size:12px;opacity:{{ it.boxOp }};"></i></span>
+                    <span style="flex:1;min-width:0;display:flex;flex-direction:column;"><span>{{ it.name }}</span><span style="font-family:var(--font-mono);font-size:11px;line-height:14px;color:var(--text-tertiary);">{{ it.code }}</span></span>
+                    <sc-if value="{{ it.sec }}" hint-placeholder-val="{{ false }}"><i class="icon-shield-alert" aria-label="Xavfsizlik" style="font-size:13px;color:var(--danger-icon);"></i></sc-if>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--border-default);">
+            <button type="button" onClick="{{ onlySec }}" style="height:30px;display:flex;align-items:center;gap:6px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--text-link);font-size:12px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-shield-alert" aria-hidden="true" style="font-size:13px;"></i>Faqat xavfsizlik</button>
+            <span style="flex:1;"></span>
+            <button type="button" onClick="{{ clearActs }}" style="height:30px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);font-size:12px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);">Tozalash</button>
+            <button type="button" onClick="{{ closePops }}" style="height:30px;padding:0 12px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:12px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);">Tayyor</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <label style="position:relative;display:flex;width:{{ bizW }};">
+      <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Biznes ID</span>
+      <i class="icon-building-2" aria-hidden="true" style="position:absolute;left:10px;top:10px;font-size:15px;color:var(--text-tertiary);pointer-events:none;"></i>
+      <input value="{{ biz }}" onChange="{{ onBiz }}" placeholder="Biznes ID" autoComplete="off" spellCheck="false" style="flex:1;min-width:0;height:36px;padding:0 10px 0 32px;border:1px solid {{ bizBorder }};border-radius:6px;background:{{ bizBg }};color:var(--text-primary);font-family:var(--font-mono);font-size:13px;outline:none;" style-focus="border-color:var(--border-focus);">
+    </label>
+
+    <sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}">
+      <button type="button" onClick="{{ clearAll }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i>Filtrlarni tozalash</button>
+    </sc-if>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);">
+    <span aria-live="polite"><strong style="font-weight:600;color:var(--text-primary);">{{ totalText }}</strong> ta hodisa</span>
+    <span style="display:inline-flex;align-items:center;gap:6px;"><span aria-hidden="true" style="width:3px;height:14px;border-radius:2px;background:var(--danger-icon);"></span><i class="icon-shield-alert" aria-hidden="true" style="font-size:13px;color:var(--danger-icon);"></i>Xavfsizlik hodisasi</span>
+    <span style="margin-left:auto;display:flex;align-items:center;gap:6px;"><i class="icon-globe" aria-hidden="true" style="font-size:13px;"></i>Asia/Tashkent</span>
+  </div>
+
+  <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="padding:56px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+      <span style="width:48px;height:48px;border-radius:12px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-cloud-off" aria-hidden="true" style="font-size:22px;"></i></span>
+      <h2 style="margin:0;font:var(--type-h3);">Audit jurnalini yuklab bo‘lmadi</h2>
+      <p style="margin:0;max-width:420px;color:var(--text-secondary);text-wrap:pretty;">Server javob bermadi. Hodisalar yozilishda davom etmoqda — faqat ko‘rsatish to‘xtadi.</p>
+      <button type="button" onClick="{{ retry }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:16px;"></i>Qayta urinish</button>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">Xato ID: c3d9-17f2 · 06.11.2026, 14:50</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:56px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+      <span style="width:48px;height:48px;border-radius:12px;background:var(--neutral-bg);color:var(--neutral-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-search-x" aria-hidden="true" style="font-size:22px;"></i></span>
+      <h2 style="margin:0;font:var(--type-h3);">Filtr bo‘yicha hodisa topilmadi</h2>
+      <p style="margin:0;max-width:440px;color:var(--text-secondary);text-wrap:pretty;">{{ emptyText }}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+        <button type="button" onClick="{{ widen }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-calendar-range" aria-hidden="true" style="font-size:16px;"></i>Oxirgi 30 kun</button>
+        <button type="button" onClick="{{ clearAll }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-x" aria-hidden="true" style="font-size:16px;"></i>Filtrlarni tozalash</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showTable }}" hint-placeholder-val="{{ true }}">
+    <div style="border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);overflow:hidden;">
+      <div style="overflow:auto;max-height:{{ tableMaxH }};">
+        <table aria-label="Audit hodisalari" aria-busy="{{ isLoading }}" style="width:100%;min-width:1180px;border-collapse:separate;border-spacing:0;font-size:13px;">
+          <thead>
+            <tr>
+              <th scope="col" style="position:sticky;top:0;z-index:2;height:40px;padding:0 14px 0 17px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Vaqt</th>
+              <th scope="col" style="position:sticky;top:0;z-index:2;padding:0 14px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Bajaruvchi</th>
+              <th scope="col" style="position:sticky;top:0;z-index:2;padding:0 14px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Amal</th>
+              <th scope="col" style="position:sticky;top:0;z-index:2;padding:0 14px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Obyekt</th>
+              <th scope="col" style="position:sticky;top:0;z-index:2;padding:0 14px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Biznes</th>
+              <th scope="col" style="position:sticky;top:0;z-index:2;padding:0 14px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Izoh</th>
+            </tr>
+          </thead>
+          <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+            <tbody>
+              <sc-for list="{{ skel }}" as="sk" hint-placeholder-count="10">
+                <tr>
+                  <sc-for list="{{ sk.cells }}" as="c" hint-placeholder-count="6">
+                    <td style="height:52px;padding:0 14px;border-bottom:1px solid var(--border-default);"><div style="width:{{ c.w }};height:12px;border-radius:4px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div></td>
+                  </sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+          </sc-if>
+          <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+                <tr tabIndex="0" aria-label="{{ r.aria }}" onClick="{{ r.open }}" onKeyDown="{{ r.onKey }}" style="cursor:pointer;background:{{ r.bg }};" style-hover="background:var(--bg-hover);">
+                  <td style="height:52px;padding:0 14px 0 14px;border-bottom:1px solid var(--border-default);border-left:3px solid {{ r.mark }};white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);">{{ r.time }}</td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:8px;"><span aria-hidden="true" style="width:24px;height:24px;flex-shrink:0;border-radius:50%;background:{{ r.actorBg }};color:{{ r.actorFg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ r.actorIcon }}" style="font-size:13px;"></i></span><span style="font-weight:{{ r.actorWeight }};">{{ r.actor }}</span></span></td>
+                  <td style="padding:6px 14px;border-bottom:1px solid var(--border-default);min-width:240px;">
+                    <span style="display:flex;flex-direction:column;gap:1px;">
+                      <span style="display:flex;align-items:center;gap:6px;font-weight:500;"><sc-if value="{{ r.sec }}" hint-placeholder-val="{{ false }}"><i class="icon-shield-alert" role="img" aria-label="Xavfsizlik hodisasi" style="font-size:13px;color:{{ r.mark }};"></i></sc-if>{{ r.name }}</span>
+                      <span style="font-family:var(--font-mono);font-size:11px;line-height:14px;color:var(--text-tertiary);">{{ r.code }}</span>
+                    </span>
+                  </td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="color:var(--text-secondary);">{{ r.objType }}</span> <span style="font-family:var(--font-mono);font-size:12px;">{{ r.objId }}</span></td>
+                  <td style="padding:0 14px;border-bottom:1px solid var(--border-default);white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:{{ r.bizFg }};">{{ r.biz }}</td>
+                  <td title="{{ r.note }}" style="padding:0 14px;border-bottom:1px solid var(--border-default);color:var(--text-secondary);max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.note }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </sc-if>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--border-default);font-size:13px;color:var(--text-secondary);">
+        <span>{{ rangeText }}</span>
+        <span style="color:var(--text-tertiary);">· sahifada 50 ta</span>
+        <div style="flex:1;"></div>
+        <nav aria-label="Sahifalash" style="display:flex;align-items:center;gap:2px;">
+          <button type="button" aria-label="Oldingi sahifa" disabled="{{ prevDis }}" onClick="{{ prev }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ prevOp }};"><i class="icon-chevron-left" aria-hidden="true" style="font-size:16px;"></i></button>
+          <sc-for list="{{ pages }}" as="pg" hint-placeholder-count="5">
+            <sc-if value="{{ pg.gap }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:24px;text-align:center;color:var(--text-tertiary);">…</span></sc-if>
+            <sc-if value="{{ pg.btn }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="{{ pg.aria }}" aria-current="{{ pg.current }}" onClick="{{ pg.go }}" style="min-width:32px;height:32px;padding:0 6px;border:1px solid {{ pg.border }};border-radius:6px;background:{{ pg.bg }};color:{{ pg.fg }};font-size:13px;font-weight:{{ pg.weight }};cursor:pointer;">{{ pg.n }}</button></sc-if>
+          </sc-for>
+          <button type="button" aria-label="Keyingi sahifa" disabled="{{ nextDis }}" onClick="{{ next }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ nextOp }};"><i class="icon-chevron-right" aria-hidden="true" style="font-size:16px;"></i></button>
+        </nav>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showCards }}" hint-placeholder-val="{{ false }}">
+    <ul aria-label="Audit hodisalari" style="list-style:none;margin:0;padding:0;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);overflow:hidden;">
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+        <li style="border-bottom:1px solid var(--border-default);">
+          <button type="button" onClick="{{ r.open }}" aria-label="{{ r.aria }}" style="width:100%;display:flex;flex-direction:column;gap:4px;padding:12px 14px 12px 13px;border:0;border-left:3px solid {{ r.mark }};background:transparent;text-align:left;cursor:pointer;color:var(--text-primary);" style-hover="background:var(--bg-hover);">
+            <span style="display:flex;align-items:center;gap:6px;font-weight:500;"><sc-if value="{{ r.sec }}" hint-placeholder-val="{{ false }}"><i class="icon-shield-alert" aria-hidden="true" style="font-size:13px;color:{{ r.mark }};"></i></sc-if>{{ r.name }}</span>
+            <span style="font-family:var(--font-mono);font-size:11px;line-height:14px;color:var(--text-tertiary);">{{ r.code }}</span>
+            <span style="font-size:13px;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:2px 8px;"><span>{{ r.actor }}</span><span aria-hidden="true">·</span><span>{{ r.objType }} <span style="font-family:var(--font-mono);">{{ r.objId }}</span></span></span>
+            <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ r.time }}</span>
+          </button>
+        </li>
+      </sc-for>
+    </ul>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:var(--text-secondary);">
+      <button type="button" aria-label="Oldingi sahifa" disabled="{{ prevDis }}" onClick="{{ prev }}" style="height:44px;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ prevOp }};"><i class="icon-chevron-left" aria-hidden="true" style="font-size:16px;"></i>Oldingi</button>
+      <span style="flex:1;text-align:center;">{{ rangeText }}</span>
+      <button type="button" aria-label="Keyingi sahifa" disabled="{{ nextDis }}" onClick="{{ next }}" style="height:44px;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ nextOp }};">Keyingi<i class="icon-chevron-right" aria-hidden="true" style="font-size:16px;"></i></button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ detOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDet }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:60;"></div>
+    <aside role="dialog" aria-modal="true" aria-labelledby="sfl-dt" style="position:fixed;top:0;right:0;bottom:0;width:{{ detW }};max-width:100%;z-index:61;background:var(--bg-surface);border-left:1px solid var(--border-default);box-shadow:-16px 0 48px rgba(12,10,9,.18);display:flex;flex-direction:column;">
+      <div style="flex-shrink:0;display:flex;align-items:flex-start;gap:10px;padding:14px 12px 14px 24px;border-bottom:1px solid var(--border-default);">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+          <h2 id="sfl-dt" style="margin:0;font-size:16px;line-height:22px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">{{ d.name }}<sc-if value="{{ d.sec }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;font-weight:600;padding:0 7px;border-radius:4px;background:{{ d.secBg }};border:1px solid {{ d.secBorder }};color:{{ d.secFg }};"><i class="icon-shield-alert" aria-hidden="true" style="font-size:11px;"></i>Xavfsizlik</span></sc-if></h2>
+          <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ d.code }}</span>
+        </div>
+        <button type="button" ref="{{ detCloseRef }}" aria-label="Yopish" onClick="{{ closeDet }}" style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:18px;"></i></button>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:16px 24px 28px;display:flex;flex-direction:column;gap:20px;">
+        <dl style="margin:0;display:flex;flex-direction:column;">
+          <sc-for list="{{ d.fields }}" as="fd" hint-placeholder-count="10">
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid var(--border-default);">
+              <dt style="margin:0;font-size:13px;color:var(--text-secondary);">{{ fd.k }}</dt>
+              <dd style="margin:0;font-family:{{ fd.font }};font-size:{{ fd.size }};font-weight:500;overflow-wrap:anywhere;text-wrap:pretty;display:flex;flex-direction:column;gap:2px;"><span>{{ fd.v }}</span><sc-if value="{{ fd.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--font-sans);font-size:12px;font-weight:400;color:var(--text-tertiary);">{{ fd.sub }}</span></sc-if></dd>
+            </div>
+          </sc-for>
+        </dl>
+
+        <sc-if value="{{ d.hasChanged }}" hint-placeholder-val="{{ false }}">
+          <section aria-labelledby="sfl-ch" style="display:flex;flex-direction:column;gap:8px;">
+            <h3 id="sfl-ch" style="margin:0;font-size:13px;font-weight:600;">O‘zgargan maydonlar</h3>
+            <ul style="list-style:none;margin:0;padding:0;border:1px solid var(--privacy-border);border-radius:8px;overflow:hidden;">
+              <sc-for list="{{ d.changed }}" as="cf" hint-placeholder-count="2">
+                <li style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--privacy-border);font-size:13px;"><span style="flex:1;font-weight:500;">{{ cf }}</span><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:var(--privacy-bg);border:1px solid var(--privacy-border);color:var(--privacy-text);"><i class="icon-lock" aria-hidden="true" style="font-size:11px;"></i>Qiymat yozilmaydi</span></li>
+              </sc-for>
+            </ul>
+            <span style="font-size:12px;line-height:16px;color:var(--text-secondary);">Audit faqat qaysi maydon o‘zgarganini saqlaydi. Narx, tannarx va foyda qiymatlari bu yerga tushmaydi.</span>
+          </section>
+        </sc-if>
+
+        <section aria-labelledby="sfl-rel" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <h3 id="sfl-rel" style="margin:0;font-size:13px;font-weight:600;">Shu obyektga oid hodisalar</h3>
+            <span style="font-size:12px;line-height:16px;padding:0 6px;border-radius:8px;background:var(--bg-subtle);border:1px solid var(--border-default);color:var(--text-secondary);">{{ d.relCount }}</span>
+          </div>
+          <sc-if value="{{ d.hasRel }}" hint-placeholder-val="{{ true }}">
+            <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;">
+              <sc-for list="{{ d.rel }}" as="rl" hint-placeholder-count="4">
+                <li style="display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:10px;">
+                  <span style="display:flex;flex-direction:column;align-items:center;"><span aria-hidden="true" style="width:10px;height:10px;margin-top:11px;flex-shrink:0;border-radius:50%;background:{{ rl.dot }};box-shadow:0 0 0 3px var(--bg-surface);"></span><span aria-hidden="true" style="flex:1;width:2px;background:var(--border-default);opacity:{{ rl.lineOp }};"></span></span>
+                  <button type="button" onClick="{{ rl.open }}" aria-current="{{ rl.current }}" style="display:flex;flex-direction:column;gap:1px;padding:6px 8px;margin:0 0 4px -8px;border:0;border-radius:6px;background:{{ rl.bg }};text-align:left;cursor:pointer;color:var(--text-primary);" style-hover="background:var(--bg-hover);">
+                    <span style="font-size:13px;font-weight:{{ rl.weight }};">{{ rl.name }}</span>
+                    <span style="font-size:12px;line-height:16px;color:var(--text-secondary);"><span style="font-family:var(--font-mono);">{{ rl.time }}</span> · {{ rl.actor }}</span>
+                  </button>
+                </li>
+              </sc-for>
+            </ol>
+          </sc-if>
+          <sc-if value="{{ d.noRel }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:13px;color:var(--text-secondary);">Boshqa hodisa yo‘q.</p></sc-if>
+        </section>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 24px;border-top:1px solid var(--border-default);background:var(--bg-subtle);">
+        <sc-if value="{{ d.hasBiz }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ d.filterBiz }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-list-filter" aria-hidden="true" style="font-size:14px;"></i>Shu biznes bo‘yicha filtrlash</button>
+        </sc-if>
+        <sc-if value="{{ d.hasSeller }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ d.goSeller }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--text-link);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-user-round" aria-hidden="true" style="font-size:14px;"></i>Sotuvchi kartasi</button>
+        </sc-if>
+      </div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ expOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeExport }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:70;"></div>
+    <div style="position:fixed;inset:0;z-index:71;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;">
+      <div role="dialog" aria-modal="true" aria-labelledby="sfl-et" aria-describedby="sfl-ed" style="pointer-events:auto;width:480px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);display:flex;flex-direction:column;">
+        <div style="padding:20px 20px 0;display:flex;gap:14px;align-items:flex-start;">
+          <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--info-bg);color:var(--info-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-file-down" aria-hidden="true" style="font-size:20px;"></i></span>
+          <div style="flex:1;min-width:0;">
+            <h2 id="sfl-et" style="margin:0;font:var(--type-h3);">Audit jurnalini eksport qilish</h2>
+            <p id="sfl-ed" style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Joriy filtr bo‘yicha <strong style="font-weight:600;color:var(--text-primary);">{{ totalText }} ta yozuv</strong> CSV faylga yoziladi.</p>
+          </div>
+        </div>
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+          <dl style="margin:0;padding:10px 14px;border-radius:8px;background:var(--bg-subtle);border:1px solid var(--border-default);display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:13px;">
+            <sc-for list="{{ expSummary }}" as="es" hint-placeholder-count="5">
+              <dt style="margin:0;color:var(--text-secondary);">{{ es.k }}</dt>
+              <dd style="margin:0;font-weight:500;overflow-wrap:anywhere;">{{ es.v }}</dd>
+            </sc-for>
+          </dl>
+          <div role="note" style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--warning-border);border-radius:8px;background:var(--warning-bg);color:var(--warning-text);font-size:13px;"><i class="icon-scroll-text" aria-hidden="true" style="font-size:15px;margin-top:2px;color:var(--warning-icon);"></i><span style="text-wrap:pretty;">Eksportning o‘zi ham auditga yoziladi: <span style="font-family:var(--font-mono);font-weight:600;">AUDIT_EXPORTED</span>, sizning emailingiz va filtr bilan.</span></div>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-radius:0 0 12px 12px;">
+          <button type="button" ref="{{ expCancelRef }}" onClick="{{ closeExport }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Bekor qilish</button>
+          <button type="button" onClick="{{ doExport }}" disabled="{{ expBusy }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-{{ expIcon }}" aria-hidden="true" style="font-size:16px;animation:{{ expAnim }};"></i>{{ expLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:fixed;left:{{ toastLeft }};right:{{ toastRight }};bottom:20px;z-index:75;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;max-width:480px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.28);font-size:14px;">
+      <i class="icon-circle-check" aria-hidden="true" style="font-size:16px;color:var(--success-icon);"></i>
+      <span style="flex:1;min-width:0;"><strong style="font-weight:600;">{{ toast.title }}</strong> {{ toast.sub }}</span>
+      <button type="button" aria-label="Xabarni yopish" onClick="{{ closeToast }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--text-inverse);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i></button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1100},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;error&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;filtered&quot;,&quot;security&quot;,&quot;noResults&quot;,&quot;actionMenu&quot;,&quot;adminCombo&quot;,&quot;datePop&quot;,&quot;drawer&quot;,&quot;drawerCatalog&quot;,&quot;export&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(page: string, id?: string) =&gt; void&quot;}}">
+const pad = n => String(n).padStart(2, '0');
+const nf = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+const fmtId = id => String(id).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const fmtTs = t => { const d = new Date(t); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const NOW = new Date(2026, 10, 6, 14, 50, 0).getTime();
+const DAY0 = new Date(2026, 10, 6).getTime();
+const ME = 'd.aliyev@sellerflow.uz';
+const ADMINS = [
+  { e: 'd.aliyev@sellerflow.uz', r: 'SUPERADMIN', id: 'A-01', st: 'Faol' },
+  { e: 'j.umarov@sellerflow.uz', r: 'SUPERADMIN', id: 'A-02', st: 'Faol' },
+  { e: 'm.karimova@sellerflow.uz', r: 'SUPPORT', id: 'A-03', st: 'Faol' },
+  { e: 's.toshev@sellerflow.uz', r: 'SUPPORT', id: 'A-04', st: 'Faol' },
+  { e: 'n.rashidova@sellerflow.uz', r: 'SUPPORT', id: 'A-05', st: 'Bloklangan' },
+  { e: 'b.qodirov@sellerflow.uz', r: 'SUPPORT', id: 'A-06', st: 'Nofaol' },
+];
+const AD = Object.fromEntries(ADMINS.map(a => [a.e, a]));
+const TGS = ['517334902', '402118775', '611908233', '733120458', '205667310', '571902336', '290117845', '388102557', '388902114', '290445118', '640218331', '712904456', '559301827', '301776540', '688120943', '420558716', '593407128', '264889031', '735501962', '318046257', '477215093', '609882134', '251340786', '546019873', '382775604', '701439528', '433908165', '658214370', '219576843', '590331647'];
+const BIZ = TGS.map((tg, i) => ({ biz: 'BIZ-' + (10412 + i * 17), tg }));
+const BYTG = Object.fromEntries(BIZ.map(b => [b.tg, b.biz]));
+const GROUPS = [['auth', 'Kirish va xavfsizlik'], ['seller', 'Sotuvchi holati'], ['access', 'Kirish so‘rovlari'], ['catalog', 'Katalog va tarix'], ['settings', 'Sozlamalar']];
+const ACT = {
+  ADMIN_LOGIN: ['Admin tizimga kirdi', 'auth'], ADMIN_LOGIN_FAILED: ['Kirish urinishi muvaffaqiyatsiz', 'auth'], ADMIN_LOCKED: ['Admin vaqtincha bloklandi', 'auth', 'danger'], ADMIN_2FA_RESET: ['2FA qayta o‘rnatildi', 'auth', 'warning'], ADMIN_STATUS_CHANGE: ['Admin holati o‘zgartirildi', 'auth', 'warning'], ADMIN_INVITED: ['Admin taklif qilindi', 'auth'], AUDIT_EXPORTED: ['Audit eksport qilindi', 'auth'],
+  SELLER_REGISTERED: ['Sotuvchi ro‘yxatdan o‘tdi', 'seller'], SELLER_ACTIVATED: ['Sotuvchi faollashtirildi', 'seller'], PRIMARY_CHANNEL_CHANGED: ['Asosiy kanal o‘zgardi', 'seller'], SELLER_BLOCKED: ['Sotuvchi bloklandi', 'seller'], SELLER_REACTIVATED: ['Sotuvchi qayta faollashtirildi', 'seller'], SELLER_DELETION_REQUESTED: ['O‘chirish so‘raldi', 'seller'], SELLER_CLOSED: ['Akkaunt yopildi', 'seller'],
+  ACCESS_REQUESTED: ['Kirish so‘rovi yuborildi', 'access'], ACCESS_GRANTED: ['Sotuvchi ruxsat berdi', 'access'], ACCESS_DENIED: ['Sotuvchi rad etdi', 'access'], ACCESS_DATA_VIEWED: ['Kirish ruxsati ko‘rildi', 'access', 'privacy'], ACCESS_REVOKED: ['Ruxsat bekor qilindi', 'access'], ACCESS_EXPIRED: ['Ruxsat muddati tugadi', 'access'],
+  PRODUCT_CREATED: ['Mahsulot qo‘shildi', 'catalog'], PRODUCT_UPDATED: ['Mahsulot yangilandi', 'catalog'], PRODUCT_ARCHIVED: ['Mahsulot arxivlandi', 'catalog'], CALCULATION_SAVED: ['Hisoblash saqlandi', 'catalog'], CALCULATION_DELETED: ['Hisoblash o‘chirildi', 'catalog'],
+  SUPPORT_CONTACT_UPDATED: ['Qo‘llab-quvvatlash kontakti yangilandi', 'settings'], TERMS_VERSION_PUBLISHED: ['Shartlar versiyasi e’lon qilindi', 'settings'],
+};
+const SEC_CODES = Object.keys(ACT).filter(k => ACT[k][2]);
+const CHN = ['Uzum Market', 'Wildberries', 'Ozon', 'Instagram', 'Telegram savdo', 'Offline do‘kon'];
+const REASONS = ['Komissiya noto‘g‘ri hisoblanmoqda', 'Import qilingan SKU’lar takrorlanmoqda', 'Logistika xarajati ikki marta hisoblangan', 'Narx tavsiyasi juda yuqori chiqyapti', 'Hisoblash saqlanmayapti', 'Tannarx valyutasi noto‘g‘ri ko‘rinmoqda'];
+const PFIELDS = [['Tannarx'], ['Reja narxi'], ['Nomi'], ['Tannarx', 'Reja narxi'], ['SKU'], ['Holat']];
+const W = [['CALCULATION_SAVED', 30], ['PRODUCT_UPDATED', 14], ['PRODUCT_CREATED', 9], ['ADMIN_LOGIN', 9], ['ACCESS_REQUESTED', 4], ['ACCESS_GRANTED', 3], ['ACCESS_DATA_VIEWED', 4], ['ACCESS_EXPIRED', 2], ['ACCESS_DENIED', 1], ['ACCESS_REVOKED', 1], ['SELLER_REGISTERED', 4], ['SELLER_ACTIVATED', 3], ['PRIMARY_CHANNEL_CHANGED', 2], ['CALCULATION_DELETED', 3], ['PRODUCT_ARCHIVED', 2], ['ADMIN_LOGIN_FAILED', 2], ['SELLER_DELETION_REQUESTED', .5], ['SELLER_BLOCKED', .3], ['SELLER_REACTIVATED', .2], ['ADMIN_2FA_RESET', .2], ['SUPPORT_CONTACT_UPDATED', .15], ['ADMIN_LOCKED', .2], ['SELLER_CLOSED', .3]];
+const WT = W.reduce((a, w) => a + w[1], 0);
+
+const EVENTS = (() => {
+  const r = rng(2026), pick = a => a[Math.floor(r() * a.length)], hex = n => Array.from({ length: n }, () => '0123456789abcdef'[Math.floor(r() * 16)]).join('');
+  const ip = () => `213.230.${Math.floor(r() * 120) + 60}.${Math.floor(r() * 250) + 2}`;
+  const DEV = ['Chrome 130 · macOS', 'Chrome 130 · Windows', 'Safari 18 · macOS', 'Firefox 132 · Ubuntu'];
+  const out = [];
+  const mk = (t, code, actor, obj, b, note, extra = {}) => out.push({ t, code, actor, obj, biz: b ? b.biz : null, tg: b ? b.tg : null, note, rid: `req_${hex(8)}-${hex(4)}`, ip: actor.kind === 'admin' ? ip() : null, dev: actor.kind === 'admin' ? pick(DEV) : actor.kind === 'seller' ? 'Telegram bot' : 'Ichki xizmat', ...extra });
+  const A = e => ({ kind: 'admin', e }), S = { kind: 'seller' }, T = { kind: 'system' };
+  const B = tg => BIZ.find(b => b.tg === tg);
+  const at = (d, h, m, s) => new Date(2026, 10, d, h, m, s).getTime();
+  const req = n => ({ type: 'So‘rov', id: '#' + n });
+  mk(at(6, 14, 49, 12), 'ACCESS_DATA_VIEWED', A(ME), req(1042), B('517334902'), 'Saqlangan hisoblashlar · faqat o‘qish');
+  mk(at(6, 14, 47, 3), 'ADMIN_LOCKED', T, { type: 'Admin', id: '#A-05' }, null, 'Ketma-ket 5 ta noto‘g‘ri urinish · 15 daqiqaga');
+  mk(at(6, 14, 46, 58), 'ADMIN_LOGIN_FAILED', T, { type: 'Admin', id: '#A-05' }, null, 'Noto‘g‘ri 2FA kodi · 5-urinish', { ip: '84.54.71.203', dev: 'Chrome 129 · Android' });
+  mk(at(6, 14, 40, 21), 'ACCESS_REQUESTED', A('m.karimova@sellerflow.uz'), req(1044), B('733120458'), '30 daqiqa · Sabab: Hisoblash saqlanmayapti, murojaat #5020');
+  mk(at(6, 14, 35, 40), 'ACCESS_GRANTED', S, req(1036), B('402118775'), '60 daqiqa, faqat o‘qish');
+  mk(at(6, 14, 33, 2), 'ACCESS_REQUESTED', A('s.toshev@sellerflow.uz'), req(1036), B('402118775'), '60 daqiqa · Sabab: Import qilingan SKU’lar takrorlanmoqda');
+  mk(at(6, 14, 24, 17), 'ACCESS_DATA_VIEWED', A(ME), req(1042), B('517334902'), 'Mahsulotlar · faqat o‘qish');
+  mk(at(6, 14, 22, 9), 'ACCESS_GRANTED', S, req(1042), B('517334902'), '45 daqiqa, faqat o‘qish');
+  mk(at(6, 14, 20, 44), 'ACCESS_REQUESTED', A(ME), req(1042), B('517334902'), '45 daqiqa · Sabab: Komissiya noto‘g‘ri hisoblanmoqda — murojaat #5012');
+  mk(at(6, 13, 58, 30), 'ADMIN_2FA_RESET', A('j.umarov@sellerflow.uz'), { type: 'Admin', id: '#A-04' }, null, 'Sabab: Telefon almashtirildi, ichki murojaat #88');
+  mk(at(6, 13, 52, 10), 'ADMIN_STATUS_CHANGE', A('j.umarov@sellerflow.uz'), { type: 'Admin', id: '#A-06' }, null, 'Faol → Nofaol · Sabab: Shtatdan chiqdi');
+  mk(at(5, 19, 40, 2), 'SUPPORT_CONTACT_UPDATED', A(ME), { type: 'Sozlama', id: 'support_contact' }, null, 'Maydonlar: kontakt holati');
+  mk(at(2, 16, 20, 31), 'SELLER_BLOCKED', A(ME), { type: 'Sotuvchi', id: '388102557' }, B('388102557'), 'Sabab: Firibgarlik shikoyati, murojaat #4821');
+  mk(at(2, 16, 20, 32), 'ACCESS_REVOKED', T, req(1037), B('388102557'), 'Bloklash natijasida avtomatik');
+  mk(at(2, 15, 52, 11), 'ACCESS_GRANTED', S, req(1037), B('388102557'), '60 daqiqa, faqat o‘qish');
+  mk(at(2, 15, 50, 4), 'ACCESS_REQUESTED', A('s.toshev@sellerflow.uz'), req(1037), B('388102557'), '60 daqiqa · Sabab: Hisoblashlar soni keskin oshgan — tekshiruv');
+  mk(at(1, 9, 0, 0), 'TERMS_VERSION_PUBLISHED', A('j.umarov@sellerflow.uz'), { type: 'Sozlama', id: 'terms_v2.1' }, null, 'Foydalanish shartlari v2.1');
+  let t = at(6, 13, 40, 0), rq = 1000;
+  while (t > NOW - 31 * 864e5) {
+    let x = r() * WT, code = W[0][0];
+    for (const [c, w] of W) { x -= w; if (x <= 0) { code = c; break; } }
+    const b = pick(BIZ), adm = pick(ADMINS.slice(0, 4)), sup = pick(ADMINS.slice(0, 2));
+    const pid = { type: 'Mahsulot', id: '#P-' + (2000 + BIZ.indexOf(b) * 10 + Math.floor(r() * 6)) };
+    const sel = { type: 'Sotuvchi', id: b.tg };
+    switch (code) {
+      case 'CALCULATION_SAVED': mk(t, code, S, { type: 'Hisoblash', id: '#C-' + (88000 + Math.floor(r() * 9000)) }, b, `${r() < .65 ? 'Foyda' : 'Narx'} · ${pick(CHN.slice(0, 4))} · ${r() < .6 ? 'To‘liq' : 'Taxminiy'}`); break;
+      case 'CALCULATION_DELETED': mk(t, code, S, { type: 'Hisoblash', id: '#C-' + (88000 + Math.floor(r() * 9000)) }, b, 'Sotuvchi botda o‘chirdi'); break;
+      case 'PRODUCT_UPDATED': { const f = pick(PFIELDS); mk(t, code, S, pid, b, 'Maydonlar: ' + f.join(', ').toLowerCase(), { changed: f }); break; }
+      case 'PRODUCT_CREATED': mk(t, code, S, pid, b, 'Bot orqali qo‘shildi'); break;
+      case 'PRODUCT_ARCHIVED': mk(t, code, S, pid, b, 'Sotuvchi arxivladi'); break;
+      case 'ADMIN_LOGIN': mk(t, code, A(adm.e), { type: 'Admin', id: '#' + adm.id }, null, 'Parol + 2FA'); break;
+      case 'ADMIN_LOGIN_FAILED': mk(t, code, T, { type: 'Admin', id: '#' + adm.id }, null, r() < .5 ? 'Noto‘g‘ri parol · 1-urinish' : 'Noto‘g‘ri 2FA kodi · 2-urinish'); break;
+      case 'ADMIN_LOCKED': mk(t, code, T, { type: 'Admin', id: '#' + adm.id }, null, 'Ketma-ket 5 ta noto‘g‘ri urinish · 15 daqiqaga'); break;
+      case 'ADMIN_2FA_RESET': mk(t, code, A(sup.e), { type: 'Admin', id: '#' + pick(ADMINS.slice(2, 4)).id }, null, 'Sabab: Yangi qurilma'); break;
+      case 'ACCESS_REQUESTED': rq++; mk(t, code, A(adm.e), req(rq), b, `${pick([30, 45, 60])} daqiqa · Sabab: ${pick(REASONS)}`); break;
+      case 'ACCESS_GRANTED': mk(t, code, S, req(Math.max(1000, rq)), b, `${pick([30, 45, 60])} daqiqa, faqat o‘qish`); break;
+      case 'ACCESS_DENIED': mk(t, code, S, req(Math.max(1000, rq)), b, 'Botda «Rad etish» bosildi'); break;
+      case 'ACCESS_REVOKED': mk(t, code, r() < .5 ? A(adm.e) : S, req(Math.max(1000, rq)), b, r() < .5 ? 'Admin muddatidan oldin yopdi' : 'Sotuvchi botda bekor qildi'); break;
+      case 'ACCESS_EXPIRED': mk(t, code, T, req(Math.max(1000, rq)), b, r() < .6 ? 'Ruxsat muddati tugadi' : 'Javobsiz, 24 soat'); break;
+      case 'ACCESS_DATA_VIEWED': mk(t, code, A(adm.e), req(Math.max(1000, rq)), b, r() < .5 ? 'Mahsulotlar · faqat o‘qish' : 'Saqlangan hisoblashlar · faqat o‘qish'); break;
+      case 'SELLER_REGISTERED': mk(t, code, S, sel, b, '/start · ' + pick(CHN)); break;
+      case 'SELLER_ACTIVATED': mk(t, code, T, sel, b, 'Onboarding yakunlandi'); break;
+      case 'PRIMARY_CHANNEL_CHANGED': { const a = pick(CHN), c = pick(CHN.filter(x => x !== a)); mk(t, code, S, sel, b, `${a} → ${c}`); break; }
+      case 'SELLER_DELETION_REQUESTED': mk(t, code, S, sel, b, '30 kunlik davr boshlandi'); break;
+      case 'SELLER_BLOCKED': mk(t, code, A(sup.e), sel, b, 'Sabab: Spam xabarlar'); break;
+      case 'SELLER_REACTIVATED': mk(t, code, A(sup.e), sel, b, 'Sabab: Shikoyat tekshirildi, asossiz'); break;
+      case 'SELLER_CLOSED': mk(t, code, T, sel, b, '30 kunlik davr tugadi, tijoriy ma’lumot o‘chirildi'); break;
+      case 'SUPPORT_CONTACT_UPDATED': mk(t, code, A(sup.e), { type: 'Sozlama', id: 'support_contact' }, null, 'Maydonlar: tugma matni, havola'); break;
+    }
+    t -= Math.round(-Math.log(1 - r()) * 2700e3 / 1000) * 1000 + 7000;
+  }
+  out.sort((a, b) => b.t - a.t);
+  out.forEach((e, i) => { e.k = 'e' + i; });
+  return out;
+})();
+
+const PRESETS = [['today', 'Bugun'], ['7d', 'Oxirgi 7 kun'], ['30d', 'Oxirgi 30 kun'], ['all', 'Hammasi']];
+const parseD = s => { const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec((s || '').trim()); if (!m) return null; const d = new Date(+m[3], +m[2] - 1, +m[1]); return d.getMonth() === +m[2] - 1 ? d.getTime() : null; };
+const ACTORS = [['admin', 'Admin', 'user-round'], ['seller', 'Sotuvchi', 'store'], ['system', 'Tizim', 'cpu']];
+const DEMO = {
+  filtered: { acts: ['ACCESS_REQUESTED', 'ACCESS_GRANTED', 'ACCESS_DENIED', 'ACCESS_DATA_VIEWED', 'ACCESS_REVOKED', 'ACCESS_EXPIRED'], actors: ['admin', 'seller'] },
+  security: { acts: SEC_CODES },
+  noResults: { biz: 'BIZ-99999', admin: 'n.rashidova@sellerflow.uz', date: 'today' },
+  actionMenu: { pop: 'act', acts: ['ADMIN_LOCKED', 'ADMIN_2FA_RESET'] },
+  adminCombo: { pop: 'combo', comboText: 'kar' },
+  datePop: { pop: 'date' },
+};
+const empty = () => ({ date: '7d', from: null, to: null, actors: [], admin: null, acts: [], biz: '' });
+
+class Component extends DCLogic {
+  state = { f: null, page: 1, pop: undefined, comboText: null, comboIdx: 0, cFrom: '', cTo: '', cErr: '', det: undefined, exp: undefined, expBusy: false, toast: null, extra: [], view: null };
+  rootRef = React.createRef(); comboRef = React.createRef(); detCloseRef = React.createRef(); expCancelRef = React.createRef();
+  componentWillUnmount() { clearTimeout(this.tt); clearTimeout(this.tb); clearTimeout(this.tr); }
+  setF = patch => this.setState({ f: { ...this._f, ...patch }, page: 1 });
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const demo = p.demo || 'none', D = DEMO[demo] || {};
+    const view = s.view ?? p.view ?? 'default';
+    const cw = p.contentWidth ?? 1136, mobile = cw < 640;
+    const f = s.f || { ...empty(), ...(D.acts ? { acts: D.acts } : {}), ...(D.actors ? { actors: D.actors } : {}), ...(D.biz ? { biz: D.biz } : {}), ...(D.admin ? { admin: D.admin } : {}), ...(D.date ? { date: D.date } : {}) };
+    this._f = f;
+    const pop = s.pop === undefined ? D.pop || null : s.pop;
+    const all = [...s.extra, ...EVENTS];
+
+    let min = -Infinity, max = Infinity;
+    if (f.date === 'today') min = DAY0; else if (f.date === '7d') min = NOW - 7 * 864e5; else if (f.date === '30d') min = NOW - 30 * 864e5; else if (f.date === 'custom') { min = f.from; max = f.to + 864e5 - 1; }
+    const bizQ = f.biz.trim().toUpperCase();
+    const fkey = JSON.stringify([f, s.extra.length]);
+    const filtered = this._fkey === fkey ? this._filtered : all.filter(e => e.t >= min && e.t <= max
+      && (!f.actors.length || f.actors.includes(e.actor.kind))
+      && (!f.admin || e.actor.e === f.admin || (e.obj.type === 'Admin' && AD[f.admin] && e.obj.id === '#' + AD[f.admin].id))
+      && (!f.acts.length || f.acts.includes(e.code))
+      && (!bizQ || (e.biz && (e.biz.includes(bizQ) || e.tg.includes(bizQ.replace(/\s/g, ''))))));
+    this._filtered = filtered; this._fkey = fkey;
+
+    const per = 50, total = filtered.length, pagesN = Math.max(1, Math.ceil(total / per)), page = Math.min(s.page, pagesN);
+    const slice = filtered.slice((page - 1) * per, page * per);
+    const detK = s.det === undefined ? (demo === 'drawer' ? EVENTS[0].k : demo === 'drawerCatalog' ? (EVENTS.find(e => e.changed && e.changed.length > 1) || EVENTS[30]).k : null) : s.det;
+    const actorOf = e => e.actor.kind === 'admin' ? { label: e.actor.e, icon: 'user-round', bg: 'var(--primary-subtle)', fg: 'var(--primary-subtle-fg)', weight: 500 } : e.actor.kind === 'seller' ? { label: 'Sotuvchi', icon: 'store', bg: 'var(--success-bg)', fg: 'var(--success-icon)', weight: 400 } : { label: 'Tizim', icon: 'cpu', bg: 'var(--neutral-bg)', fg: 'var(--neutral-icon)', weight: 400 };
+    const objIdOf = e => e.obj.type === 'Sotuvchi' ? fmtId(e.obj.id) : e.obj.id;
+    const open = k => this.setState({ det: k, pop: null }, () => setTimeout(() => this.detCloseRef.current && this.detCloseRef.current.focus({ preventScroll: true }), 30));
+    const rows = slice.map(e => {
+      const A = ACT[e.code], a = actorOf(e), sec = !!A[2];
+      return { k: e.k, time: fmtTs(e.t), actor: a.label, actorIcon: a.icon, actorBg: a.bg, actorFg: a.fg, actorWeight: a.weight, name: A[0], code: e.code, sec, mark: sec ? `var(--${A[2]}-icon)` : 'transparent',
+        objType: e.obj.type, objId: objIdOf(e), biz: e.biz || '—', bizFg: e.biz ? 'var(--text-primary)' : 'var(--text-tertiary)', note: e.note,
+        bg: detK === e.k ? 'var(--bg-active)' : 'transparent',
+        aria: `${fmtTs(e.t)}, ${a.label}, ${A[0]}${sec ? ', xavfsizlik hodisasi' : ''}. Tafsilotni ochish`,
+        open: () => open(e.k),
+        onKey: ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(e.k); } else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); const sib = ev.key === 'ArrowDown' ? ev.currentTarget.nextElementSibling : ev.currentTarget.previousElementSibling; sib && sib.focus(); } } };
+    });
+
+    let d = { fields: [], rel: [], changed: [] };
+    const de = detK ? all.find(e => e.k === detK) : null;
+    if (de) {
+      const A = ACT[de.code], a = actorOf(de), sec = A[2];
+      const fields = [
+        { k: 'Vaqt', v: fmtTs(de.t), font: 'var(--font-mono)', sub: 'Asia/Tashkent' },
+        { k: 'Bajaruvchi', v: a.label, sub: de.actor.kind === 'admin' ? AD[de.actor.e].r : de.actor.kind === 'seller' ? 'Telegram bot orqali' : 'Avtomatik jarayon' },
+        { k: 'Amal', v: A[0], sub: GROUPS.find(g => g[0] === A[1])[1] },
+        { k: 'Amal kodi', v: de.code, font: 'var(--font-mono)' },
+        { k: 'Obyekt', v: `${de.obj.type} ${objIdOf(de)}` },
+        { k: 'Biznes', v: de.biz || '—', font: 'var(--font-mono)', sub: de.tg ? 'Sotuvchi Telegram ID: ' + fmtId(de.tg) : '' },
+        { k: 'Izoh', v: de.note },
+        { k: 'IP manzil', v: de.ip || '—', font: 'var(--font-mono)' },
+        { k: 'Qurilma', v: de.dev },
+        { k: 'So‘rov ID', v: de.rid, font: 'var(--font-mono)', size: '12px' },
+      ].map(x => ({ ...x, font: x.font || 'var(--font-sans)', size: x.size || '13px', hasSub: !!x.sub, sub: x.sub || '' }));
+      const relAll = all.filter(e => e.obj.type === de.obj.type && e.obj.id === de.obj.id);
+      const idx = relAll.indexOf(de);
+      const relSlice = relAll.slice(Math.max(0, idx - 4), idx + 6);
+      d = { name: A[0], code: de.code, sec: !!sec, secBg: sec ? `var(--${sec}-bg)` : '', secBorder: sec ? `var(--${sec}-border)` : '', secFg: sec ? `var(--${sec}-text)` : '',
+        fields, hasChanged: !!de.changed, changed: de.changed || [],
+        relCount: relAll.length, hasRel: relAll.length > 1, noRel: relAll.length <= 1,
+        rel: relSlice.map((e, i) => { const cur = e.k === de.k, R = ACT[e.code]; return { name: R[0], time: fmtTs(e.t), actor: actorOf(e).label, current: cur ? 'true' : undefined, bg: cur ? 'var(--bg-active)' : 'transparent', weight: cur ? 600 : 500, dot: R[2] ? `var(--${R[2]}-icon)` : cur ? 'var(--primary)' : 'var(--border-strong)', lineOp: i === relSlice.length - 1 ? 0 : 1, open: () => this.setState({ det: e.k }) }; }),
+        hasBiz: !!de.biz, filterBiz: () => this.setState({ f: { ...f, biz: de.biz }, page: 1, det: null }),
+        hasSeller: !!de.tg, goSeller: () => p.onNavigate && p.onNavigate('seller', de.tg) };
+    }
+
+    const nums = new Set([1, pagesN, page - 1, page, page + 1].filter(n => n >= 1 && n <= pagesN));
+    const pages = []; let last = 0;
+    [...nums].sort((a, b) => a - b).forEach(n => { if (n - last > 1) pages.push({ gap: true, btn: false }); const cur = n === page; pages.push({ gap: false, btn: true, n, aria: `${n}-sahifa`, current: cur ? 'page' : undefined, bg: cur ? 'var(--primary-subtle)' : 'var(--bg-surface)', fg: cur ? 'var(--primary-subtle-fg)' : 'var(--text-primary)', border: cur ? 'var(--primary)' : 'var(--border-default)', weight: cur ? 600 : 400, go: () => this.setState({ page: n }) }); last = n; });
+
+    // filters UI
+    const on = (a, v) => a.includes(v), tog = (a, v) => on(a, v) ? a.filter(x => x !== v) : [...a, v];
+    const dateLabel = f.date === 'custom' ? `${fmtTs(f.from).slice(0, 10)} – ${fmtTs(f.to).slice(0, 10)}` : PRESETS.find(x => x[0] === f.date)[1];
+    const activeTrig = { border: 'var(--primary)', bg: 'var(--primary-subtle)' }, idle = { border: 'var(--border-input)', bg: 'var(--bg-surface)' };
+    const q = String(s.comboText ?? (pop === 'combo' ? (D.comboText || '') : '')).toLowerCase();
+    const comboOpen = pop === 'combo';
+    const adminList = ADMINS.filter(a => !q || a.e.toLowerCase().includes(q) || (f.admin === a.e && s.comboText == null));
+    const cIdx = Math.min(s.comboIdx, Math.max(0, adminList.length - 1));
+    const pickAdmin = e => { this.setState({ f: { ...f, admin: e }, page: 1, pop: null, comboText: null, comboIdx: 0 }); };
+    const groupState = codes => { const n = codes.filter(c => on(f.acts, c)).length; return n === 0 ? 'none' : n === codes.length ? 'all' : 'some'; };
+    const box = st => ({ boxBorder: st === 'none' ? 'var(--border-strong)' : 'var(--primary)', boxBg: st === 'none' ? 'var(--bg-surface)' : 'var(--primary)', boxOp: st === 'none' ? 0 : 1 });
+    const actGroups = GROUPS.map(([gid, label]) => {
+      const codes = Object.keys(ACT).filter(c => ACT[c][1] === gid), st = groupState(codes), n = codes.filter(c => on(f.acts, c)).length;
+      return { label, aria: st === 'all' ? 'true' : st === 'some' ? 'mixed' : 'false', ...box(st), boxIcon: st === 'some' ? 'minus' : 'check', countText: n ? `${n}/${codes.length}` : String(codes.length),
+        toggle: () => this.setF({ acts: st === 'all' ? f.acts.filter(c => !codes.includes(c)) : [...new Set([...f.acts, ...codes])] }),
+        items: codes.map(c => { const o = on(f.acts, c); return { name: ACT[c][0], code: c, sec: !!ACT[c][2], on: o, ...box(o ? 'all' : 'none'), toggle: () => this.setF({ acts: tog(f.acts, c) }) }; }) };
+    });
+    const nFilters = (f.date !== '7d' ? 1 : 0) + (f.actors.length ? 1 : 0) + (f.admin ? 1 : 0) + (f.acts.length ? 1 : 0) + (bizQ ? 1 : 0);
+
+    const loading = view === 'loading', isError = view === 'error';
+    const isEmpty = !loading && !isError && total === 0;
+    const summary = [
+      { k: 'Sana', v: dateLabel },
+      { k: 'Bajaruvchi', v: f.actors.length ? f.actors.map(a => ACTORS.find(x => x[0] === a)[1]).join(', ') : 'Hammasi' },
+      { k: 'Admin', v: f.admin || 'Hammasi' },
+      { k: 'Amal turi', v: f.acts.length ? `${f.acts.length} ta tanlangan` : 'Hammasi' },
+      { k: 'Biznes ID', v: bizQ || '—' },
+    ];
+    const expOpen = s.exp === undefined ? demo === 'export' : s.exp;
+
+    return {
+      rootRef: this.rootRef, comboRef: this.comboRef, detCloseRef: this.detCloseRef, expCancelRef: this.expCancelRef,
+      openExport: () => this.setState({ exp: true, pop: null }, () => setTimeout(() => this.expCancelRef.current && this.expCancelRef.current.focus({ preventScroll: true }), 30)),
+      exportDisabled: total === 0 || loading || isError, exportFg: total === 0 || loading || isError ? 'var(--text-tertiary)' : 'var(--text-primary)',
+      closePops: () => this.setState({ pop: null, comboText: null }),
+      dateOpen: pop === 'date', toggleDate: () => this.setState({ pop: pop === 'date' ? null : 'date', cErr: '', cFrom: f.date === 'custom' ? fmtTs(f.from).slice(0, 10) : '', cTo: f.date === 'custom' ? fmtTs(f.to).slice(0, 10) : '' }),
+      dateLabel, dateTrig: f.date !== '7d' ? activeTrig : idle,
+      presets: PRESETS.map(([id, label]) => { const o = f.date === id; return { label, on: o, bg: o ? 'var(--bg-active)' : 'transparent', weight: o ? 600 : 400, checkOp: o ? 1 : 0, pick: () => { this.setF({ date: id }); this.setState({ pop: null }); } }; }),
+      cFrom: s.cFrom, cTo: s.cTo, cErr: s.cErr, cErrOn: !!s.cErr, cBorder: s.cErr ? 'var(--danger-icon)' : 'var(--border-input)',
+      onFrom: e => this.setState({ cFrom: e.target.value.slice(0, 10), cErr: '' }), onTo: e => this.setState({ cTo: e.target.value.slice(0, 10), cErr: '' }),
+      applyCustom: () => { const a = parseD(s.cFrom), b = parseD(s.cTo); if (a == null || b == null) return this.setState({ cErr: 'Sanani DD.MM.YYYY ko‘rinishida kiriting.' }); if (a > b) return this.setState({ cErr: '«Dan» sanasi «Gacha»dan keyin bo‘lmasin.' }); this.setF({ date: 'custom', from: a, to: b }); this.setState({ pop: null }); },
+      actorChips: ACTORS.map(([id, label, icon]) => { const o = on(f.actors, id); return { label, icon, on: o, bg: o ? 'var(--bg-surface)' : 'transparent', shadow: o ? '0 1px 2px rgba(12,10,9,.12)' : 'none', fg: o ? 'var(--text-primary)' : 'var(--text-secondary)', weight: o ? 600 : 500, toggle: () => this.setF({ actors: tog(f.actors, id) }) }; }),
+      comboW: mobile ? '100%' : '240px', comboOpen, comboText: s.comboText ?? (comboOpen && D.comboText ? D.comboText : (f.admin || '')),
+      comboBorder: f.admin ? 'var(--primary)' : 'var(--border-input)', comboBg: f.admin ? 'var(--primary-subtle)' : 'var(--bg-surface)',
+      comboActive: comboOpen && adminList[cIdx] ? 'sfl-ad-' + cIdx : undefined,
+      onCombo: e => this.setState({ comboText: e.target.value, pop: 'combo', comboIdx: 0 }),
+      openCombo: () => { if (!comboOpen) this.setState({ pop: 'combo', comboText: '', comboIdx: 0 }); },
+      comboKey: e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ pop: 'combo', comboIdx: Math.min(cIdx + 1, adminList.length - 1) }); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ comboIdx: Math.max(cIdx - 1, 0) }); }
+        else if (e.key === 'Enter') { e.preventDefault(); if (comboOpen && adminList[cIdx]) pickAdmin(adminList[cIdx].e); }
+        else if (e.key === 'Escape' && comboOpen) { e.preventDefault(); e.stopPropagation(); this.setState({ pop: null, comboText: null }); }
+        else if (e.key === 'Tab') this.setState({ pop: null, comboText: null });
+      },
+      adminOpts: adminList.map((a, i) => ({ domId: 'sfl-ad-' + i, email: a.e, meta: `${a.r} · ${a.st}`, ini: a.e.slice(0, 2).toUpperCase(), sel: f.admin === a.e, checkOp: f.admin === a.e ? 1 : 0, bg: i === cIdx ? 'var(--bg-hover)' : 'transparent', pick: ev => { ev.preventDefault(); pickAdmin(a.e); } })),
+      adminNone: adminList.length === 0, hasAdmin: !!f.admin, noAdmin: !f.admin,
+      clearAdmin: () => this.setF({ admin: null }),
+      actOpen: pop === 'act', toggleAct: () => this.setState({ pop: pop === 'act' ? null : 'act' }),
+      actTrig: f.acts.length ? { ...activeTrig, has: true, count: f.acts.length } : { ...idle, has: false, count: 0 },
+      actLeft: mobile ? 'auto' : '0', actRight: mobile ? '0' : 'auto',
+      actGroups, onlySec: () => this.setF({ acts: SEC_CODES }), clearActs: () => this.setF({ acts: [] }),
+      bizW: mobile ? '100%' : '180px', biz: f.biz, onBiz: e => this.setF({ biz: e.target.value }),
+      bizBorder: bizQ ? 'var(--primary)' : 'var(--border-input)', bizBg: bizQ ? 'var(--primary-subtle)' : 'var(--bg-surface)',
+      hasFilters: nFilters > 0, clearAll: () => this.setState({ f: empty(), page: 1, comboText: null }),
+      widen: () => this.setF({ date: '30d' }),
+      emptyText: `Tanlangan ${nFilters} ta filtr bo‘yicha yozuv yo‘q. Sana oralig‘ini kengaytiring yoki filtrlarni tozalang.`,
+      totalText: loading ? '…' : nf(total),
+      isError, isEmpty, isLoading: loading,
+      showTable: !mobile && !isError && (!isEmpty || loading), showCards: mobile && !isError && !isEmpty && !loading,
+      tableMaxH: cw >= 900 ? '720px' : 'none',
+      skel: Array.from({ length: 10 }, (_, i) => ({ cells: Array.from({ length: 6 }, (_, j) => ({ w: ['70%', '80%', '75%', '55%', '45%', '85%'][(i + j) % 6] })) })),
+      rows: loading ? [] : rows, hasRows: !loading,
+      rangeText: total ? `${nf((page - 1) * per + 1)}–${nf(Math.min(page * per, total))} / ${nf(total)}` : '0',
+      pages, prevDis: page <= 1, nextDis: page >= pagesN, prevOp: page <= 1 ? .4 : 1, nextOp: page >= pagesN ? .4 : 1,
+      prev: () => this.setState({ page: Math.max(1, page - 1) }), next: () => this.setState({ page: Math.min(pagesN, page + 1) }),
+      retry: () => { this.setState({ view: 'loading' }); clearTimeout(this.tr); this.tr = setTimeout(() => this.setState({ view: 'default' }), 1100); },
+      detOpen: !!de, d, detW: mobile ? '100%' : '520px', closeDet: () => this.setState({ det: null }),
+      expOpen, closeExport: () => { if (!s.expBusy) this.setState({ exp: false }); }, expSummary: summary,
+      expBusy: s.expBusy, expIcon: s.expBusy ? 'loader-circle' : 'download', expAnim: s.expBusy ? 'sfSpin .8s linear infinite' : 'none', expLabel: s.expBusy ? 'Tayyorlanmoqda…' : 'CSV yuklab olish',
+      doExport: () => {
+        this.setState({ expBusy: true }); clearTimeout(this.tb);
+        this.tb = setTimeout(() => {
+          const list = this._filtered, esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+          const csv = '\ufeff' + [['vaqt', 'bajaruvchi', 'amal', 'amal_kodi', 'obyekt', 'biznes', 'izoh'].join(','), ...list.map(e => [fmtTs(e.t), actorOf(e).label, ACT[e.code][0], e.code, `${e.obj.type} ${e.obj.id}`, e.biz || '', e.note].map(esc).join(','))].join('\n');
+          try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `audit_${fmtTs(Date.now()).slice(0, 10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); } catch (_) {}
+          const now = new Date(); const t = new Date(2026, 10, 6, now.getHours(), now.getMinutes(), now.getSeconds()).getTime();
+          const ev = { k: 'x' + Date.now(), t: Math.max(t, NOW + 1000), code: 'AUDIT_EXPORTED', actor: { kind: 'admin', e: ME }, obj: { type: 'Eksport', id: '#E-' + (310 + s.extra.length) }, biz: null, tg: null, note: `${nf(list.length)} ta yozuv · CSV · ${summary.filter(x => x.v !== 'Hammasi' && x.v !== '—').map(x => x.k + ': ' + x.v).join('; ')}`, rid: 'req_' + Math.random().toString(16).slice(2, 10), ip: '213.230.94.17', dev: 'Chrome 130 · macOS' };
+          this.setState({ expBusy: false, exp: false, extra: [ev, ...s.extra], toast: { title: 'CSV tayyor.', sub: `${nf(list.length)} ta yozuv. Eksport auditga yozildi.` } });
+          clearTimeout(this.tt); this.tt = setTimeout(() => this.setState({ toast: null }), 5000);
+        }, 900);
+      },
+      onRootKey: e => { if (e.key !== 'Escape') return; if (expOpen) { e.stopPropagation(); this.setState({ exp: false }); } else if (pop) { e.stopPropagation(); this.setState({ pop: null, comboText: null }); } else if (de) { e.stopPropagation(); this.setState({ det: null }); } },
+      hasToast: !!s.toast, toast: s.toast || {}, closeToast: () => this.setState({ toast: null }),
+      toastLeft: mobile ? '12px' : 'auto', toastRight: mobile ? '12px' : '24px',
+    };
+  }
+}
+</script>
+</body>
+</html>

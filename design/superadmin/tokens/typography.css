@@ -1,0 +1,30 @@
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-12: 12px; --lh-12: 16px;
+  --text-13: 13px; --lh-13: 18px;
+  --text-14: 14px; --lh-14: 20px;   /* body */
+  --text-16: 16px; --lh-16: 24px;
+  --text-20: 20px; --lh-20: 28px;
+  --text-24: 24px; --lh-24: 32px;
+  --text-30: 30px; --lh-30: 36px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --tracking-tight: -0.011em;  /* 20px+ */
+  --tracking-caps: 0.04em;     /* 12px uppercase labels */
+
+  /* Semantic roles */
+  --type-display: var(--weight-semibold) var(--text-30)/var(--lh-30) var(--font-sans);
+  --type-h1: var(--weight-semibold) var(--text-24)/var(--lh-24) var(--font-sans);
+  --type-h2: var(--weight-semibold) var(--text-20)/var(--lh-20) var(--font-sans);
+  --type-h3: var(--weight-semibold) var(--text-16)/var(--lh-16) var(--font-sans);
+  --type-body: var(--weight-regular) var(--text-14)/var(--lh-14) var(--font-sans);
+  --type-body-strong: var(--weight-medium) var(--text-14)/var(--lh-14) var(--font-sans);
+  --type-small: var(--weight-regular) var(--text-13)/var(--lh-13) var(--font-sans);
+  --type-caption: var(--weight-medium) var(--text-12)/var(--lh-12) var(--font-sans);
+  --type-mono: var(--weight-regular) var(--text-13)/var(--lh-13) var(--font-mono);
+}

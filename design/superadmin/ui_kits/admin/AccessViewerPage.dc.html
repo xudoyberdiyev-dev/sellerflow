@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+[data-sfv] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sfv] button{font-family:inherit;}
+[data-sfv] [class^="icon-"]{line-height:1;display:inline-flex;}
+[data-sfv] tbody tr:focus-visible{outline-offset:-2px;}
+[data-sfv-ro]{-webkit-user-select:none;user-select:none;}
+</style>
+</helmet>
+<div data-sfv="" ref="{{ rootRef }}" onKeyDown="{{ onRootKey }}" style="position:relative;display:flex;flex-direction:column;gap:20px;min-height:760px;color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;">
+
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-busy="true" aria-label="Ma’lumot yuklanmoqda" style="display:flex;flex-direction:column;gap:20px;">
+      <div style="height:56px;border-radius:10px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+      <div style="width:320px;max-width:70%;height:28px;border-radius:6px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+      <div style="height:420px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isStateBox }}" hint-placeholder-val="{{ false }}">
+    <div role="region" aria-labelledby="sfv-st" style="flex:1;min-height:520px;display:flex;align-items:center;justify-content:center;padding:48px 16px;">
+      <div style="max-width:460px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <span style="width:56px;height:56px;border-radius:14px;background:{{ sx.bg }};border:1px solid {{ sx.border }};color:{{ sx.fg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ sx.icon }}" aria-hidden="true" style="font-size:24px;"></i></span>
+        <span style="font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text-tertiary);letter-spacing:.04em;">{{ sx.code }}</span>
+        <h1 id="sfv-st" style="margin:0;font:var(--type-h2);letter-spacing:var(--tracking-tight);text-wrap:balance;">{{ sx.title }}</h1>
+        <p style="margin:0;color:var(--text-secondary);text-wrap:pretty;">{{ sx.text }}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+          <button type="button" onClick="{{ goAccess }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-arrow-left" aria-hidden="true" style="font-size:16px;"></i>Kirish so‘rovlariga qaytish</button>
+          <sc-if value="{{ sx.hasNew }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ goAccess }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-key-round" aria-hidden="true" style="font-size:16px;"></i>O‘zim so‘rov yuborish</button>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMain }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div role="region" aria-label="Faqat ko‘rish rejimi" style="position:sticky;top:0;z-index:20;margin:-20px -16px 0;border-bottom:1px solid var(--privacy-border);background:var(--privacy-bg);color:var(--privacy-text);box-shadow:0 6px 16px rgba(12,10,9,.10);">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;">
+          <i class="icon-lock" aria-hidden="true" style="font-size:16px;color:var(--privacy-icon);"></i>
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:16px;"><strong style="font-size:13px;font-weight:600;">Faqat ko‘rish</strong><span style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span style="display:inline-flex;align-items:center;gap:4px;"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:var(--danger-icon);"></span>auditga yozilmoqda</span></span></span>
+          <span role="timer" aria-label="Ruxsat tugashiga {{ remainText }} qoldi" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:14px;background:{{ tm.bg }};border:1px solid {{ tm.border }};color:{{ tm.fg }};font-family:var(--font-mono);font-size:13px;font-weight:600;"><i class="icon-timer" aria-hidden="true" style="font-size:12px;"></i>{{ remainText }}</span>
+          <button type="button" aria-label="Ruxsat tafsilotlari" aria-expanded="{{ bnOpen }}" onClick="{{ toggleBn }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--privacy-text);cursor:pointer;"><i class="icon-chevron-down" aria-hidden="true" style="font-size:18px;transform:{{ bnRot }};"></i></button>
+          <button type="button" aria-label="Ko‘ruvchini yopish" onClick="{{ goAccess }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--privacy-text);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:18px;"></i></button>
+        </div>
+        <sc-if value="{{ bnOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:0 14px 12px;display:flex;flex-direction:column;gap:10px;font-size:13px;">
+            <span style="text-wrap:pretty;">Sotuvchi <span style="font-family:var(--font-mono);font-weight:600;">{{ idText }}</span> roziligi bilan · Har ko‘rish auditga yozilmoqda · Tahrirlash, nusxalash va eksport o‘chirilgan.</span>
+            <button type="button" onClick="{{ askRevoke }}" style="height:44px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--danger-border);border-radius:8px;background:var(--bg-surface);color:var(--danger-text);font-size:14px;font-weight:500;cursor:pointer;"><i class="icon-circle-slash" aria-hidden="true" style="font-size:15px;"></i>Ruxsatni bekor qilish</button>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+    <div role="region" aria-label="Faqat ko‘rish rejimi" style="position:sticky;top:12px;z-index:20;display:{{ deskFlex }};align-items:center;gap:10px 14px;flex-wrap:wrap;padding:10px 12px 10px 16px;border:1px solid var(--privacy-border);border-radius:10px;background:var(--privacy-bg);color:var(--privacy-text);box-shadow:0 8px 24px rgba(12,10,9,.10);">
+      <i class="icon-lock" aria-hidden="true" style="font-size:18px;color:var(--privacy-icon);"></i>
+      <span style="flex:1 1 320px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;">
+        <strong style="font-weight:600;">Faqat ko‘rish</strong>
+        <span aria-hidden="true">·</span>
+        <span>Sotuvchi <span style="font-family:var(--font-mono);font-weight:600;">{{ idText }}</span> roziligi bilan</span>
+        <span aria-hidden="true">·</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--danger-icon);"></span>Har ko‘rish auditga yozilmoqda</span>
+        <span aria-hidden="true">·</span>
+        <span role="timer" aria-label="Ruxsat tugashiga {{ remainText }} qoldi" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;background:{{ tm.bg }};border:1px solid {{ tm.border }};color:{{ tm.fg }};font-weight:600;"><i class="icon-timer" aria-hidden="true" style="font-size:13px;"></i><span style="font-family:var(--font-mono);">{{ remainText }}</span>qoldi</span>
+      </span>
+      <span style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" onClick="{{ goAccess }}" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--privacy-border);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-x" aria-hidden="true" style="font-size:14px;"></i>Yopish</button>
+        <button type="button" onClick="{{ askRevoke }}" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--danger-border);border-radius:6px;background:var(--bg-surface);color:var(--danger-text);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--danger-bg);"><i class="icon-circle-slash" aria-hidden="true" style="font-size:14px;"></i>Ruxsatni bekor qilish</button>
+      </span>
+    </div>
+
+    <div data-sfv-ro="" aria-hidden="{{ closedAria }}" onCopy="{{ blockCopy }}" onCut="{{ blockCopy }}" onDragStart="{{ blockDrag }}" style="display:flex;flex-direction:column;gap:20px;filter:{{ dimFilter }};opacity:{{ dimOpacity }};transition:filter .3s ease,opacity .3s ease;pointer-events:{{ dimPE }};">
+      <div style="display:flex;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:6px;">
+          <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">Sotuvchi <span style="font-family:var(--font-mono);">{{ idText }}</span></h1>
+          <span style="font-size:13px;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:2px 8px;"><span>Ruxsat <span style="font-family:var(--font-mono);">{{ g.num }}</span></span><span aria-hidden="true">·</span><span>{{ g.dur }} daqiqa</span><span aria-hidden="true">·</span><span>{{ g.at }} da berildi</span><span aria-hidden="true">·</span><span>Sabab: {{ g.reason }}</span></span>
+        </div>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:16px;color:var(--text-tertiary);"><i class="icon-pencil-off" aria-hidden="true" style="font-size:13px;"></i>Tahrirlash, nusxalash va eksport o‘chirilgan</span>
+      </div>
+
+      <div role="tablist" aria-label="Tijoriy ma’lumot" onKeyDown="{{ tabKey }}" style="display:flex;gap:4px;overflow-x:auto;min-width:0;border-bottom:1px solid var(--border-default);">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+          <button type="button" role="tab" id="{{ t.domId }}" aria-selected="{{ t.on }}" aria-controls="sfv-panel" tabIndex="{{ t.tabIndex }}" onClick="{{ t.onClick }}" style="height:40px;flex-shrink:0;display:flex;align-items:center;gap:6px;padding:0 10px;margin-bottom:-1px;border:0;border-bottom:2px solid {{ t.line }};background:transparent;color:{{ t.fg }};font-size:14px;font-weight:{{ t.weight }};cursor:pointer;white-space:nowrap;" style-hover="color:var(--text-primary);"><i class="icon-{{ t.icon }}" aria-hidden="true" style="font-size:14px;"></i>{{ t.label }}<span style="font-size:12px;line-height:16px;padding:0 6px;border-radius:8px;background:var(--bg-subtle);border:1px solid var(--border-default);color:var(--text-secondary);font-weight:500;">{{ t.count }}</span></button>
+        </sc-for>
+      </div>
+
+      <div role="tabpanel" id="sfv-panel" aria-labelledby="{{ panelLabel }}" style="border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);overflow:hidden;">
+        <div style="overflow:auto;">
+          <sc-if value="{{ isProdTable }}" hint-placeholder-val="{{ true }}">
+            <table aria-label="Mahsulotlar, faqat ko‘rish" style="width:100%;min-width:760px;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr>
+                  <th scope="col" style="height:40px;padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Nomi</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:right;font-size:12px;font-weight:600;color:var(--text-secondary);">Tannarx</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:right;font-size:12px;font-weight:600;color:var(--text-secondary);">Reja narxi</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">SKU</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Holat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ prodRows }}" as="pr" hint-placeholder-count="10">
+                  <tr>
+                    <td style="height:48px;padding:0 16px;border-bottom:1px solid var(--border-default);font-weight:500;">{{ pr.name }}</td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);text-align:right;white-space:nowrap;">{{ pr.cost }}</td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);text-align:right;white-space:nowrap;">{{ pr.plan }}</td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);white-space:nowrap;">{{ pr.sku }}</td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ pr.bg }};border:1px solid {{ pr.border }};color:{{ pr.fg }};"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ pr.dot }};"></span>{{ pr.status }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </sc-if>
+          <sc-if value="{{ isCalcTable }}" hint-placeholder-val="{{ false }}">
+            <table aria-label="Saqlangan hisoblashlar, faqat ko‘rish" style="width:100%;min-width:900px;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr>
+                  <th scope="col" style="height:40px;padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Sana</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Tur</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Mahsulot</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Kanal</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:right;font-size:12px;font-weight:600;color:var(--text-secondary);">Natija</th>
+                  <th scope="col" style="padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);">Aniqlik</th>
+                  <th scope="col" style="width:40px;padding:0 8px;background:var(--bg-subtle);border-bottom:1px solid var(--border-default);"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Ochish</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ calcRows }}" as="c" hint-placeholder-count="10">
+                  <tr tabIndex="0" aria-label="{{ c.aria }}" onClick="{{ c.open }}" onKeyDown="{{ c.onKey }}" style="cursor:pointer;background:{{ c.bg }};" style-hover="background:var(--bg-hover);">
+                    <td style="height:52px;padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;color:var(--text-secondary);">{{ c.at }}</td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ c.tbg }};border:1px solid {{ c.tborder }};color:{{ c.tfg }};"><i class="icon-{{ c.ticon }}" aria-hidden="true" style="font-size:12px;"></i>{{ c.type }}</span></td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);font-weight:500;">{{ c.product }}</td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:6px;"><span aria-hidden="true" style="width:8px;height:8px;border-radius:2px;background:{{ c.chColor }};"></span>{{ c.ch }}</span></td>
+                    <td style="padding:6px 16px;border-bottom:1px solid var(--border-default);text-align:right;white-space:nowrap;"><span style="display:inline-flex;flex-direction:column;align-items:flex-end;"><span style="font-weight:600;color:{{ c.resFg }};">{{ c.result }}</span><span style="font-size:12px;line-height:16px;color:var(--text-secondary);">{{ c.resSub }}</span></span></td>
+                    <td style="padding:0 16px;border-bottom:1px solid var(--border-default);white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ c.abg }};border:1px solid {{ c.aborder }};color:{{ c.afg }};"><i class="icon-{{ c.aicon }}" aria-hidden="true" style="font-size:12px;"></i>{{ c.acc }}</span></td>
+                    <td style="padding:0 8px;border-bottom:1px solid var(--border-default);color:var(--text-tertiary);"><i class="icon-chevron-right" aria-hidden="true" style="font-size:16px;"></i></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </sc-if>
+        </div>
+        <sc-if value="{{ prodCards }}" hint-placeholder-val="{{ false }}">
+          <ul aria-label="Mahsulotlar, faqat ko‘rish" style="list-style:none;margin:0;padding:0;">
+            <sc-for list="{{ prodRows }}" as="pr" hint-placeholder-count="6">
+              <li style="padding:12px 16px;border-bottom:1px solid var(--border-default);display:flex;flex-direction:column;gap:8px;">
+                <span style="display:flex;align-items:flex-start;gap:8px;"><span style="flex:1;min-width:0;display:flex;flex-direction:column;"><span style="font-weight:600;">{{ pr.name }}</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">{{ pr.sku }}</span></span><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ pr.bg }};border:1px solid {{ pr.border }};color:{{ pr.fg }};white-space:nowrap;"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ pr.dot }};"></span>{{ pr.status }}</span></span>
+                <dl style="margin:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;"><div><dt style="margin:0;font-size:12px;color:var(--text-secondary);">Tannarx</dt><dd style="margin:0;font-weight:500;">{{ pr.cost }}</dd></div><div><dt style="margin:0;font-size:12px;color:var(--text-secondary);">Reja narxi</dt><dd style="margin:0;font-weight:500;">{{ pr.plan }}</dd></div></dl>
+              </li>
+            </sc-for>
+          </ul>
+        </sc-if>
+        <sc-if value="{{ calcCards }}" hint-placeholder-val="{{ false }}">
+          <ul aria-label="Saqlangan hisoblashlar, faqat ko‘rish" style="list-style:none;margin:0;padding:0;">
+            <sc-for list="{{ calcRows }}" as="c" hint-placeholder-count="6">
+              <li style="border-bottom:1px solid var(--border-default);">
+                <button type="button" onClick="{{ c.open }}" aria-label="{{ c.aria }}" style="width:100%;display:flex;flex-direction:column;gap:6px;padding:12px 16px;border:0;background:transparent;text-align:left;color:var(--text-primary);cursor:pointer;" style-hover="background:var(--bg-hover);">
+                  <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ c.tbg }};border:1px solid {{ c.tborder }};color:{{ c.tfg }};"><i class="icon-{{ c.ticon }}" aria-hidden="true" style="font-size:12px;"></i>{{ c.type }}</span><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ c.abg }};border:1px solid {{ c.aborder }};color:{{ c.afg }};"><i class="icon-{{ c.aicon }}" aria-hidden="true" style="font-size:12px;"></i>{{ c.acc }}</span><i class="icon-chevron-right" aria-hidden="true" style="margin-left:auto;font-size:16px;color:var(--text-tertiary);"></i></span>
+                  <span style="font-weight:600;">{{ c.product }}</span>
+                  <span style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;width:100%;"><span style="font-size:12px;color:var(--text-secondary);">{{ c.ch }} · {{ c.at }}</span><span style="font-weight:600;color:{{ c.resFg }};white-space:nowrap;">{{ c.result }}</span></span>
+                </button>
+              </li>
+            </sc-for>
+          </ul>
+        </sc-if>
+        <div style="display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--border-default);font-size:13px;color:var(--text-secondary);">
+          <span aria-live="polite">{{ rangeText }}</span>
+          <div style="flex:1;"></div>
+          <nav aria-label="Sahifalash" style="display:flex;align-items:center;gap:2px;">
+            <button type="button" aria-label="Oldingi sahifa" disabled="{{ prevDis }}" onClick="{{ prev }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ prevOp }};"><i class="icon-chevron-left" aria-hidden="true" style="font-size:16px;"></i></button>
+            <sc-for list="{{ pages }}" as="pg" hint-placeholder-count="3">
+              <sc-if value="{{ pg.gap }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:24px;text-align:center;color:var(--text-tertiary);">…</span></sc-if>
+              <sc-if value="{{ pg.btn }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="{{ pg.aria }}" aria-current="{{ pg.current }}" onClick="{{ pg.go }}" style="min-width:32px;height:32px;padding:0 6px;border:1px solid {{ pg.border }};border-radius:6px;background:{{ pg.bg }};color:{{ pg.fg }};font-size:13px;font-weight:{{ pg.weight }};cursor:pointer;">{{ pg.n }}</button></sc-if>
+            </sc-for>
+            <button type="button" aria-label="Keyingi sahifa" disabled="{{ nextDis }}" onClick="{{ next }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;opacity:{{ nextOp }};"><i class="icon-chevron-right" aria-hidden="true" style="font-size:16px;"></i></button>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <div aria-hidden="true" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:15;opacity:.04;">
+      <div style="position:absolute;left:-50%;top:-50%;width:200%;height:200%;transform:rotate(-24deg);display:flex;flex-wrap:wrap;align-content:flex-start;gap:56px 80px;padding:40px;box-sizing:border-box;">
+        <sc-for list="{{ wm }}" as="w" hint-placeholder-count="40"><span style="font-size:16px;font-weight:700;color:var(--text-primary);white-space:nowrap;">{{ wmText }}</span></sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ calcOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCalc }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:60;"></div>
+    <aside data-sfv-ro="" role="dialog" aria-modal="true" aria-labelledby="sfv-ct" onCopy="{{ blockCopy }}" style="position:fixed;top:0;right:0;bottom:0;width:{{ cdW }};max-width:100%;z-index:61;background:var(--bg-surface);border-left:1px solid var(--border-default);box-shadow:-16px 0 48px rgba(12,10,9,.18);display:flex;flex-direction:column;overflow:hidden;">
+      <div style="height:56px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 12px 0 24px;border-bottom:1px solid var(--border-default);">
+        <h2 id="sfv-ct" style="margin:0;font-size:16px;line-height:22px;font-weight:600;">Hisob tafsiloti</h2>
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ c.tbg }};border:1px solid {{ c.tborder }};color:{{ c.tfg }};"><i class="icon-{{ c.ticon }}" aria-hidden="true" style="font-size:12px;"></i>{{ c.type }}</span>
+        <span style="flex:1;"></span>
+        <button type="button" aria-label="Yopish" onClick="{{ closeCalc }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-x" aria-hidden="true" style="font-size:18px;"></i></button>
+      </div>
+      <div style="position:relative;flex:1;min-height:0;overflow-y:auto;">
+        <div style="padding:20px 24px 28px;display:flex;flex-direction:column;gap:20px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:17px;line-height:24px;font-weight:600;">{{ c.product }}</span>
+            <span style="display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);"><span style="display:inline-flex;align-items:center;gap:6px;"><span aria-hidden="true" style="width:8px;height:8px;border-radius:2px;background:{{ c.chColor }};"></span>{{ c.ch }}</span><span aria-hidden="true">·</span><span>{{ c.at }}</span><span aria-hidden="true">·</span><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:4px;background:{{ c.abg }};border:1px solid {{ c.aborder }};color:{{ c.afg }};"><i class="icon-{{ c.aicon }}" aria-hidden="true" style="font-size:12px;"></i>{{ c.acc }}</span></span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--border-default);border:1px solid var(--border-default);border-radius:8px;overflow:hidden;">
+            <sc-for list="{{ c.tiles }}" as="tl" hint-placeholder-count="2">
+              <div style="background:var(--bg-surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0;">
+                <span style="font-size:12px;line-height:16px;color:var(--text-secondary);">{{ tl.label }}</span>
+                <span style="font-size:22px;line-height:30px;font-weight:600;letter-spacing:-.01em;color:{{ tl.fg }};white-space:nowrap;">{{ tl.value }}</span>
+                <span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ tl.sub }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ c.approx }}" hint-placeholder-val="{{ false }}">
+            <div role="note" style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--warning-border);border-radius:8px;background:var(--warning-bg);color:var(--warning-text);font-size:13px;"><i class="icon-triangle-alert" aria-hidden="true" style="font-size:15px;margin-top:2px;color:var(--warning-icon);"></i><span style="text-wrap:pretty;">{{ c.approxText }}</span></div>
+          </sc-if>
+          <section aria-labelledby="sfv-exp" style="display:flex;flex-direction:column;gap:8px;">
+            <h3 id="sfv-exp" style="margin:0;font-size:13px;font-weight:600;">Xarajatlar</h3>
+            <ul style="list-style:none;margin:0;padding:0;border:1px solid var(--border-default);border-radius:8px;overflow:hidden;">
+              <sc-for list="{{ c.lines }}" as="ln" hint-placeholder-count="6">
+                <li style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border-default);font-size:13px;">
+                  <span style="display:flex;flex-direction:column;min-width:0;"><span style="font-weight:500;">{{ ln.name }}</span><sc-if value="{{ ln.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ ln.note }}</span></sc-if></span>
+                  <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;font-weight:600;padding:0 7px;border-radius:4px;background:{{ ln.bg }};border:1px solid {{ ln.border }};color:{{ ln.fg }};white-space:nowrap;"><i class="icon-{{ ln.icon }}" aria-hidden="true" style="font-size:11px;"></i>{{ ln.status }}</span>
+                  <span style="min-width:104px;text-align:right;font-weight:500;white-space:nowrap;color:{{ ln.amtFg }};">{{ ln.amount }}</span>
+                </li>
+              </sc-for>
+              <li style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 14px;background:var(--bg-subtle);font-size:13px;font-weight:600;"><span>Jami xarajat</span><span style="min-width:104px;text-align:right;white-space:nowrap;">{{ c.total }}</span></li>
+            </ul>
+          </section>
+          <section aria-labelledby="sfv-sum" style="display:flex;flex-direction:column;gap:8px;">
+            <h3 id="sfv-sum" style="margin:0;font-size:13px;font-weight:600;">{{ c.sumTitle }}</h3>
+            <dl style="margin:0;border:1px solid var(--border-default);border-radius:8px;overflow:hidden;">
+              <sc-for list="{{ c.sum }}" as="sm" hint-placeholder-count="4">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:10px 14px;border-bottom:1px solid var(--border-default);background:{{ sm.bg }};">
+                  <dt style="margin:0;font-size:13px;color:var(--text-secondary);display:flex;flex-direction:column;"><span>{{ sm.k }}</span><sc-if value="{{ sm.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ sm.note }}</span></sc-if></dt>
+                  <dd style="margin:0;font-weight:{{ sm.weight }};font-size:{{ sm.size }};color:{{ sm.fg }};white-space:nowrap;">{{ sm.v }}</dd>
+                </div>
+              </sc-for>
+            </dl>
+          </section>
+        </div>
+        <div aria-hidden="true" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.04;">
+          <div style="position:absolute;left:-50%;top:-50%;width:200%;height:200%;transform:rotate(-24deg);display:flex;flex-wrap:wrap;align-content:flex-start;gap:56px 72px;padding:40px;box-sizing:border-box;">
+            <sc-for list="{{ wmSmall }}" as="w" hint-placeholder-count="20"><span style="font-size:15px;font-weight:700;color:var(--text-primary);white-space:nowrap;">{{ wmText }}</span></sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:12px 24px;border-top:1px solid var(--border-default);background:var(--privacy-bg);color:var(--privacy-text);font-size:12px;line-height:16px;"><i class="icon-lock" aria-hidden="true" style="font-size:13px;color:var(--privacy-icon);"></i><span>Faqat ko‘rish · hisobni o‘zgartirib, nusxalab bo‘lmaydi · ochilish auditga yozildi</span></div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ revokeOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeRevoke }}" aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:70;"></div>
+    <div style="position:fixed;inset:0;z-index:71;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="sfv-rt" aria-describedby="sfv-rd" style="pointer-events:auto;width:440px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);">
+        <div style="padding:20px;display:flex;gap:14px;align-items:flex-start;">
+          <span style="width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-circle-slash" aria-hidden="true" style="font-size:20px;"></i></span>
+          <div style="flex:1;min-width:0;">
+            <h2 id="sfv-rt" style="margin:0;font:var(--type-h3);">Ruxsatni bekor qilasizmi?</h2>
+            <p id="sfv-rd" style="margin:6px 0 0;font-size:13px;color:var(--text-secondary);text-wrap:pretty;">Ma’lumot darhol yopiladi. Davom ettirish uchun sotuvchidan yangi rozilik kerak bo‘ladi. Amal auditga yoziladi.</p>
+          </div>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--border-default);background:var(--bg-subtle);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-radius:0 0 12px 12px;">
+          <button type="button" ref="{{ rvRef }}" onClick="{{ closeRevoke }}" style="height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Ortga</button>
+          <button type="button" onClick="{{ doRevoke }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--danger-solid);color:#fff;font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--danger-solid-hover);"><i class="icon-circle-slash" aria-hidden="true" style="font-size:16px;"></i>Ruxsatni bekor qilish</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ closedOpen }}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="position:fixed;inset:0;background:var(--bg-overlay);z-index:80;"></div>
+    <div style="position:fixed;inset:0;z-index:81;display:flex;align-items:center;justify-content:center;padding:16px;">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="sfv-xt" aria-describedby="sfv-xd" style="width:440px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);padding:24px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;">
+        <span style="width:44px;height:44px;border-radius:12px;background:var(--privacy-bg);border:1px solid var(--privacy-border);color:var(--privacy-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-{{ cx.icon }}" aria-hidden="true" style="font-size:20px;"></i></span>
+        <div>
+          <h2 id="sfv-xt" style="margin:0;font:var(--type-h2);letter-spacing:var(--tracking-tight);text-wrap:balance;">{{ cx.title }}</h2>
+          <p id="sfv-xd" style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;">{{ cx.text }}</p>
+        </div>
+        <div style="font-size:12px;line-height:16px;color:var(--text-secondary);background:var(--bg-subtle);border-radius:6px;padding:8px 12px;display:flex;gap:6px;align-items:center;"><i class="icon-scroll-text" aria-hidden="true" style="font-size:13px;"></i><span>Sessiya auditga yozildi: <span style="font-family:var(--font-mono);">{{ g.num }}</span> · {{ cx.span }} · {{ viewsText }}</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <button type="button" onClick="{{ goAccess }}" style="height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Yangi so‘rov yuborish</button>
+          <button type="button" ref="{{ cxRef }}" onClick="{{ goAccess }}" style="height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-arrow-left" aria-hidden="true" style="font-size:16px;"></i>Kirish so‘rovlariga qaytish</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:fixed;left:{{ toastLeft }};right:{{ toastRight }};bottom:20px;z-index:90;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;max-width:460px;background:var(--bg-inverse);color:var(--text-inverse);border-radius:8px;box-shadow:0 12px 32px rgba(12,10,9,.28);font-size:14px;">
+      <i class="icon-lock" aria-hidden="true" style="font-size:16px;color:var(--privacy-icon);"></i>
+      <span style="flex:1;min-width:0;">{{ toast }}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1000},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;SUPERADMIN&quot;,&quot;SUPPORT&quot;],&quot;default&quot;:&quot;SUPERADMIN&quot;,&quot;tsType&quot;:&quot;'SUPERADMIN'|'SUPPORT'&quot;},&quot;sellerId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;517334902&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;products&quot;,&quot;calcs&quot;],&quot;default&quot;:&quot;products&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;forbidden&quot;,&quot;blocked&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;calc&quot;,&quot;calcPrice&quot;,&quot;expiring&quot;,&quot;expired&quot;,&quot;sellerRevoked&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contentWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1136,&quot;tsType&quot;:&quot;number&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(page: string, id?: string) =&gt; void&quot;}}">
+const pad = n => String(n).padStart(2, '0');
+const nowHM = () => { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const nf = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+const som = n => (n < 0 ? '−' : '') + nf(Math.abs(Math.round(n))) + ' so‘m';
+const pctF = n => (n < 0 ? '−' : '') + Math.abs(n).toFixed(2).replace('.', ',') + '%';
+const fmtId = id => String(id).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const fmtT = r => pad(Math.floor(r / 60)) + ':' + pad(r % 60);
+const tone = t => ({ bg: `var(--${t}-bg)`, border: `var(--${t}-border)`, fg: `var(--${t}-text)`, dot: `var(--${t}-icon)` });
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const ME = { SUPERADMIN: 'd.aliyev@sellerflow.uz', SUPPORT: 'm.karimova@sellerflow.uz' };
+const CH = { uzum: ['Uzum Market', 1, .15, 18000], wb: ['Wildberries', 2, .18, 22000], ozon: ['Ozon', 3, .16, 20000], instagram: ['Instagram', 4, 0, 15000], tgshop: ['Telegram savdo', 5, 0, 12000], offline: ['Offline do‘kon', 6, 0, 0] };
+const GRANTS = {
+  '517334902': { num: '#1042', dur: 45, at: '14:22', reason: 'Komissiya noto‘g‘ri hisoblanmoqda — murojaat #5012', span: '14:22–15:07', views: 3 },
+  '402118775': { num: '#1036', dur: 60, at: '14:35', reason: 'Import qilingan SKU’lar takrorlanmoqda', span: '14:35–15:35', views: 0 },
+};
+const NAMES = ['Bolalar qishki kurtkasi', 'Termos, 1 l', 'Simsiz quloqchin', 'Telefon g‘ilofi', 'Ayollar sumkasi, charm', 'Oshxona tarozisi', 'Sport shishasi, 750 ml', 'LED stol chirog‘i', 'Bolalar ryukzagi', 'Paxta choyshab to‘plami', 'Kofe tegirmoni', 'Erkaklar hamyoni', 'Silikon qolip to‘plami', 'Avtomobil telefon ushlagichi', 'Yog‘och o‘yinchoq poyezd', 'Fitnes rezinasi, 5 dona', 'Elektr choynak, 1,7 l', 'Ortopedik yostiq', 'Sport soati', 'Kosmetika sumkasi', 'Termokrujka, 450 ml', 'USB-C kabel, 2 m', 'Bolalar kitoblari to‘plami', 'Gilam, 120×180'];
+const SKUP = ['KRT', 'TRM', 'QLQ', 'GLF', 'SMK', 'TRZ', 'SHS', 'LED', 'RYK', 'CHY', 'KFT', 'HMN', 'QLP', 'USH', 'OYN', 'FTN', 'CHN', 'YST', 'SOT', 'KSM', 'KRJ', 'KBL', 'KTB', 'GLM'];
+const PRODUCTS = (() => { const r = rng(517); return NAMES.map((name, i) => { const cost = Math.round((8000 + Math.pow(r(), 1.4) * 240000) / 500) * 500; const plan = Math.round(cost * (1.55 + r() * .8) / 1000) * 1000; const ch = r() < .62 ? 'uzum' : r() < .5 ? 'instagram' : r() < .5 ? 'wb' : 'tgshop'; return { name, cost, plan, ch, sku: `${SKUP[i]}-${String(140 + i * 37).padStart(4, '0')}`, status: i % 9 === 4 ? 'arch' : i % 11 === 7 ? 'draft' : 'active' }; }); })();
+const PST = { active: ['Faol', 'success'], arch: ['Arxivlangan', 'neutral'], draft: ['Qoralama', 'info'] };
+const LS = { set: ['Kiritilgan', 'success', 'check'], zero: ['0', 'neutral', 'circle'], unknown: ['Noma’lum', 'warning', 'circle-help'], skip: ['Kiritilmagan', 'orange', 'circle-dashed'] };
+const CALCS = (() => {
+  const r = rng(1042); const out = []; let t = new Date(2026, 10, 6, 13, 58).getTime();
+  for (let i = 0; i < 186; i++) {
+    const P = PRODUCTS[Math.floor(r() * PRODUCTS.length)];
+    const ch = r() < .75 ? P.ch : ['uzum', 'wb', 'ozon', 'instagram', 'offline'][Math.floor(r() * 5)];
+    const C = CH[ch], profitType = r() < .68;
+    const price = Math.round(P.plan * (.9 + r() * .2) / 1000) * 1000;
+    const logi = C[3] ? Math.round(C[3] * (.7 + r() * .6) / 500) * 500 : 0;
+    const pack = r() < .3 ? 0 : Math.round((1500 + r() * 3500) / 500) * 500;
+    const adsR = r(), taxR = r();
+    const ads = adsR < .45 ? { st: 'set', v: Math.round(price * (.03 + r() * .05) / 500) * 500 } : adsR < .72 ? { st: 'unknown' } : { st: 'skip' };
+    const tax = taxR < .55 ? { st: 'set', pct: .04 } : { st: 'skip' };
+    const goal = r() < .6 ? { kind: 'margin', v: [.15, .2, .25][Math.floor(r() * 3)] } : { kind: 'profit', v: [20000, 30000, 50000][Math.floor(r() * 3)] };
+    const d = new Date(t);
+    out.push({ i, at: `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`, P, ch, profitType, price, logi, pack, ads, tax, goal });
+    t -= (2 + r() * 50) * 36e5;
+  }
+  return out;
+})();
+const calcModel = c => {
+  const C = CH[c.ch];
+  const comm = C[2];
+  const fixed = [
+    { name: 'Logistika', st: c.logi ? 'set' : 'zero', v: c.logi, note: c.ch === 'offline' ? 'o‘zi olib ketadi' : '' },
+    { name: 'Qadoqlash', st: c.pack ? 'set' : 'zero', v: c.pack },
+    { name: 'Reklama', st: c.ads.st, v: c.ads.v || 0, note: c.ads.st === 'unknown' ? 'sotuvchi «bilmayman» deb belgilagan' : c.ads.st === 'skip' ? 'savol o‘tkazib yuborilgan' : '' },
+  ];
+  const F = c.P.cost + fixed.reduce((a, l) => a + (l.st === 'set' ? l.v : 0), 0);
+  const taxPct = c.tax.st === 'set' ? c.tax.pct : 0;
+  const pctSum = comm + taxPct;
+  const approxN = fixed.filter(l => l.st === 'unknown' || l.st === 'skip').length + (c.tax.st === 'skip' ? 1 : 0);
+  let price, rec = null, target, boundary, step;
+  if (c.profitType) price = c.price;
+  else {
+    boundary = F / (1 - pctSum);
+    target = c.goal.kind === 'margin' ? F / (1 - pctSum - c.goal.v) : (F + c.goal.v) / (1 - pctSum);
+    step = target < 50000 ? 500 : 1000;
+    rec = Math.ceil(target / step) * step; price = rec;
+  }
+  const commV = Math.round(price * comm), taxV = Math.round(price * taxPct);
+  const lines = [
+    { name: 'Tannarx', st: 'set', v: c.P.cost },
+    { name: 'Marketplace komissiyasi', st: comm ? 'set' : 'zero', v: commV, note: comm ? `${Math.round(comm * 100)}% · ${C[0]}` : `${C[0]} — komissiya yo‘q` },
+    ...fixed,
+    { name: 'Soliq', st: c.tax.st, v: taxV, note: c.tax.st === 'set' ? '4% · aylanmadan' : 'savol o‘tkazib yuborilgan' },
+  ];
+  const total = lines.reduce((a, l) => a + (l.st === 'set' ? l.v : 0), 0);
+  const profit = price - total, margin = profit / price * 100;
+  return { lines, total, profit, margin, price, rec, target, boundary, step, approxN, comm };
+};
+
+class Component extends DCLogic {
+  state = { tab: null, page: 1, remain: null, closed: undefined, calc: undefined, revoke: false, toast: null, views: null };
+  rootRef = React.createRef(); rvRef = React.createRef(); cxRef = React.createRef();
+
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      if (this._closed || this._view !== 'default') return;
+      const r = (this.state.remain ?? this._remain0) - 1;
+      if (r <= 0) { this.setState({ remain: 0, closed: 'expired', calc: null, revoke: false }); this.focusClosed(); }
+      else this.setState({ remain: r });
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); }
+  focusClosed = () => setTimeout(() => this.cxRef.current && this.cxRef.current.focus({ preventScroll: true }), 40);
+  nav = (...a) => this.props.onNavigate && this.props.onNavigate(...a);
+  showToast = t => { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: null }), 3200); };
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const me = ME[p.role === 'SUPPORT' ? 'SUPPORT' : 'SUPERADMIN'];
+    const cw = p.contentWidth ?? 1136, mobile = cw < 640;
+    const id = String(p.sellerId || '517334902');
+    const g = GRANTS[id] || GRANTS['517334902'];
+    const view = p.view || 'default';
+    const demo = p.demo || 'none';
+    this._view = view;
+    this._remain0 = demo === 'expiring' ? 272 : demo === 'expired' ? 0 : 1421;
+    const remain = s.remain ?? this._remain0;
+    const closed = s.closed !== undefined ? s.closed : demo === 'expired' ? 'expired' : demo === 'sellerRevoked' ? 'seller' : null;
+    this._closed = closed;
+    const warn = remain < 300;
+    const tab = s.tab ?? p.tab ?? (demo === 'calc' || demo === 'calcPrice' ? 'calcs' : 'products');
+    const isProducts = tab === 'products';
+    const per = 10, total = isProducts ? PRODUCTS.length : CALCS.length, pagesN = Math.ceil(total / per), page = Math.min(s.page, pagesN);
+    const slice = (isProducts ? PRODUCTS : CALCS).slice((page - 1) * per, page * per);
+
+    const calcIdx = s.calc === undefined ? (demo === 'calc' ? CALCS.findIndex(c => c.profitType && c.ads.st === 'unknown') : demo === 'calcPrice' ? CALCS.findIndex(c => !c.profitType) : null) : s.calc;
+    const viewC = c => {
+      const M = calcModel(c), C = CH[c.ch], full = M.approxN === 0;
+      const at = tone(full ? 'success' : 'warning'), tt = tone(c.profitType ? 'info' : 'privacy');
+      return { M, at: c.at, type: c.profitType ? 'Foyda' : 'Narx', ticon: c.profitType ? 'trending-up' : 'tag', tbg: tt.bg, tborder: tt.border, tfg: tt.fg,
+        product: c.P.name, ch: C[0], chColor: `var(--chart-${C[1]})`,
+        result: c.profitType ? som(M.profit) : som(M.rec), resSub: c.profitType ? 'marja ' + pctF(M.margin) : 'tavsiya narxi', resFg: c.profitType && M.profit < 0 ? 'var(--danger-text)' : 'var(--text-primary)',
+        acc: full ? 'To‘liq' : 'Taxminiy', aicon: full ? 'circle-check' : 'circle-help', abg: at.bg, aborder: at.border, afg: at.fg };
+    };
+    const calcRows = isProducts ? [] : slice.map(c => { const v = viewC(c); const open = () => this.setState({ calc: c.i }); return { ...v, aria: `${v.at}, ${v.type}, ${v.product}. Tafsilotni ochish`, bg: calcIdx === c.i ? 'var(--bg-active)' : 'transparent', open, onKey: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const sib = e.key === 'ArrowDown' ? e.currentTarget.nextElementSibling : e.currentTarget.previousElementSibling; sib && sib.focus(); } } }; });
+    const prodRows = isProducts ? slice.map(x => { const S = PST[x.status], t = tone(S[1]); return { name: x.name, cost: som(x.cost), plan: som(x.plan), sku: x.sku, status: S[0], bg: t.bg, border: t.border, fg: t.fg, dot: t.dot }; }) : [];
+
+    let c = { tiles: [], lines: [], sum: [] };
+    if (calcIdx != null && calcIdx >= 0 && !closed) {
+      const cc = CALCS[calcIdx], v = viewC(cc), M = v.M;
+      const lines = M.lines.map(l => { const L = LS[l.st], t = tone(L[1]); return { name: l.name, hasNote: !!l.note, note: l.note || '', status: L[0], icon: L[2], bg: t.bg, border: t.border, fg: t.fg, amount: l.st === 'set' ? som(l.v) : l.st === 'zero' ? '0 so‘m' : '—', amtFg: l.st === 'set' ? 'var(--text-primary)' : 'var(--text-tertiary)' }; });
+      const S = (k, val, o = {}) => ({ k, v: val, weight: o.strong ? 600 : 500, size: o.strong ? '15px' : '13px', fg: o.fg || 'var(--text-primary)', bg: o.strong ? 'var(--bg-subtle)' : 'transparent', hasNote: !!o.note, note: o.note || '' });
+      const negFg = M.profit < 0 ? 'var(--danger-text)' : 'var(--text-primary)';
+      c = { ...v, lines, total: som(M.total), approx: M.approxN > 0,
+        approxText: `Taxminiy: ${M.approxN} ta xarajat noma’lum yoki kiritilmagan. Haqiqiy foyda ko‘rsatilganidan past bo‘lishi mumkin.`,
+        tiles: cc.profitType
+          ? [{ label: 'Sotish narxi', value: som(M.price), sub: '1 dona', fg: 'var(--text-primary)' }, { label: 'Foyda', value: som(M.profit), sub: 'marja ' + pctF(M.margin), fg: negFg }]
+          : [{ label: 'Tavsiya narxi', value: som(M.rec), sub: `${nf(M.step)} so‘m qadam bilan yaxlitlangan`, fg: 'var(--text-primary)' }, { label: 'Kutilgan foyda', value: som(M.profit), sub: 'marja ' + pctF(M.margin), fg: negFg }],
+        sumTitle: cc.profitType ? 'Foyda hisobi' : 'Narx hisobi',
+        sum: cc.profitType
+          ? [S('Sotish narxi', som(M.price)), S('Jami xarajat', '−' + som(M.total)), S('Foyda', som(M.profit), { strong: true, fg: negFg }), S('Marja', pctF(M.margin), { fg: negFg })]
+          : [S('Maqsad', cc.goal.kind === 'margin' ? `Marja ${Math.round(cc.goal.v * 100)}%` : `Foyda ${som(cc.goal.v)} / dona`), S('Matematik chegara', som(M.boundary), { note: 'shu narxda foyda 0 bo‘ladi' }), S('Hisoblangan narx', som(M.target), { note: 'yaxlitlashdan oldin' }), S('Yaxlitlash qadami', nf(M.step) + ' so‘m'), S('Tavsiya narxi', som(M.rec), { strong: true }), S('Kutilgan foyda', `${som(M.profit)} · ${pctF(M.margin)}`)],
+      };
+    }
+
+    const nums = new Set([1, pagesN, page - 1, page, page + 1].filter(n => n >= 1 && n <= pagesN));
+    const pages = []; let last = 0;
+    [...nums].sort((a, b) => a - b).forEach(n => { if (n - last > 1) pages.push({ gap: true, btn: false }); const cur = n === page; pages.push({ gap: false, btn: true, n, aria: `${n}-sahifa`, current: cur ? 'page' : undefined, bg: cur ? 'var(--primary-subtle)' : 'var(--bg-surface)', fg: cur ? 'var(--primary-subtle-fg)' : 'var(--text-primary)', border: cur ? 'var(--primary)' : 'var(--border-default)', weight: cur ? 600 : 400, go: () => this.setState({ page: n }) }); last = n; });
+
+    const TABS = [['products', 'Mahsulotlar', 'package', PRODUCTS.length], ['calcs', mobile ? 'Hisoblashlar' : 'Saqlangan hisoblashlar', 'calculator', CALCS.length]];
+    const tabs = TABS.map(([tid, label, icon, count]) => { const on = tab === tid; return { domId: 'sfv-tab-' + tid, label, icon, count, on, tabIndex: on ? 0 : -1, line: on ? 'var(--primary)' : 'transparent', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', weight: on ? 600 : 500, onClick: () => this.setState({ tab: tid, page: 1 }) }; });
+
+    const CX = {
+      expired: { icon: 'timer-off', title: 'Ruxsat muddati tugadi. Ma’lumot yopildi.', text: 'Ko‘rishni davom ettirish uchun sotuvchidan yangi rozilik so‘rang.' },
+      cancelled: { icon: 'circle-slash', title: 'Ruxsat bekor qilindi. Ma’lumot yopildi.', text: 'Siz ruxsatni muddatidan oldin yopdingiz. Sotuvchiga botda xabar yuborildi.' },
+      seller: { icon: 'circle-slash', title: 'Sotuvchi ruxsatni bekor qildi. Ma’lumot yopildi.', text: 'Sotuvchi botda kirishni yopdi. Qayta ko‘rish uchun yangi so‘rov kerak.' },
+    };
+    const cx = closed ? { ...CX[closed], span: closed === 'expired' ? g.span : g.span.split('–')[0] + '–' + nowHM() } : {};
+    const views = (s.views ?? g.views) + (calcIdx != null && calcIdx >= 0 ? 1 : 0);
+
+    const SX = {
+      forbidden: { icon: 'lock', bg: 'var(--privacy-bg)', border: 'var(--privacy-border)', fg: 'var(--privacy-icon)', code: '403 · Ruxsat #1039', title: 'Bu ruxsat boshqa administratorga berilgan', text: 'Ruxsat m.karimova@sellerflow.uz uchun berilgan. Ma’lumotni faqat so‘rov yuborgan admin ko‘ra oladi. Bu urinish auditga yozildi.', hasNew: true },
+      blocked: { icon: 'ban', bg: 'var(--warning-bg)', border: 'var(--warning-border)', fg: 'var(--warning-icon)', code: 'Ruxsat #1037 · yopilgan', title: 'Sotuvchi bloklangani sababli ruxsat tugadi', text: 'Sotuvchi 388 102 557 02.11.2026, 16:20 da d.aliyev@sellerflow.uz tomonidan bloklandi. Bloklash barcha faol ruxsatlarni darhol yopadi.', hasNew: false },
+    };
+
+    return {
+      rootRef: this.rootRef, rvRef: this.rvRef, cxRef: this.cxRef, isMobile: mobile, deskFlex: mobile ? 'none' : 'flex', isProdTable: isProducts && !mobile, isCalcTable: !isProducts && !mobile, prodCards: isProducts && mobile, calcCards: !isProducts && mobile, bnOpen: !!s.bnOpen, bnRot: s.bnOpen ? 'rotate(180deg)' : 'none', toggleBn: () => this.setState({ bnOpen: !s.bnOpen }),
+      isLoading: view === 'loading', isStateBox: !!SX[view], sx: SX[view] || {}, isMain: view === 'default',
+      idText: fmtId(id), g, remainText: fmtT(remain),
+      tm: warn ? { bg: 'var(--warning-bg)', border: 'var(--warning-border)', fg: 'var(--warning-text)' } : { bg: 'var(--bg-surface)', border: 'var(--privacy-border)', fg: 'var(--privacy-text)' },
+      goAccess: () => this.nav('access'),
+      askRevoke: () => this.setState({ revoke: true }, () => setTimeout(() => this.rvRef.current && this.rvRef.current.focus({ preventScroll: true }), 30)),
+      revokeOpen: s.revoke && !closed, closeRevoke: () => this.setState({ revoke: false }),
+      doRevoke: () => { this.setState({ revoke: false, closed: 'cancelled', calc: null }); this.focusClosed(); },
+      closedOpen: !!closed, cx, viewsText: `${views} ta ko‘rish`,
+      closedAria: closed ? 'true' : undefined, dimFilter: closed ? 'blur(6px) grayscale(.4)' : 'none', dimOpacity: closed ? .45 : 1, dimPE: closed ? 'none' : 'auto',
+      blockCopy: e => { e.preventDefault(); this.showToast('Nusxa olish o‘chirilgan — faqat ko‘rish rejimi.'); },
+      blockDrag: e => e.preventDefault(),
+      tabs, panelLabel: 'sfv-tab-' + tab, isProducts, isCalcs: !isProducts,
+      tabKey: e => { if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const nt = isProducts ? 'calcs' : 'products'; this.setState({ tab: nt, page: 1 }); setTimeout(() => { const el = this.rootRef.current && this.rootRef.current.querySelector('#sfv-tab-' + nt); el && el.focus({ preventScroll: true }); }, 0); },
+      prodRows, calcRows,
+      rangeText: `${(page - 1) * per + 1}–${Math.min(page * per, total)} / ${nf(total)}`,
+      pages, prevDis: page <= 1, nextDis: page >= pagesN, prevOp: page <= 1 ? .4 : 1, nextOp: page >= pagesN ? .4 : 1,
+      prev: () => this.setState({ page: Math.max(1, page - 1) }), next: () => this.setState({ page: Math.min(pagesN, page + 1) }),
+      calcOpen: calcIdx != null && calcIdx >= 0 && !closed, c, cdW: mobile ? '100%' : '520px',
+      closeCalc: () => this.setState({ calc: null, views: views }),
+      wm: Array.from({ length: 90 }, (_, i) => i), wmSmall: Array.from({ length: 40 }, (_, i) => i),
+      wmText: `${me} · 06.11.2026, ${nowHM()}`,
+      onRootKey: e => { if (e.key !== 'Escape') return; if (s.revoke) { e.stopPropagation(); this.setState({ revoke: false }); } else if (calcIdx != null) { e.stopPropagation(); this.setState({ calc: null }); } },
+      hasToast: !!s.toast, toast: s.toast || '', toastLeft: mobile ? '12px' : 'auto', toastRight: mobile ? '12px' : '24px',
+    };
+  }
+}
+</script>
+</body>
+</html>

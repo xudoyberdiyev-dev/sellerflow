@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/colors.css">
+<link rel="stylesheet" href="../../tokens/typography.css">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+html,body{margin:0;height:100%;}
+a{color:var(--text-link);} a:hover{color:var(--primary-hover);}
+@keyframes sfPulse{0%,100%{opacity:1}50%{opacity:.45}}
+[data-sf] :focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;}
+[data-sf] button{font-family:inherit;}
+[data-sf] [class^="icon-"]{line-height:1;display:inline-flex;}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" data-sf="" data-theme="{{ theme }}" onKeyDown="{{ onRootKey }}" style="position:relative;transform:translateZ(0);display:flex;width:100%;height:100%;min-height:480px;overflow:hidden;background:var(--bg-app);color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased;">
+
+  <a href="#sf-main" onClick="{{ skipToMain }}" style="position:absolute;left:12px;top:-60px;z-index:200;height:40px;display:flex;align-items:center;padding:0 14px;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 8px 24px rgba(12,10,9,.24);" style-focus="top:12px;">Asosiy kontentga o‘tish</a>
+  <sc-if value="{{ drawer }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeOverlay }}" aria-hidden="true" style="position:absolute;inset:0;background:var(--bg-overlay);z-index:40;"></div>
+  </sc-if>
+
+  <aside aria-label="Asosiy navigatsiya" style="display:{{ sbDisplay }};position:{{ sbPos }};top:0;left:0;bottom:0;z-index:50;flex-direction:column;flex-shrink:0;width:{{ sbW }}px;height:100%;background:var(--bg-surface);border-right:1px solid var(--border-default);box-shadow:{{ sbShadow }};transition:width .16s ease;box-sizing:border-box;">
+    <div style="height:56px;display:flex;align-items:center;gap:10px;padding:0 {{ hdrPad }};justify-content:{{ itemJustify }};border-bottom:1px solid var(--border-default);flex-shrink:0;box-sizing:border-box;">
+      <span style="position:relative;display:inline-flex;flex-shrink:0;">
+        <img src="../../assets/logo-mark.svg" alt="SellerFlow" width="28" height="28" style="display:block;border-radius:6px;">
+        <sc-if value="{{ collapsed }}" hint-placeholder-val="{{ false }}">
+          <span role="img" aria-label="Muhit: {{ env.label }}" title="{{ env.label }}" style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:{{ env.dot }};box-shadow:0 0 0 2px var(--bg-surface);"></span>
+        </sc-if>
+      </span>
+      <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;">
+          <span style="font-weight:600;font-size:14px;line-height:18px;white-space:nowrap;">SellerFlow Admin</span>
+          <span style="align-self:flex-start;font-size:10px;line-height:14px;font-weight:600;letter-spacing:.06em;padding:0 5px;border-radius:4px;background:{{ env.bg }};color:{{ env.fg }};border:1px solid {{ env.border }};">{{ env.label }}</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+        <button type="button" aria-label="Menyuni yopish" onClick="{{ closeOverlay }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-x" aria-hidden="true" style="font-size:18px;"></i></button>
+      </sc-if>
+    </div>
+
+    <nav style="flex:1;overflow-y:{{ navOverflow }};padding:12px {{ navPadX }};display:flex;flex-direction:column;gap:16px;">
+      <sc-for list="{{ groups }}" as="group" hint-placeholder-count="3">
+        <div role="group" aria-label="{{ group.label }}" style="display:flex;flex-direction:column;gap:2px;">
+          <sc-if value="{{ group.showLabel }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:0 10px 6px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);">{{ group.label }}</div>
+          </sc-if>
+          <sc-if value="{{ group.showDivider }}" hint-placeholder-val="{{ false }}">
+            <div style="height:1px;background:var(--border-default);margin:0 6px 10px;"></div>
+          </sc-if>
+          <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="2">
+            <div style="position:relative;">
+              <button type="button" aria-label="{{ item.ariaLabel }}" aria-current="{{ item.ariaCurrent }}" onClick="{{ item.onClick }}" onMouseEnter="{{ item.onEnter }}" onMouseLeave="{{ item.onLeave }}" onFocus="{{ item.onEnter }}" onBlur="{{ item.onLeave }}" style="width:100%;height:36px;display:flex;align-items:center;justify-content:{{ itemJustify }};gap:10px;padding:{{ itemPad }};border:0;border-radius:6px;background:{{ item.bg }};color:{{ item.fg }};font-size:14px;font-weight:{{ item.weight }};cursor:pointer;text-align:left;" style-hover="background:{{ item.hoverBg }};color:var(--text-primary);">
+                <span style="position:relative;display:inline-flex;">
+                  <i class="icon-{{ item.icon }}" aria-hidden="true" style="font-size:18px;color:{{ item.iconFg }};"></i>
+                  <sc-if value="{{ item.hasDot }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;top:-3px;right:-4px;width:8px;height:8px;border-radius:50%;background:var(--warning-icon);box-shadow:0 0 0 2px var(--bg-surface);"></span>
+                  </sc-if>
+                </span>
+                <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}">
+                  <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.label }}</span>
+                </sc-if>
+                <sc-if value="{{ item.hasCount }}" hint-placeholder-val="{{ false }}">
+                  <span style="min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:10px;background:var(--warning-bg);color:var(--warning-text);border:1px solid var(--warning-border);font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">{{ item.count }}</span>
+                </sc-if>
+              </button>
+              <sc-if value="{{ item.showTip }}" hint-placeholder-val="{{ false }}">
+                <div role="tooltip" style="position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);background:var(--bg-inverse);color:var(--text-inverse);font-size:12px;line-height:16px;font-weight:500;padding:6px 8px;border-radius:6px;white-space:nowrap;z-index:60;box-shadow:0 4px 12px rgba(12,10,9,.2);pointer-events:none;">{{ item.tipText }}</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </nav>
+
+    <div style="border-top:1px solid var(--border-default);padding:8px {{ navPadX }};display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+      <sc-if value="{{ showCollapseBtn }}" hint-placeholder-val="{{ true }}">
+        <button type="button" onClick="{{ toggleCollapse }}" aria-label="{{ collapseLabel }}" aria-expanded="{{ expanded }}" style="height:32px;display:flex;align-items:center;justify-content:{{ itemJustify }};gap:10px;padding:{{ itemPad }};border:0;border-radius:6px;background:transparent;color:var(--text-tertiary);cursor:pointer;font-size:13px;" style-hover="background:var(--bg-hover);color:var(--text-primary);">
+          <i class="icon-{{ collapseIcon }}" aria-hidden="true" style="font-size:16px;"></i>
+          <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}"><span>Panelni yig‘ish</span></sc-if>
+        </button>
+      </sc-if>
+      <button type="button" aria-haspopup="menu" aria-expanded="{{ userMenuOpen }}" aria-label="Admin menyusi: {{ user.email }}" onClick="{{ toggleUserMenu }}" style="display:flex;align-items:center;gap:10px;padding:{{ userPad }};height:48px;border:0;border-radius:8px;background:{{ userBtnBg }};cursor:pointer;text-align:left;justify-content:{{ itemJustify }};color:var(--text-primary);" style-hover="background:var(--bg-hover);">
+        <span aria-hidden="true" style="width:32px;height:32px;flex-shrink:0;border-radius:50%;background:var(--primary-subtle);color:var(--primary-subtle-fg);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ user.initials }}</span>
+        <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}">
+          <span style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;">
+            <span style="font-size:13px;line-height:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ user.email }}</span>
+            <span style="align-self:flex-start;font-size:10px;line-height:14px;font-weight:600;letter-spacing:.04em;padding:0 5px;border-radius:4px;background:{{ user.rbg }};color:{{ user.rfg }};">{{ user.role }}</span>
+          </span>
+          <i class="icon-chevrons-up-down" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i>
+        </sc-if>
+      </button>
+    </div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%;">
+    <header style="height:56px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 {{ topPadX }};background:var(--bg-surface);border-bottom:1px solid var(--border-default);box-sizing:border-box;">
+      <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+        <button type="button" aria-label="Menyuni ochish" aria-expanded="{{ drawer }}" onClick="{{ openDrawer }}" style="width:44px;height:44px;margin-left:-8px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-primary);cursor:pointer;"><i class="icon-menu" aria-hidden="true" style="font-size:20px;"></i></button>
+        <img src="../../assets/logo-mark.svg" alt="SellerFlow Admin" width="28" height="28" style="display:block;border-radius:6px;">
+        <span style="font-size:10px;line-height:14px;font-weight:600;letter-spacing:.06em;padding:0 5px;border-radius:4px;background:{{ env.bg }};color:{{ env.fg }};border:1px solid {{ env.border }};">{{ env.short }}</span>
+        <div style="flex:1;"></div>
+        <button type="button" aria-label="Qidirish" onClick="{{ openPalette }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-secondary);cursor:pointer;"><i class="icon-search" aria-hidden="true" style="font-size:20px;"></i></button>
+        <div style="position:relative;">
+          <button type="button" onClick="{{ toggleNotif }}" aria-label="{{ bellLabel }}" aria-haspopup="dialog" aria-expanded="{{ notifOpen }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:{{ bellBg }};color:var(--text-secondary);cursor:pointer;"><i class="icon-bell" aria-hidden="true" style="font-size:20px;"></i></button>
+          <sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ true }}">
+            <span aria-hidden="true" style="position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:var(--danger-solid);color:#fff;font-size:10px;font-weight:600;line-height:16px;text-align:center;box-shadow:0 0 0 2px var(--bg-surface);pointer-events:none;">{{ unread }}</span>
+          </sc-if>
+        </div>
+        <button type="button" aria-label="Admin menyusi: {{ user.email }}" aria-haspopup="menu" aria-expanded="{{ userMenuOpen }}" onClick="{{ toggleUserMenu }}" style="width:44px;height:44px;margin-right:-6px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:transparent;cursor:pointer;"><span aria-hidden="true" style="width:32px;height:32px;border-radius:50%;background:var(--primary-subtle);color:var(--primary-subtle-fg);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ user.initials }}</span></button>
+      </sc-if>
+
+      <sc-if value="{{ notMobile }}" hint-placeholder-val="{{ true }}">
+        <nav aria-label="Breadcrumb" style="flex:1;min-width:0;">
+          <ol style="display:flex;align-items:center;gap:6px;list-style:none;margin:0;padding:0;font-size:14px;white-space:nowrap;overflow:hidden;">
+            <sc-for list="{{ crumbs }}" as="c" hint-placeholder-count="1">
+              <li style="display:flex;align-items:center;gap:6px;min-width:0;">
+                <sc-if value="{{ c.notFirst }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="color:var(--text-disabled);">/</span></sc-if>
+                <sc-if value="{{ c.isLink }}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{ c.onClick }}" style="border:0;background:none;padding:2px 4px;margin:0 -4px;border-radius:4px;color:var(--text-secondary);cursor:pointer;font-size:14px;font-family:{{ c.font }};" style-hover="color:var(--text-primary);background:var(--bg-hover);">{{ c.label }}</button>
+                </sc-if>
+                <sc-if value="{{ c.isLast }}" hint-placeholder-val="{{ true }}">
+                  <span aria-current="page" style="color:var(--text-primary);font-weight:500;font-family:{{ c.font }};overflow:hidden;text-overflow:ellipsis;">{{ c.label }}</span>
+                </sc-if>
+              </li>
+            </sc-for>
+          </ol>
+        </nav>
+        <button type="button" onClick="{{ openPalette }}" aria-label="Telegram ID bo‘yicha qidirish" aria-keyshortcuts="Meta+K Control+K" style="width:{{ searchW }}px;height:36px;display:flex;align-items:center;gap:8px;padding:0 6px 0 10px;box-sizing:border-box;border:1px solid var(--border-input);border-radius:6px;background:var(--bg-surface);color:var(--text-tertiary);cursor:text;font-size:14px;" style-hover="border-color:var(--text-tertiary);">
+          <i class="icon-search" aria-hidden="true" style="font-size:16px;"></i>
+          <span style="flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Telegram ID bo‘yicha qidirish…</span>
+          <kbd style="font-family:var(--font-mono);font-size:11px;line-height:16px;padding:1px 6px;border:1px solid var(--border-default);border-radius:4px;background:var(--bg-subtle);color:var(--text-secondary);">⌘K</kbd>
+        </button>
+        <button type="button" onClick="{{ goStatus }}" aria-label="Tizim holati: {{ status.label }}" title="Tizim holati sahifasini ochish" style="height:32px;display:flex;align-items:center;gap:8px;padding:0 12px 0 10px;border:1px solid {{ status.border }};border-radius:16px;background:{{ status.bg }};color:{{ status.fg }};font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">
+          <span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:{{ status.dot }};"></span>{{ status.label }}
+        </button>
+        <div style="position:relative;">
+          <button type="button" onClick="{{ toggleNotif }}" aria-label="{{ bellLabel }}" aria-haspopup="dialog" aria-expanded="{{ notifOpen }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:{{ bellBg }};color:var(--text-secondary);cursor:pointer;" style-hover="background:var(--bg-hover);color:var(--text-primary);"><i class="icon-bell" aria-hidden="true" style="font-size:18px;"></i></button>
+          <sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ true }}">
+            <span aria-hidden="true" style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:var(--danger-solid);color:#fff;font-size:10px;font-weight:600;line-height:16px;text-align:center;box-shadow:0 0 0 2px var(--bg-surface);pointer-events:none;">{{ unread }}</span>
+          </sc-if>
+        </div>
+      </sc-if>
+    </header>
+
+    <sc-if value="{{ hasBanner }}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="flex-shrink:0;display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding:10px {{ bannerPadX }};background:var(--warning-bg);border-bottom:1px solid var(--warning-border);color:var(--warning-text);">
+        <div style="display:flex;gap:10px;align-items:flex-start;flex:1;min-width:220px;">
+          <i class="icon-{{ banner.icon }}" aria-hidden="true" style="font-size:18px;color:var(--warning-icon);margin-top:1px;"></i>
+          <div style="display:flex;flex-wrap:wrap;gap:2px 8px;text-wrap:pretty;"><span style="font-weight:600;">{{ banner.title }}</span><span>{{ banner.text }}</span></div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button type="button" onClick="{{ bannerRun }}" style="height:32px;padding:0 12px;border:1px solid var(--warning-border);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--bg-hover);">{{ banner.action }}</button>
+          <sc-if value="{{ banner.dismiss }}" hint-placeholder-val="{{ false }}">
+            <button type="button" aria-label="Bannerni yopish" onClick="{{ dismissBanner }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--warning-text);cursor:pointer;"><i class="icon-x" aria-hidden="true" style="font-size:16px;"></i></button>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <main id="sf-main" ref="{{ mainRef }}" tabIndex="-1" aria-label="Asosiy kontent" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;outline:none;">
+      <div style="width:100%;max-width:1280px;margin:0 auto;padding:{{ mainPad }};box-sizing:border-box;display:flex;flex-direction:column;gap:24px;flex:1;">
+        <sc-if value="{{ showHeader }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:220px;">
+              <h1 style="margin:0;font:var(--type-h1);letter-spacing:var(--tracking-tight);">{{ page.title }}</h1>
+              <p style="margin:4px 0 0;color:var(--text-secondary);text-wrap:pretty;">{{ page.desc }}</p>
+            </div>
+            <sc-if value="{{ headerAction }}" hint-placeholder-val="{{ true }}">
+              <button type="button" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;" style-hover="background:var(--primary-hover);"><i class="icon-{{ page.icon }}" aria-hidden="true" style="font-size:16px;"></i>{{ page.action }}</button>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+          <dc-import name="DashboardPage" role="{{ role }}" view="{{ dashView }}" system-issue="{{ sysIssue }}" content-width="{{ contentW }}" on-navigate="{{ navTo }}" hint-size="100%,600px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isSellers }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="SellersPage" role="{{ role }}" view="{{ sellersView }}" demo="{{ sellersDemo }}" content-width="{{ contentW }}" on-navigate="{{ navTo }}" hint-size="100%,600px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isProfilePage }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="ProfilePage" role="{{ role }}" section="{{ profileSection }}" temp="{{ profileTemp }}" view="{{ pageState }}" demo="{{ profileDemo }}" theme-pref="{{ themePref }}" on-theme="{{ setThemePref }}" content-width="{{ contentW }}" on-navigate="{{ navTo }}" hint-size="100%,900px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isStatusPage }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="SystemStatusPage" scenario="{{ statusScenario }}" view="{{ pageState }}" content-width="{{ contentW }}" hint-size="100%,1100px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isAdminsPage }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="AdminsPage" view="{{ adminsView }}" demo="{{ adminsDemo }}" content-width="{{ contentW }}" hint-size="100%,900px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isAuditPage }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="AuditLogPage" view="{{ pageState }}" demo="{{ auditDemo }}" content-width="{{ contentW }}" on-navigate="{{ navTo }}" hint-size="100%,900px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isSupportPage }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="SupportSettingsPage" view="{{ pageState }}" demo="{{ supportDemo }}" content-width="{{ contentW }}" hint-size="100%,900px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isAccess }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="AccessRequestsPage" role="{{ role }}" view="{{ accessView }}" tab="{{ accessTab }}" demo="{{ accessDemo }}" content-width="{{ contentW }}" on-navigate="{{ navTo }}" hint-size="100%,760px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isViewer }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="AccessViewerPage" role="{{ role }}" seller-id="{{ sellerId }}" view="{{ viewerView }}" tab="{{ viewerTab }}" demo="{{ viewerDemo }}" content-width="{{ contentW }}" on-navigate="{{ navTo }}" hint-size="100%,760px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isSellerPage }}" hint-placeholder-val="{{ false }}">
+          <dc-import name="SellerDetailPage" role="{{ role }}" seller-id="{{ sellerId }}" view="{{ sellerView }}" access="{{ sellerAccess }}" tab="{{ sellerTab }}" demo="{{ sellerDemo2 }}" content-width="{{ contentW }}" on-navigate="{{ detailNav }}" hint-size="100%,760px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ isDefault }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;">
+            <div style="height:112px;border:1px dashed var(--border-strong);border-radius:8px;display:flex;align-items:flex-end;padding:12px;box-sizing:border-box;font-size:12px;color:var(--text-tertiary);">Ko‘rsatkich</div>
+            <div style="height:112px;border:1px dashed var(--border-strong);border-radius:8px;display:flex;align-items:flex-end;padding:12px;box-sizing:border-box;font-size:12px;color:var(--text-tertiary);">Ko‘rsatkich</div>
+            <div style="height:112px;border:1px dashed var(--border-strong);border-radius:8px;display:flex;align-items:flex-end;padding:12px;box-sizing:border-box;font-size:12px;color:var(--text-tertiary);">Ko‘rsatkich</div>
+            <div style="height:112px;border:1px dashed var(--border-strong);border-radius:8px;display:flex;align-items:flex-end;padding:12px;box-sizing:border-box;font-size:12px;color:var(--text-tertiary);">Ko‘rsatkich</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;">
+            <div style="min-height:300px;border:1px dashed var(--border-strong);border-radius:8px;display:flex;align-items:flex-end;padding:12px;box-sizing:border-box;font-size:12px;color:var(--text-tertiary);">Grafik</div>
+            <div style="min-height:300px;border:1px dashed var(--border-strong);border-radius:8px;display:flex;align-items:flex-end;padding:12px;box-sizing:border-box;font-size:12px;color:var(--text-tertiary);">So‘nggi faoliyat</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+          <div role="status" aria-label="Yuklanmoqda" aria-busy="true" style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;">
+              <div style="height:112px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+              <div style="height:112px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+              <div style="height:112px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+              <div style="height:112px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;">
+              <div style="height:300px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+              <div style="height:300px;border-radius:8px;background:var(--bg-muted);animation:sfPulse 1.6s ease-in-out infinite;"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:340px;display:flex;align-items:center;justify-content:center;padding:48px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);">
+            <div style="max-width:400px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+              <span style="width:48px;height:48px;border-radius:12px;background:var(--neutral-bg);color:var(--neutral-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-inbox" aria-hidden="true" style="font-size:22px;"></i></span>
+              <h2 style="margin:0;font:var(--type-h3);">Hozircha ma’lumot yo‘q</h2>
+              <p style="margin:0;color:var(--text-secondary);text-wrap:pretty;">Birinchi sotuvchi botda ro‘yxatdan o‘tgach, statistika shu yerda ko‘rinadi.</p>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+          <div role="alert" style="flex:1;min-height:340px;display:flex;align-items:center;justify-content:center;padding:48px 16px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-surface);">
+            <div style="max-width:420px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+              <span style="width:48px;height:48px;border-radius:12px;background:var(--danger-bg);color:var(--danger-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-cloud-off" aria-hidden="true" style="font-size:22px;"></i></span>
+              <h2 style="margin:0;font:var(--type-h3);">Ma’lumotlarni yuklab bo‘lmadi</h2>
+              <p style="margin:0;color:var(--text-secondary);text-wrap:pretty;">Server javob bermadi. Birozdan keyin qayta urinib ko‘ring. Muammo takrorlansa, xato ID’ni jamoaga yuboring.</p>
+              <button type="button" onClick="{{ retry }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-refresh-cw" aria-hidden="true" style="font-size:16px;"></i>Qayta urinish</button>
+              <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);">Xato ID: 7f3a-91c2 · 06.11.2026, 14:36</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isForbidden }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:420px;display:flex;align-items:center;justify-content:center;padding:48px 16px;">
+            <div style="max-width:420px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+              <span style="width:56px;height:56px;border-radius:14px;background:var(--privacy-bg);border:1px solid var(--privacy-border);color:var(--privacy-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-lock" aria-hidden="true" style="font-size:24px;"></i></span>
+              <span style="font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text-tertiary);letter-spacing:.04em;">403</span>
+              <h1 style="margin:0;font:var(--type-h2);letter-spacing:var(--tracking-tight);">Ruxsat yo‘q</h1>
+              <p style="margin:0;color:var(--text-secondary);text-wrap:pretty;">Bu sahifa faqat SUPERADMIN roli uchun. Kirish kerak bo‘lsa, administratorga murojaat qiling.</p>
+              <button type="button" onClick="{{ goHome }}" style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg-surface);color:var(--text-primary);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);"><i class="icon-arrow-left" aria-hidden="true" style="font-size:16px;"></i>Boshqaruv paneliga qaytish</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      <footer style="border-top:1px solid var(--border-default);flex-shrink:0;">
+        <div style="max-width:1280px;margin:0 auto;padding:14px {{ footPadX }};box-sizing:border-box;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between;font-size:12px;line-height:16px;color:var(--text-tertiary);">
+          <span style="display:flex;align-items:center;gap:6px;color:var(--privacy-text);"><i class="icon-lock" aria-hidden="true" style="font-size:13px;color:var(--privacy-icon);"></i>Tijoriy ma’lumotlar faqat sotuvchi roziligi bilan ko‘rsatiladi</span>
+          <span style="font-family:var(--font-mono);">v1.4.0 · build 2611.06</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <sc-if value="{{ mobileAction }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:30;padding:10px 16px 14px;background:var(--bg-surface);border-top:1px solid var(--border-default);box-shadow:0 -8px 24px rgba(12,10,9,.08);">
+      <button type="button" style="width:100%;height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:8px;background:var(--primary);color:var(--primary-fg);font-size:15px;font-weight:600;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-{{ page.icon }}" aria-hidden="true" style="font-size:17px;"></i>{{ page.action }}</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSellerDrawer }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDrawerSeller }}" aria-hidden="true" style="position:absolute;inset:0;background:var(--bg-overlay);z-index:44;"></div>
+    <div role="dialog" aria-modal="true" aria-labelledby="sfd-dtitle" style="position:absolute;top:0;right:0;bottom:0;width:{{ sdW }};max-width:100%;z-index:45;background:var(--bg-surface);border-left:1px solid var(--border-default);box-shadow:-16px 0 48px rgba(12,10,9,.18);display:flex;flex-direction:column;">
+      <dc-import name="SellerDetailPage" variant="drawer" role="{{ role }}" seller-id="{{ sellerId }}" view="{{ sellerView }}" access="{{ sellerAccess }}" tab="{{ sellerTab }}" demo="{{ sellerDemo2 }}" content-width="{{ sdCW }}" on-navigate="{{ detailNav }}" style="flex:1;min-height:0;" hint-size="100%,100%"></dc-import>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ popCatcher }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeOverlay }}" aria-hidden="true" style="position:absolute;inset:0;z-index:65;"></div>
+  </sc-if>
+
+  <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{ false }}">
+    <div role="dialog" aria-label="Bildirishnomalar" style="position:absolute;top:52px;right:{{ notifRight }};width:{{ notifW }};background:var(--bg-surface);border:1px solid var(--border-default);border-radius:10px;box-shadow:0 12px 32px rgba(12,10,9,.16),0 2px 6px rgba(12,10,9,.08);z-index:70;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-default);">
+        <span style="font-weight:600;">Bildirishnomalar</span>
+        <button type="button" onClick="{{ markAllRead }}" style="border:0;background:none;padding:2px 4px;border-radius:4px;color:var(--text-link);font-size:13px;font-weight:500;cursor:pointer;" style-hover="text-decoration:underline;">Hammasini o‘qilgan deb belgilash</button>
+      </div>
+      <ul style="list-style:none;margin:0;padding:4px;display:flex;flex-direction:column;gap:2px;">
+        <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="4">
+          <li>
+            <button type="button" onClick="{{ n.run }}" style="width:100%;display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border:0;border-radius:6px;background:transparent;text-align:left;cursor:pointer;color:var(--text-primary);" style-hover="background:var(--bg-hover);">
+              <span style="width:32px;height:32px;flex-shrink:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};display:flex;align-items:center;justify-content:center;"><i class="icon-{{ n.icon }}" aria-hidden="true" style="font-size:16px;"></i></span>
+              <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                <span style="font-size:13px;line-height:18px;font-weight:{{ n.weight }};">{{ n.pre }}<span style="font-family:var(--font-mono);">{{ n.id }}</span>{{ n.post }}</span>
+                <span style="font-size:12px;line-height:16px;color:var(--text-secondary);">{{ n.text }}</span>
+                <span style="font-size:12px;line-height:16px;color:var(--text-tertiary);">{{ n.time }}</span>
+              </span>
+              <sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}">
+                <span role="img" aria-label="O‘qilmagan" style="width:8px;height:8px;flex-shrink:0;margin-top:6px;border-radius:50%;background:var(--primary);"></span>
+              </sc-if>
+            </button>
+          </li>
+        </sc-for>
+      </ul>
+      <div style="border-top:1px solid var(--border-default);padding:8px 12px;display:flex;justify-content:center;">
+        <button type="button" style="border:0;background:none;padding:6px 8px;border-radius:4px;color:var(--text-link);font-size:13px;font-weight:500;cursor:pointer;" style-hover="background:var(--bg-hover);">Barcha bildirishnomalar</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{ false }}">
+    <div role="menu" aria-label="Admin menyusi" style="position:absolute;left:{{ menu.left }};right:{{ menu.right }};top:{{ menu.top }};bottom:{{ menu.bottom }};width:264px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:10px;box-shadow:0 12px 32px rgba(12,10,9,.16),0 2px 6px rgba(12,10,9,.08);z-index:70;padding:6px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;">
+      <div style="padding:8px 10px 10px;border-bottom:1px solid var(--border-default);margin-bottom:4px;display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:13px;font-weight:500;">{{ user.email }}</span>
+        <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:10px;line-height:14px;font-weight:600;letter-spacing:.04em;padding:0 5px;border-radius:4px;background:{{ user.rbg }};color:{{ user.rfg }};">{{ user.role }}</span>
+          <span style="font-size:12px;color:var(--text-tertiary);">Kirish: 06.11.2026, 06:30</span>
+        </span>
+      </div>
+      <button type="button" role="menuitem" onClick="{{ goProfile }}" style="height:36px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--text-primary);font-size:14px;cursor:pointer;text-align:left;" style-hover="background:var(--bg-hover);"><i class="icon-shield-check" aria-hidden="true" style="font-size:16px;color:var(--text-tertiary);"></i>Profil va xavfsizlik</button>
+      <div style="padding:6px 10px 8px;">
+        <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:6px;">Mavzu</div>
+        <div role="radiogroup" aria-label="Mavzu" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;background:var(--bg-subtle);border:1px solid var(--border-default);border-radius:6px;">
+          <sc-for list="{{ themeOpts }}" as="t" hint-placeholder-count="3">
+            <button type="button" role="radio" aria-checked="{{ t.checked }}" onClick="{{ t.onClick }}" style="height:28px;display:flex;align-items:center;justify-content:center;gap:4px;border:0;border-radius:4px;background:{{ t.bg }};box-shadow:{{ t.shadow }};font-size:12px;font-weight:500;color:{{ t.fg }};cursor:pointer;"><i class="icon-{{ t.icon }}" aria-hidden="true" style="font-size:13px;"></i>{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="height:1px;background:var(--border-default);margin:2px 0;"></div>
+      <button type="button" role="menuitem" onClick="{{ closeOverlay }}" style="height:36px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--danger-text);font-size:14px;cursor:pointer;text-align:left;" style-hover="background:var(--danger-bg);"><i class="icon-log-out" aria-hidden="true" style="font-size:16px;"></i>Chiqish</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ paletteOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeOverlay }}" aria-hidden="true" style="position:absolute;inset:0;background:var(--bg-overlay);z-index:80;"></div>
+    <div role="dialog" aria-modal="true" aria-label="Buyruqlar paneli" style="position:absolute;left:50%;top:{{ paletteTop }};transform:translateX(-50%);width:640px;max-width:calc(100% - 24px);max-height:calc(100% - 96px);background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);z-index:90;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:10px;padding:0 16px;height:52px;border-bottom:1px solid var(--border-default);flex-shrink:0;">
+        <i class="icon-search" aria-hidden="true" style="font-size:18px;color:var(--text-tertiary);"></i>
+        <input ref="{{ inputRef }}" value="{{ q }}" onChange="{{ onQ }}" onKeyDown="{{ onPaletteKey }}" placeholder="Sahifa, amal yoki Telegram ID…" aria-label="Buyruq yoki Telegram ID" role="combobox" aria-expanded="true" aria-controls="sf-cmd-list" aria-activedescendant="{{ activeId }}" autocomplete="off" style="flex:1;min-width:0;height:100%;border:0;outline:none;background:transparent;font-family:inherit;font-size:15px;color:var(--text-primary);">
+        <kbd style="font-family:var(--font-mono);font-size:11px;line-height:16px;padding:1px 6px;border:1px solid var(--border-default);border-radius:4px;background:var(--bg-subtle);color:var(--text-secondary);">esc</kbd>
+      </div>
+      <div id="sf-cmd-list" role="listbox" aria-label="Natijalar" style="overflow-y:auto;padding:6px;flex:1;">
+        <sc-for list="{{ psections }}" as="sec" hint-placeholder-count="3">
+          <div role="group" aria-label="{{ sec.label }}" style="padding-bottom:4px;">
+            <div style="padding:8px 10px 4px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);">{{ sec.label }}</div>
+            <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="2">
+              <div id="{{ it.domId }}" role="option" aria-selected="{{ it.active }}" onClick="{{ it.run }}" onMouseMove="{{ it.hover }}" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:6px;cursor:pointer;background:{{ it.bg }};color:var(--text-primary);">
+                <i class="icon-{{ it.icon }}" aria-hidden="true" style="font-size:16px;color:{{ it.iconFg }};"></i>
+                <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:{{ it.font }};">{{ it.label }}</span>
+                <span style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;">{{ it.hint }}</span>
+                <sc-if value="{{ it.active }}" hint-placeholder-val="{{ false }}"><i class="icon-corner-down-left" aria-hidden="true" style="font-size:14px;color:var(--text-tertiary);"></i></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <sc-if value="{{ paletteEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:32px 16px;text-align:center;color:var(--text-secondary);display:flex;flex-direction:column;gap:4px;">
+            <span>«{{ q }}» bo‘yicha hech narsa topilmadi.</span>
+            <span style="font-size:13px;color:var(--text-tertiary);">Sotuvchini topish uchun Telegram ID raqamini kiriting.</span>
+          </div>
+        </sc-if>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:8px 16px;border-top:1px solid var(--border-default);background:var(--bg-subtle);font-size:12px;line-height:16px;color:var(--text-tertiary);">
+        <span style="display:flex;align-items:center;gap:4px;"><kbd style="font-family:var(--font-mono);font-size:11px;padding:0 5px;border:1px solid var(--border-default);border-radius:4px;background:var(--bg-surface);">↑</kbd><kbd style="font-family:var(--font-mono);font-size:11px;padding:0 5px;border:1px solid var(--border-default);border-radius:4px;background:var(--bg-surface);">↓</kbd>tanlash</span>
+        <span style="display:flex;align-items:center;gap:4px;"><kbd style="font-family:var(--font-mono);font-size:11px;padding:0 5px;border:1px solid var(--border-default);border-radius:4px;background:var(--bg-surface);">↵</kbd>ochish</span>
+        <span style="display:flex;align-items:center;gap:4px;"><kbd style="font-family:var(--font-mono);font-size:11px;padding:0 5px;border:1px solid var(--border-default);border-radius:4px;background:var(--bg-surface);">esc</kbd>yopish</span>
+        <sc-if value="{{ supportNote }}" hint-placeholder-val="{{ false }}">
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px;"><i class="icon-lock" aria-hidden="true" style="font-size:12px;"></i>Rolingiz uchun ayrim amallar yashirilgan</span>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sessionExpired }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:var(--bg-overlay);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;">
+      <div role="alertdialog" aria-modal="true" aria-label="Xavfsizlik uchun sessiya yopildi" style="width:400px;max-width:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;box-shadow:0 24px 64px rgba(12,10,9,.28);padding:24px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;">
+        <span style="width:40px;height:40px;border-radius:10px;background:var(--privacy-bg);border:1px solid var(--privacy-border);color:var(--privacy-icon);display:flex;align-items:center;justify-content:center;"><i class="icon-shield-alert" aria-hidden="true" style="font-size:20px;"></i></span>
+        <div>
+          <h2 style="margin:0;font:var(--type-h2);letter-spacing:var(--tracking-tight);">Xavfsizlik uchun sessiya yopildi</h2>
+          <p style="margin:6px 0 0;color:var(--text-secondary);text-wrap:pretty;">8 soatlik sessiya muddati tugadi. Davom etish uchun parol va 2FA kodi bilan qayta kiring.</p>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:12px;line-height:16px;color:var(--text-secondary);background:var(--bg-subtle);border-radius:6px;padding:8px 12px;">06.11.2026 · 06:30 – 14:30 · Asia/Tashkent</div>
+        <button type="button" onClick="{{ relogin }}" style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:6px;background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;cursor:pointer;" style-hover="background:var(--primary-hover);"><i class="icon-log-in" aria-hidden="true" style="font-size:16px;"></i>Qayta kirish</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},
+&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;system&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'|'system'&quot;},
+&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;SUPERADMIN&quot;,&quot;SUPPORT&quot;],&quot;default&quot;:&quot;SUPERADMIN&quot;,&quot;tsType&quot;:&quot;'SUPERADMIN'|'SUPPORT'&quot;},
+&quot;env&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;PRODUCTION&quot;,&quot;STAGING&quot;],&quot;default&quot;:&quot;PRODUCTION&quot;,&quot;tsType&quot;:&quot;'PRODUCTION'|'STAGING'&quot;},
+&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ok&quot;,&quot;issue&quot;],&quot;default&quot;:&quot;ok&quot;,&quot;tsType&quot;:&quot;'ok'|'issue'&quot;},
+&quot;banner&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;tempPassword&quot;,&quot;sessionEnding&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;overlay&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;palette&quot;,&quot;notifications&quot;,&quot;userMenu&quot;,&quot;drawer&quot;,&quot;tooltip&quot;,&quot;sessionExpired&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;pageState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;empty&quot;,&quot;error&quot;,&quot;forbidden&quot;,&quot;chartError&quot;,&quot;noResults&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;status&quot;,&quot;sellers&quot;,&quot;access&quot;,&quot;support&quot;,&quot;audit&quot;,&quot;admins&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;sellersDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;menu&quot;,&quot;block&quot;,&quot;reactivate&quot;,&quot;toast&quot;,&quot;compact&quot;,&quot;filtered&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;sellerId&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;517334902&quot;,&quot;402118775&quot;,&quot;388102557&quot;,&quot;388902114&quot;,&quot;290445118&quot;],&quot;default&quot;:&quot;517334902&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;sellerMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;page&quot;,&quot;drawer&quot;],&quot;default&quot;:&quot;page&quot;,&quot;tsType&quot;:&quot;'page'|'drawer'&quot;},
+&quot;sellerView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;notFound&quot;,&quot;error&quot;,&quot;forbidden&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;sellerAccess&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;pending&quot;,&quot;active&quot;,&quot;viewing&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;sellerTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overview&quot;,&quot;commercial&quot;,&quot;requests&quot;,&quot;audit&quot;],&quot;default&quot;:&quot;overview&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;sellerDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;menu&quot;,&quot;request&quot;,&quot;block&quot;,&quot;reactivate&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;profileSection&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;profile&quot;,&quot;password&quot;,&quot;2fa&quot;,&quot;sessions&quot;,&quot;activity&quot;,&quot;ui&quot;],&quot;default&quot;:&quot;profile&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;profileTemp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},
+&quot;profileDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;pwFilled&quot;,&quot;pwWeak&quot;,&quot;pwMismatch&quot;,&quot;pwWrong&quot;,&quot;logoutAll&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;statusScenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ok&quot;,&quot;partial&quot;,&quot;critical&quot;,&quot;botOff&quot;],&quot;default&quot;:&quot;ok&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;adminsDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;collapsed&quot;,&quot;menu&quot;,&quot;add&quot;,&quot;addFilled&quot;,&quot;addWeak&quot;,&quot;addDup&quot;,&quot;addDone&quot;,&quot;disable&quot;,&quot;reset&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;auditDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;filtered&quot;,&quot;security&quot;,&quot;noResults&quot;,&quot;actionMenu&quot;,&quot;adminCombo&quot;,&quot;datePop&quot;,&quot;drawer&quot;,&quot;drawerCatalog&quot;,&quot;export&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;supportDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;dirty&quot;,&quot;disabled&quot;,&quot;invalid&quot;,&quot;badUser&quot;,&quot;saveError&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;accessTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;active&quot;,&quot;pending&quot;,&quot;history&quot;],&quot;default&quot;:&quot;active&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;accessDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;new&quot;,&quot;newError&quot;,&quot;detailPending&quot;,&quot;detailGranted&quot;,&quot;detailOther&quot;,&quot;detailDenied&quot;,&quot;detailCancelled&quot;,&quot;detailExpired&quot;,&quot;detailBlocked&quot;,&quot;cancel&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;viewerView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;forbidden&quot;,&quot;blocked&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;viewerTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;products&quot;,&quot;calcs&quot;],&quot;default&quot;:&quot;products&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;viewerDemo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;calc&quot;,&quot;calcPrice&quot;,&quot;expiring&quot;,&quot;expired&quot;,&quot;sellerRevoked&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},
+&quot;collapsed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},
+&quot;hotkeys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},
+&quot;previewWidth&quot;:{&quot;editor&quot;:null,&quot;default&quot;:1440,&quot;tsType&quot;:&quot;number&quot;}}">
+const fmtId = d => String(d).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const NAV = [
+  { id: 'general', label: 'Umumiy', items: [
+    { id: 'dashboard', label: 'Boshqaruv paneli', icon: 'layout-dashboard' },
+    { id: 'status', label: 'Tizim holati', icon: 'activity' } ] },
+  { id: 'sellers', label: 'Sotuvchilar', items: [
+    { id: 'sellers', label: 'Sotuvchilar', icon: 'users' },
+    { id: 'access', label: 'Kirish so‘rovlari', icon: 'key-round', count: 3 } ] },
+  { id: 'platform', label: 'Platforma', superOnly: true, items: [
+    { id: 'support', label: 'Qo‘llab-quvvatlash', icon: 'life-buoy' },
+    { id: 'audit', label: 'Audit jurnali', icon: 'scroll-text' },
+    { id: 'admins', label: 'Administratorlar', icon: 'user-cog' } ] },
+];
+const PLATFORM = ['support', 'audit', 'admins'];
+const PAGES = {
+  dashboard: { title: 'Boshqaruv paneli', desc: 'Platforma faoliyati bo‘yicha agregat ko‘rsatkichlar.', crumbs: [{ label: 'Boshqaruv paneli' }], action: 'Hisobotni yuklash', icon: 'download' },
+  status: { title: 'Tizim holati', desc: 'Bot, API, ma’lumotlar bazasi va zaxira nusxalar holati.', crumbs: [{ label: 'Tizim holati' }] },
+  sellers: { title: 'Sotuvchilar', desc: 'Ro‘yxatdan o‘tgan sotuvchilar. Tijoriy ma’lumotlar yashirin.', crumbs: [{ label: 'Sotuvchilar' }], action: 'Eksport', icon: 'download' },
+  access: { title: 'Kirish so‘rovlari', desc: 'Sotuvchi roziligi bilan vaqtinchalik, faqat o‘qish uchun kirish.', crumbs: [{ label: 'Sotuvchilar', to: 'sellers' }, { label: 'Kirish so‘rovlari' }], action: 'Yangi kirish so‘rovi', icon: 'plus' },
+  support: { title: 'Qo‘llab-quvvatlash', desc: 'Sotuvchilar murojaatlari va javoblar.', crumbs: [{ label: 'Qo‘llab-quvvatlash' }] },
+  audit: { title: 'Audit jurnali', desc: 'Adminlarning barcha amallari va ko‘rishlar tarixi.', crumbs: [{ label: 'Audit jurnali' }], action: 'Eksport', icon: 'download' },
+  admins: { title: 'Administratorlar', desc: 'Panel foydalanuvchilari, rollar va 2FA holati.', crumbs: [{ label: 'Administratorlar' }], action: 'Admin qo‘shish', icon: 'user-plus' },
+  profile: { title: 'Profil va xavfsizlik', desc: 'Parol, 2FA va faol sessiyalar.', crumbs: [{ label: 'Profil va xavfsizlik' }] },
+};
+const NOTIFS = [
+  { icon: 'circle-check', tone: 'success', pre: 'Sotuvchi ', id: '517 334 902', post: ' ruxsat berdi', text: '45 daqiqa, faqat o‘qish uchun', time: 'Bugun, 14:32', unread: true, to: ['access'] },
+  { icon: 'circle-x', tone: 'danger', pre: 'Backup muvaffaqiyatsiz', id: '', post: '', text: 'Kunlik zaxira nusxa 03:00 da yaratilmadi', time: 'Bugun, 03:04', unread: true, to: ['status'] },
+  { icon: 'clock', tone: 'warning', pre: 'Sotuvchi ', id: '402 118 775', post: ' javob bermadi', text: 'Kirish so‘rovi muddati tugadi', time: 'Kecha, 18:10', unread: false, to: ['access'] },
+  { icon: 'user-x', tone: 'neutral', pre: 'Sotuvchi ', id: '388 902 114', post: ' o‘chirishni so‘radi', text: 'Akkaunt holati: O‘chirish so‘ralgan', time: '04.11.2026, 11:47', unread: false, to: ['seller', '388902114'] },
+];
+const BANNERS = {
+  tempPassword: { icon: 'key-round', title: 'Vaqtinchalik parol bilan kirdingiz — parolni almashtiring.', text: 'Parol almashtirilmaguncha xavfli amallar cheklangan.', action: 'Parolni almashtirish', dismiss: false },
+  sessionEnding: { icon: 'clock', title: 'Sessiya tugaydi — qayta kiring.', text: 'Xavfsizlik uchun sessiya 10 daqiqadan keyin, 14:30 da yopiladi.', action: 'Qayta kirish', dismiss: true },
+};
+
+class Component extends DCLogic {
+  state = { mode: null, w: null, collapsed: null, themePref: null, overlay: null, page: null, sellerId: null, q: '', sel: 0, banner: null, hover: null, read: false, pageState: null };
+  rootRef = React.createRef(); mainRef = React.createRef();
+  inputRef = React.createRef();
+
+  componentDidMount() {
+    const el = this.rootRef.current;
+    if (el && window.ResizeObserver) {
+      this.ro = new ResizeObserver(e => { const w = Math.round(e[0].contentRect.width); if (w && w !== this.state.w) this.setState({ w }); });
+      this.ro.observe(el);
+    }
+    if (this.props.hotkeys) {
+      this.kh = e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.setOverlay(this.overlay === 'palette' ? 'none' : 'palette'); } };
+      window.addEventListener('keydown', this.kh);
+    }
+  }
+  componentWillUnmount() { this.ro && this.ro.disconnect(); this.kh && window.removeEventListener('keydown', this.kh); clearTimeout(this.t); }
+
+  get overlay() { return this.state.overlay ?? this.props.overlay ?? 'none'; }
+  setOverlay = o => this.setState({ overlay: o, q: '', sel: 0, hover: null }, () => {
+    if (o === 'palette') setTimeout(() => this.inputRef.current && this.inputRef.current.focus({ preventScroll: true }), 0);
+  });
+  toggle = o => this.setOverlay(this.overlay === o ? 'none' : o);
+  go = (page, sellerId = null) => this.setState({ page, sellerId, overlay: 'none', q: '', sel: 0, pageState: 'default', hover: null });
+
+  onPaletteKey = e => {
+    const n = (this._flat || []).length;
+    if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ sel: n ? (this._sel + 1) % n : 0 }); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ sel: n ? (this._sel - 1 + n) % n : 0 }); }
+    else if (e.key === 'Enter') { e.preventDefault(); const it = this._flat[this._sel]; it && it.run(); }
+    else if (e.key === 'Escape') { e.preventDefault(); this.setOverlay('none'); }
+  };
+
+  renderVals() {
+    const p = this.props, s = this.state;
+    const isSuper = p.role !== 'SUPPORT';
+    const w = s.w ?? p.previewWidth ?? 1440;
+    const mode = w < 768 ? 'mobile' : w < 1200 ? 'tablet' : 'desktop';
+    const isMobile = mode === 'mobile';
+    const pref = s.themePref ?? p.theme ?? 'light';
+    const theme = pref === 'system' ? (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : pref;
+    const ov = this.overlay;
+    const collapsed = !isMobile && (s.collapsed ?? p.collapsed ?? mode === 'tablet');
+    const expanded = !collapsed;
+    const drawer = isMobile && ov === 'drawer';
+    let page = s.page ?? p.page ?? 'dashboard';
+    const sellerId = s.sellerId ?? p.sellerId ?? '517334902';
+    const sMode = s.mode ?? p.sellerMode ?? 'page';
+    const sellerDrawer = page === 'seller' && sMode === 'drawer';
+    const meta = page === 'viewer' ? { title: 'Faqat ko‘rish', desc: '', crumbs: [{ label: 'Kirish so‘rovlari', to: 'access' }, { label: fmtId(sellerId), mono: true }, { label: 'Faqat ko‘rish' }] } : sellerDrawer ? PAGES.sellers : page === 'seller'
+      ? { title: 'Sotuvchi ' + fmtId(sellerId), desc: 'Profil va akkaunt holati. Tijoriy ma’lumotlar faqat rozilik bilan ko‘rinadi.', crumbs: [{ label: 'Sotuvchilar', to: 'sellers' }, { label: fmtId(sellerId), mono: true }], action: 'Kirish so‘rovi yuborish', icon: 'key-round' }
+      : (PAGES[page] || PAGES.dashboard);
+    const forbidden = (!isSuper && PLATFORM.includes(page)) || (s.pageState ?? p.pageState) === 'forbidden';
+    let pageState = forbidden ? 'forbidden' : (s.pageState ?? p.pageState ?? 'default');
+    if (pageState === 'chartError' && page !== 'dashboard') pageState = 'default';
+    if (pageState === 'noResults' && page !== 'sellers') pageState = 'default';
+    const isDash = page === 'dashboard' && ['default', 'loading', 'empty', 'chartError'].includes(pageState);
+    const isSellers = (page === 'sellers' || sellerDrawer) && ['default', 'loading', 'empty', 'error', 'noResults'].includes(pageState);
+    const isSellerPage = page === 'seller' && !sellerDrawer && !forbidden;
+    const isAccess = page === 'access' && !forbidden && ['default', 'loading', 'empty', 'error'].includes(pageState);
+    const isViewer = page === 'viewer' && !forbidden;
+    const isSupportPage = page === 'support' && !forbidden && ['default', 'loading', 'empty', 'error'].includes(pageState);
+    const isAuditPage = page === 'audit' && !forbidden && ['default', 'loading', 'error'].includes(pageState);
+    const isAdminsPage = page === 'admins' && !forbidden && ['default', 'loading', 'error', 'empty'].includes(pageState);
+    const isStatusPage = page === 'status' && !forbidden && ['default', 'loading', 'error'].includes(pageState);
+    const isProfilePage = page === 'profile' && !forbidden && ['default', 'loading', 'error'].includes(pageState);
+    const custom = isSellerPage || isAccess || isViewer || isSupportPage || isAuditPage || isAdminsPage || isStatusPage || isProfilePage;
+
+    const envStaging = p.env === 'STAGING';
+    const env = envStaging
+      ? { label: 'STAGING', short: 'STG', bg: 'var(--warning-bg)', fg: 'var(--warning-text)', border: 'var(--warning-border)', dot: 'var(--warning-icon)' }
+      : { label: 'PRODUCTION', short: 'PROD', bg: 'var(--danger-bg)', fg: 'var(--danger-text)', border: 'var(--danger-border)', dot: 'var(--danger-icon)' };
+
+    const groups = NAV.filter(g => isSuper || !g.superOnly).map((g, gi) => ({
+      label: g.label, showLabel: expanded, showDivider: collapsed && gi > 0,
+      items: g.items.map(it => {
+        const active = it.id === page || (page === 'seller' && it.id === 'sellers') || (page === 'viewer' && it.id === 'access');
+        return {
+          ...it, active,
+          bg: active ? 'var(--primary-subtle)' : 'transparent',
+          hoverBg: active ? 'var(--primary-subtle)' : 'var(--bg-hover)',
+          fg: active ? 'var(--primary-subtle-fg)' : 'var(--text-secondary)',
+          iconFg: active ? 'var(--primary-subtle-fg)' : 'var(--text-tertiary)',
+          weight: active ? 600 : 500,
+          ariaCurrent: active ? 'page' : undefined,
+          ariaLabel: it.count ? `${it.label}, ${it.count} ta kutilmoqda` : it.label,
+          hasCount: !!it.count && expanded, hasDot: !!it.count && collapsed,
+          showTip: collapsed && (s.hover === it.id || (s.hover == null && ov === 'tooltip' && it.id === 'access')),
+          tipText: it.count ? `${it.label} · ${it.count} ta kutilmoqda` : it.label,
+          onClick: () => this.go(it.id),
+          onEnter: () => collapsed && this.setState({ hover: it.id }),
+          onLeave: () => this.state.hover && this.setState({ hover: null }),
+        };
+      }),
+    }));
+
+    const crumbs = meta.crumbs.map((c, i, a) => ({
+      label: c.label, notFirst: i > 0, isLast: i === a.length - 1, isLink: i < a.length - 1,
+      font: c.mono ? 'var(--font-mono)' : 'inherit', onClick: c.to ? () => this.go(c.to) : undefined,
+    }));
+
+    const issue = p.status === 'issue';
+    const status = issue
+      ? { label: 'Muammo bor', bg: 'var(--warning-bg)', border: 'var(--warning-border)', fg: 'var(--warning-text)', dot: 'var(--warning-icon)' }
+      : { label: 'Hammasi ishlayapti', bg: 'var(--success-bg)', border: 'var(--success-border)', fg: 'var(--success-text)', dot: 'var(--success-icon)' };
+
+    const notifs = NOTIFS.map(n => {
+      const unread = n.unread && !s.read;
+      return { ...n, unread, weight: unread ? 600 : 500, bg: `var(--${n.tone}-bg)`, fg: `var(--${n.tone}-icon)`, run: () => this.go(...n.to) };
+    });
+    const unread = notifs.filter(n => n.unread).length;
+
+    const user = isSuper
+      ? { email: 'd.aliyev@sellerflow.uz', initials: 'DA', role: 'SUPERADMIN', rbg: 'var(--primary-subtle)', rfg: 'var(--primary-subtle-fg)' }
+      : { email: 'm.karimova@sellerflow.uz', initials: 'MK', role: 'SUPPORT', rbg: 'var(--info-bg)', rfg: 'var(--info-text)' };
+
+    const themeOpts = [['light', 'Yorug‘', 'sun'], ['dark', 'Qorong‘i', 'moon'], ['system', 'Tizim', 'monitor']].map(([id, label, icon]) => {
+      const on = pref === id;
+      return { label, icon, checked: on, bg: on ? 'var(--bg-surface)' : 'transparent', shadow: on ? '0 1px 2px rgba(12,10,9,.12)' : 'none', fg: on ? 'var(--text-primary)' : 'var(--text-secondary)', onClick: () => this.setState({ themePref: id }) };
+    });
+
+    const bannerKey = s.banner ?? p.banner ?? 'none';
+    const banner = BANNERS[bannerKey];
+
+    // Command palette
+    const q = s.q.trim().toLowerCase();
+    const digits = q.replace(/\s/g, '');
+    const secs = [];
+    if (/^\d{3,}$/.test(digits)) secs.push({ label: 'Sotuvchi', items: [{ icon: 'search', label: 'Telegram ID: ' + fmtId(digits), hint: 'Sotuvchini ochish', mono: true, run: () => this.go('seller', digits) }] });
+    else if (!q) secs.push({ label: 'So‘nggi qidiruvlar', items: ['517334902', '402118775'].map(d => ({ icon: 'history', label: fmtId(d), hint: 'Sotuvchi', mono: true, run: () => this.go('seller', d) })) });
+    const match = l => !q || l.toLowerCase().includes(q);
+    const pagesL = NAV.filter(g => isSuper || !g.superOnly).flatMap(g => g.items).filter(i => match(i.label)).map(i => ({ icon: i.icon, label: i.label, hint: 'Sahifa', run: () => this.go(i.id) }));
+    if (pagesL.length) secs.push({ label: 'Sahifalar', items: pagesL });
+    const acts = [
+      { icon: 'key-round', label: 'Yangi kirish so‘rovi', run: () => this.go('access') },
+      { icon: 'user-plus', label: 'Admin qo‘shish', superOnly: true, run: () => this.go('admins') },
+      { icon: 'sun-moon', label: 'Mavzuni almashtirish', run: () => this.setState({ themePref: theme === 'dark' ? 'light' : 'dark', overlay: 'none' }) },
+      { icon: 'log-out', label: 'Chiqish', run: () => this.setOverlay('none') },
+    ].filter(a => (isSuper || !a.superOnly) && match(a.label)).map(a => ({ ...a, hint: 'Amal' }));
+    if (acts.length) secs.push({ label: 'Amallar', items: acts });
+    const total = secs.reduce((n, x) => n + x.items.length, 0);
+    const sel = Math.min(s.sel, Math.max(total - 1, 0));
+    let idx = 0; const flat = [];
+    const psections = secs.map(sec => ({ label: sec.label, items: sec.items.map(it => {
+      const i = idx++; flat.push(it); const active = i === sel;
+      return { ...it, domId: 'sfc-' + i, active, bg: active ? 'var(--bg-active)' : 'transparent', iconFg: active ? 'var(--text-primary)' : 'var(--text-tertiary)', font: it.mono ? 'var(--font-mono)' : 'inherit', hover: () => this.state.sel !== i && this.setState({ sel: i }) };
+    }) }));
+    this._flat = flat; this._sel = sel;
+
+    return {
+      rootRef: this.rootRef, inputRef: this.inputRef, theme,
+      isMobile, notMobile: !isMobile, collapsed, expanded, drawer, env, groups, crumbs, status, user, themeOpts, page: meta,
+      sbW: isMobile ? 280 : collapsed ? 64 : 240,
+      sbDisplay: isMobile && !drawer ? 'none' : 'flex',
+      sbPos: isMobile ? 'absolute' : 'relative',
+      sbShadow: isMobile ? '0 16px 48px rgba(12,10,9,.28)' : 'none',
+      hdrPad: collapsed ? '0' : '16px', navPadX: collapsed ? '12px' : '12px',
+      navOverflow: collapsed ? 'visible' : 'auto',
+      itemJustify: collapsed ? 'center' : 'flex-start', itemPad: collapsed ? '0' : '0 10px',
+      userPad: collapsed ? '0' : '0 8px', userBtnBg: ov === 'userMenu' ? 'var(--bg-hover)' : 'transparent',
+      showCollapseBtn: !isMobile, collapseIcon: collapsed ? 'panel-left-open' : 'panel-left-close',
+      collapseLabel: collapsed ? 'Panelni yoyish' : 'Panelni yig‘ish',
+      toggleCollapse: () => this.setState({ collapsed: !collapsed, hover: null, overlay: ov === 'tooltip' ? 'none' : ov }),
+      topPadX: isMobile ? '12px' : '20px', bannerPadX: isMobile ? '16px' : '24px', footPadX: isMobile ? '16px' : '32px',
+      mainPad: isMobile ? (!forbidden && !isSellers && !custom && meta.action ? '20px 16px 96px' : '20px 16px 32px') : '28px 32px 40px', headerAction: !!meta.action && !isMobile, mobileAction: isMobile && !forbidden && !isSellers && !custom && !!meta.action, mainRef: this.mainRef, skipToMain: e => { e.preventDefault(); this.mainRef.current && this.mainRef.current.focus(); },
+      searchW: mode === 'tablet' ? 260 : 340,
+      openDrawer: () => this.setOverlay('drawer'), openPalette: () => this.setOverlay('palette'),
+      closeOverlay: () => this.setOverlay('none'),
+      onRootKey: e => { if (e.key === 'Escape' && !['none', 'sessionExpired', 'tooltip', 'palette'].includes(this.overlay)) this.setOverlay('none'); },
+      goStatus: () => this.go('status'), goHome: () => this.go('dashboard'), goProfile: () => this.go('profile'),
+      toggleNotif: () => this.toggle('notifications'), toggleUserMenu: () => this.toggle('userMenu'),
+      notifOpen: ov === 'notifications', userMenuOpen: ov === 'userMenu', paletteOpen: ov === 'palette', sessionExpired: ov === 'sessionExpired',
+      popCatcher: ov === 'notifications' || ov === 'userMenu',
+      notifs, unread, hasUnread: unread > 0, markAllRead: () => this.setState({ read: true }),
+      bellLabel: unread ? `Bildirishnomalar, ${unread} ta o‘qilmagan` : 'Bildirishnomalar',
+      bellBg: ov === 'notifications' ? 'var(--bg-active)' : 'transparent',
+      notifRight: isMobile ? '8px' : '16px', notifW: isMobile ? 'calc(100% - 16px)' : '384px',
+      menu: isMobile ? { top: '52px', right: '8px', left: 'auto', bottom: 'auto' } : { left: '8px', bottom: '64px', top: 'auto', right: 'auto' },
+      hasBanner: !!banner, banner: banner || {},
+      bannerRun: () => bannerKey === 'tempPassword' ? this.go('profile') : this.setState({ banner: 'none' }),
+      dismissBanner: () => this.setState({ banner: 'none' }),
+      showHeader: !forbidden && !isSellers && !custom,
+      isAccess, isViewer, isSupportPage, isAuditPage, isAdminsPage, isStatusPage, isProfilePage, profileSection: p.profileSection || null, profileTemp: !!p.profileTemp, profileDemo: p.profileDemo || 'none', themePref: pref, setThemePref: t => this.setState({ themePref: t }), statusScenario: p.statusScenario || 'ok', adminsView: pageState === 'empty' ? 'single' : pageState, adminsDemo: p.adminsDemo || 'none', auditDemo: p.auditDemo || 'none', pageState, supportDemo: p.supportDemo || 'none', accessView: pageState, accessTab: p.accessTab || 'active', accessDemo: p.accessDemo || 'none', viewerView: p.viewerView || 'default', viewerTab: p.viewerTab || 'products', viewerDemo: p.viewerDemo || 'none',
+      isSellerPage, isSellerDrawer: sellerDrawer && !forbidden, sellerId, sellerView: p.sellerView || 'default', sellerAccess: p.sellerAccess || 'none', sellerTab: p.sellerTab || 'overview', sellerDemo2: p.sellerDemo || 'none',
+      sdW: isMobile ? '100%' : '560px', sdCW: isMobile ? w : 560,
+      closeDrawerSeller: () => this.go('sellers'),
+      detailNav: (to, sid) => to === 'close' ? this.go('sellers') : to === 'sellerFull' ? this.setState({ mode: 'page', page: 'seller', sellerId: sid }) : this.go(to, sid ?? null),
+      isDash, dashView: pageState, role: isSuper ? 'SUPERADMIN' : 'SUPPORT', sysIssue: issue, navTo: (id, sid) => this.go(id, sid ?? null), isSellers, sellersView: pageState, sellersDemo: p.sellersDemo || 'none',
+      contentW: Math.min(1280, w - (isMobile ? 0 : collapsed ? 64 : 240)) - (isMobile ? 32 : 64),
+      isDefault: !isDash && !isSellers && !custom && pageState === 'default', isLoading: !isDash && !isSellers && !custom && pageState === 'loading', isEmpty: !isDash && !isSellers && !custom && pageState === 'empty', isError: !isSellers && !custom && pageState === 'error', isForbidden: forbidden,
+      retry: () => { this.setState({ pageState: 'loading' }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ pageState: 'default' }), 1200); },
+      q: s.q, onQ: e => this.setState({ q: e.target.value, sel: 0 }), onPaletteKey: this.onPaletteKey,
+      psections, paletteEmpty: total === 0, activeId: total ? 'sfc-' + sel : undefined,
+      paletteTop: isMobile ? '12px' : '12%', supportNote: !isSuper,
+      relogin: () => this.setState({ overlay: 'none', banner: 'none' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

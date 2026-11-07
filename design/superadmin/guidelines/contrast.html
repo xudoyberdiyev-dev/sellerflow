@@ -1,0 +1,19 @@
+<!-- @dsCard group="Colors" viewport="700x760" name="Contrast (WCAG AA)" subtitle="Live-computed ratios, light and dark" -->
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>body{padding:20px;background:var(--bg-surface)} .row{display:flex;gap:8px;flex-wrap:wrap} .sw{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1} .chip{height:48px;border-radius:6px;border:1px solid rgba(0,0,0,.06)} .lbl{font:var(--type-caption);color:var(--text-primary)} .hex{font:11px/14px var(--font-mono);color:var(--text-tertiary)} table{width:100%;border-collapse:collapse;font:var(--type-small)} td,th{padding:5px 8px;border-bottom:1px solid var(--border-default);text-align:left} th{font:var(--type-caption);color:var(--text-secondary)} .s{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:22px;border-radius:4px;padding:0 6px;font:500 12px var(--font-sans)} td.n{font-variant-numeric:tabular-nums;text-align:right}</style></head><body><table><thead><tr><th>Juftlik</th><th>Namuna (yorug‘)</th><th style="text-align:right">Yorug‘</th><th>Namuna (qorong‘i)</th><th style="text-align:right">Qorong‘i</th></tr></thead><tbody id="t"></tbody></table>
+<div id="probe-l" style="display:none"></div><div id="probe-d" data-theme="dark" style="display:none"></div>
+<script>
+const pairs=[["--text-primary","--bg-surface","Asosiy matn"],["--text-secondary","--bg-surface","Ikkilamchi matn"],["--text-tertiary","--bg-surface","Uchlamchi matn"],["--text-tertiary","--bg-app","Uchlamchi / app fon"],["--text-secondary","--bg-subtle","Jadval sarlavhasi"],["--primary-fg","--primary","Primary tugma"],["--primary-fg","--primary-hover","Primary hover"],["--primary-subtle-fg","--primary-subtle","Faol navigatsiya"],["--text-link","--bg-surface","Havola"],["#ffffff","--danger-solid","Danger tugma"],["--success-text","--success-bg","Success badge"],["--warning-text","--warning-bg","Warning badge"],["--danger-text","--danger-bg","Danger badge"],["--info-text","--info-bg","Info badge"],["--orange-text","--orange-bg","Orange badge"],["--neutral-text","--neutral-bg","Neutral badge"],["--privacy-text","--privacy-bg","Privacy matn"],["--privacy-solid-fg","--privacy-solid","READ-ONLY banner"],["--border-input","--bg-surface","Input chegarasi (≥3:1)"]];
+const v=(x)=>x.startsWith('--')?'var('+x+')':x;
+function rgb(el,prop,val){el.style[prop]=val;const c=getComputedStyle(el)[prop];return c.match(/[\d.]+/g).slice(0,3).map(Number);}
+function L([r,g,b]){const f=c=>{c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4)};return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b);}
+function ratio(a,b){const x=L(a),y=L(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);}
+const tb=document.getElementById('t');
+document.fonts.ready.then(()=>{
+for(const [fg,bg,label] of pairs){
+  const cells=['l','d'].map(m=>{const p=document.getElementById('probe-'+m);const f=rgb(p,'color',v(fg));const b=rgb(p,'backgroundColor',v(bg));return {f,b,r:ratio(f,b)};});
+  const min=label.includes('3:1')?3:4.5;
+  const td=(c,m)=>'<td><span class="s" '+(m==='d'?'data-theme="dark"':'')+' style="color:rgb('+c.f+');background:rgb('+c.b+')">Aa 14</span></td><td class="n">'+c.r.toFixed(2).replace('.',',')+':1 '+(c.r>=min?'✓':'✗')+'</td>';
+  tb.insertAdjacentHTML('beforeend','<tr><td>'+label+'<div class="hex">'+fg+' / '+bg+'</div></td>'+td(cells[0],'l')+td(cells[1],'d')+'</tr>');
+}});
+</script></body></html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<style>
+html,body{margin:0;background:#e7e5e4;}
+a{color:#135c3d;} a:hover{color:#104932;}
+</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:48px;font-family:Inter,system-ui,sans-serif;color:#1c1917;">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:960px;">
+    <span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#57534e;">SellerFlow Admin · Autentifikatsiya</span>
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.015em;">Kirish, 2FA, parol va sessiya ekranlari</h1>
+    <p style="margin:0;font-size:15px;line-height:22px;color:#57534e;text-wrap:pretty;">Har artboard jonli. Demo qoidalari: parol 10 belgidan qisqa bo‘lsa — xato (5 urinishdan keyin bloklanadi); email «new…» bilan boshlansa — 2FA ulash, «temp…» — parol almashtirish. OTP: 000000, 123456 — noto‘g‘ri kod, boshqasi — muvaffaqiyat. Paste ishlaydi.</p>
+  </div>
+  <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+    <div style="display:flex;flex-direction:column;gap:24px;">
+      <h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;padding-top:24px;border-top:1px solid #d6d3d1;">{{ g.title }}</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;max-width:{{ g.maxW }}px;">
+        <sc-for list="{{ g.items }}" as="a" hint-placeholder-count="3">
+          <div id="{{ a.id }}" style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">{{ a.badge }}</span><span style="font-size:16px;font-weight:600;">{{ a.label }}</span></div>
+            <div style="width:{{ a.w }}px;height:{{ a.h }}px;border-radius:{{ a.r }}px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);">
+              <dc-import name="AuthScreen" screen="{{ a.screen }}" theme="{{ a.theme }}" preview-width="{{ a.w }}" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SCREENS = [
+  ['1', 'Kirish', 'login'], ['2', 'Xato', 'loginError'], ['3', 'Bloklangan', 'locked'],
+  ['4a', '2FA ulash · ilova', 'setup1'], ['4b', '2FA ulash · QR', 'setup2'], ['4c', '2FA ulash · tasdiqlash', 'setup3'],
+  ['5', '2FA kodi', 'otp'], ['6', 'Noto‘g‘ri kod', 'otpError'], ['7', 'Parol almashtirish', 'changePassword'],
+  ['8', 'Sessiya tugadi', 'sessionExpired'], ['9', 'Hisob o‘chirilgan', 'deleted'],
+];
+const GROUPS = [
+  { key: 'dl', title: 'Desktop 1440 · yorug‘', w: 1440, h: 900, r: 12, theme: 'light', maxW: 2976 },
+  { key: 'ml', title: 'Mobil 390 · yorug‘', w: 390, h: 844, r: 24, theme: 'light', maxW: 2700 },
+  { key: 'dd', title: 'Desktop 1440 · qorong‘i', w: 1440, h: 900, r: 12, theme: 'dark', maxW: 2976 },
+  { key: 'md', title: 'Mobil 390 · qorong‘i', w: 390, h: 844, r: 24, theme: 'dark', maxW: 2700 },
+];
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      groups: GROUPS.map(g => ({
+        title: g.title, maxW: g.maxW,
+        items: SCREENS.map(([n, label, screen]) => ({ id: `${g.key}-${n}`, badge: `${g.key.toUpperCase()}·${n}`, label, screen, theme: g.theme, w: g.w, h: g.h, r: g.r })),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

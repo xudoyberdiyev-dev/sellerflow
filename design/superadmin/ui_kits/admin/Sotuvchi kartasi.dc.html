@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<style>html,body{margin:0;background:#f5f5f4;} a{color:#1c1917;} a:hover{color:#57534e;}</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:40px;font-family:Inter,system-ui,sans-serif;color:#1c1917;">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px;">
+    <span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#57534e;">SellerFlow Admin · Sotuvchi kartasi</span>
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.02em;">Sotuvchi tafsilotlari — sahifa va 560px drawer</h1>
+    <p style="margin:0;font-size:15px;line-height:24px;color:#57534e;text-wrap:pretty;">Tablar, ⋯ menyu, kirish so‘rovi modali, bloklash/qayta faollashtirish, ruxsat taymeri va «Ko‘rish» ishlaydi. Har bir holat o‘zgarishi Audit tabiga yoziladi. Drawer’da ⤢ tugmasi to‘liq sahifani ochadi.</p>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Asosiy ko‘rinishlar</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="4a" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4a</span><span style="font-size:14px;font-weight:500;">Sahifa · Umumiy · Faol</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller"  preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+    <div id="4b" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4b</span><span style="font-size:14px;font-weight:500;">Drawer 560px · sotuvchilar ro‘yxati ustida</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-mode="drawer" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Tijoriy ma’lumot — maxfiylik chegarasi</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="4c" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4c</span><span style="font-size:14px;font-weight:500;">Yashirin · privacy guard</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-tab="commercial" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4d" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4d</span><span style="font-size:14px;font-weight:500;">So‘rov kutilmoqda</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-tab="commercial" seller-access="pending" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4e" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4e</span><span style="font-size:14px;font-weight:500;">Ruxsat faol · taymer</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-tab="commercial" seller-access="active" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4f" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4f</span><span style="font-size:14px;font-weight:500;">Ko‘rish → read-only ko‘ruvchi</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="viewer" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Tarix va audit</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="4g" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4g</span><span style="font-size:14px;font-weight:500;">Kirish so‘rovlari tarixi</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-tab="requests" seller-access="active" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4h" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4h</span><span style="font-size:14px;font-weight:500;">Audit · vaqt chizig‘i (bloklangan)</span></div>
+      <div style="width:1280px;height:1400px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-id="388102557" seller-tab="audit" preview-width="{{ 1280 }}" hint-size="1280px,1400px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Akkaunt holatlari</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="4i" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4i</span><span style="font-size:14px;font-weight:500;">Bloklangan · amber banner</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-id="388102557" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4j" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4j</span><span style="font-size:14px;font-weight:500;">O‘chirish so‘ralgan · 12 kun qoldi</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-id="388902114" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4k" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4k</span><span style="font-size:14px;font-weight:500;">Yopilgan · amallar yo‘q</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-id="290445118" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4l" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4l</span><span style="font-size:14px;font-weight:500;">Drawer · qorong‘i · bloklangan</span></div>
+      <div style="width:1440px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-mode="drawer" seller-id="388102557" theme="dark" preview-width="{{ 1440 }}" hint-size="1440px,1000px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Amallar va rollar</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="4m" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4m</span><span style="font-size:14px;font-weight:500;">⋯ menyu</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-demo="menu" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4n" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4n</span><span style="font-size:14px;font-weight:500;">Kirish so‘rovi modali</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-demo="request" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4o" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4o</span><span style="font-size:14px;font-weight:500;">Bloklash modali</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-demo="block" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+    <div id="4p" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4p</span><span style="font-size:14px;font-weight:500;">SUPPORT · faqat o‘z so‘rovlari</span></div>
+      <div style="width:1280px;height:1000px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" role="SUPPORT" seller-tab="requests" seller-demo="menu" preview-width="{{ 1280 }}" hint-size="1280px,1000px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Planshet va mobil</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="4q" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4q</span><span style="font-size:14px;font-weight:500;">Planshet · 1024</span></div>
+      <div style="width:1024px;height:1100px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-tab="commercial" preview-width="{{ 1024 }}" hint-size="1024px,1100px"></dc-import></div>
+    </div>
+    <div id="4r" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4r</span><span style="font-size:14px;font-weight:500;">Mobil · Umumiy</span></div>
+      <div style="width:390px;height:1500px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-id="388902114" preview-width="{{ 390 }}" hint-size="390px,1500px"></dc-import></div>
+    </div>
+    <div id="4s" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4s</span><span style="font-size:14px;font-weight:500;">Mobil · drawer · so‘rovlar</span></div>
+      <div style="width:390px;height:1100px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-mode="drawer" seller-tab="requests" preview-width="{{ 390 }}" hint-size="390px,1100px"></dc-import></div>
+    </div>
+  </div>
+  <h2 style="margin:24px 0 0;font-size:22px;line-height:30px;font-weight:600;">Yuklanish, xato, 404, 403</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="4t" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4t</span><span style="font-size:14px;font-weight:500;">Skeleton</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-view="loading" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+    <div id="4u" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4u</span><span style="font-size:14px;font-weight:500;">Topilmadi · 404</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-id="123456789" seller-view="notFound" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+    <div id="4v" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4v</span><span style="font-size:14px;font-weight:500;">Xato · qayta urinish</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-view="error" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+    <div id="4w" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">4w</span><span style="font-size:14px;font-weight:500;">Ruxsat yo‘q · 403</span></div>
+      <div style="width:1280px;height:820px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" style="display:block;width:100%;height:100%;" page="seller" seller-view="forbidden" role="SUPPORT" preview-width="{{ 1280 }}" hint-size="1280px,820px"></dc-import></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

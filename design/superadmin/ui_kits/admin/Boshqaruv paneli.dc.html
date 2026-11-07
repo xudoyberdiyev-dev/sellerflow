@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<style>html,body{margin:0;background:#f5f5f4;} a{color:#1c1917;} a:hover{color:#57534e;}</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:40px;font-family:Inter,system-ui,sans-serif;color:#1c1917;">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:880px;">
+    <span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#57534e;">SellerFlow Admin · Boshqaruv paneli</span>
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.02em;">Boshqaruv paneli — faqat agregat ko‘rsatkichlar</h1>
+    <p style="margin:0;font-size:15px;line-height:24px;color:#57534e;text-wrap:pretty;">Davr tanlagichi, grafiklar hover’i (sichqoncha yoki ←/→), «Yangilash», «Kutilayotgan kirish so‘rovlari» kartasi va «Qayta urinish» ishlaydi.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="2a" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2a</span><span style="font-size:14px;font-weight:500;">Desktop · yorug‘ · SUPERADMIN</span></div>
+      <div style="width:1440px;height:1900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" page="dashboard" preview-width="{{ 1440 }}" hint-size="1440px,1900px"></dc-import></div>
+    </div>
+    <div id="2b" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2b</span><span style="font-size:14px;font-weight:500;">Desktop · qorong‘i · backup xatosi</span></div>
+      <div style="width:1440px;height:1900px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" theme="dark" status="issue" page="dashboard" preview-width="{{ 1440 }}" hint-size="1440px,1900px"></dc-import></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="2c" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2c</span><span style="font-size:14px;font-weight:500;">SUPPORT · «Mening so‘rovlarim» audit o‘rnida</span></div>
+      <div style="width:1280px;height:1940px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" role="SUPPORT" page="dashboard" preview-width="{{ 1280 }}" hint-size="1280px,1940px"></dc-import></div>
+    </div>
+    <div id="2d" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2d</span><span style="font-size:14px;font-weight:500;">Planshet · 1024</span></div>
+      <div style="width:1024px;height:2880px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" page="dashboard" preview-width="{{ 1024 }}" hint-size="1024px,2880px"></dc-import></div>
+    </div>
+    <div id="2e" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2e</span><span style="font-size:14px;font-weight:500;">Mobil · yorug‘</span></div>
+      <div style="width:390px;height:3600px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" page="dashboard" preview-width="{{ 390 }}" hint-size="390px,3600px"></dc-import></div>
+    </div>
+    <div id="2f" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2f</span><span style="font-size:14px;font-weight:500;">Mobil · qorong‘i</span></div>
+      <div style="width:390px;height:3600px;border-radius:24px;overflow:hidden;border:1px solid #d6d3d1;box-shadow:0 8px 32px rgba(12,10,9,.08);"><dc-import name="AdminShell" theme="dark" page="dashboard" preview-width="{{ 390 }}" hint-size="390px,3600px"></dc-import></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:880px;margin-top:24px;">
+    <h2 style="margin:0;font-size:22px;line-height:30px;font-weight:600;">Holatlar</h2>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div id="2g" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2g</span><span style="font-size:14px;font-weight:500;">Yuklanish (skeleton)</span></div>
+      <div style="width:1280px;height:1740px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;"><dc-import name="AdminShell" page="dashboard" page-state="loading" preview-width="{{ 1280 }}" hint-size="1280px,1740px"></dc-import></div>
+    </div>
+    <div id="2h" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2h</span><span style="font-size:14px;font-weight:500;">Bo‘sh platforma</span></div>
+      <div style="width:1280px;height:1260px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;"><dc-import name="AdminShell" page="dashboard" page-state="empty" preview-width="{{ 1280 }}" hint-size="1280px,1260px"></dc-import></div>
+    </div>
+    <div id="2i" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font:600 12px/20px 'JetBrains Mono',monospace;background:#1c1917;color:#fff;padding:0 8px;border-radius:4px;">2i</span><span style="font-size:14px;font-weight:500;">Grafik yuklanmadi · karta ichida qayta urinish</span></div>
+      <div style="width:1280px;height:1940px;border-radius:12px;overflow:hidden;border:1px solid #d6d3d1;"><dc-import name="AdminShell" page="dashboard" page-state="chartError" preview-width="{{ 1280 }}" hint-size="1280px,1940px"></dc-import></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
