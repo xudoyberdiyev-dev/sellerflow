@@ -186,6 +186,10 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
                 info.showHelp(ctx, false);
                 return;
             }
+            if ("/delete".equals(cmd) && status == AccountStatus.ONBOARDING) {
+                onboarding.askWipe(ctx); // M-26
+                return;
+            }
             onboarding.onText(ctx, text, cmd);
             return;
         }

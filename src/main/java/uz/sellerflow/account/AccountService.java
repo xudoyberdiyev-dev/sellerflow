@@ -152,6 +152,22 @@ public class AccountService {
         return u;
     }
 
+    /**
+     * M-26: onboardingni tugatmagan (biznes yo'q) foydalanuvchi ma'lumotini o'chiradi: qoralama o'chiriladi,
+     * yozuv CLOSED va Telegram ID psevdonimga almashtiriladi. Rozilik yozuvlari (bo'lsa) shaxssiz dalil sifatida qoladi.
+     */
+    @Transactional
+    public void wipeOnboarding(long userId) {
+        UserAccount u = users.findById(userId).orElseThrow(() -> new Errors.NotFound("user"));
+        if (u.getStatus() != AccountStatus.ONBOARDING || businesses.findByOwnerUserId(userId).isPresent()) {
+            throw new Errors.Forbidden("Wipe allowed only during onboarding");
+        }
+        u.detachTelegramId(pseudonymousTelegramId());
+        u.setStatus(AccountStatus.CLOSED);
+        users.saveAndFlush(u);
+        audit.record(Actor.USER, userId, null, "ONBOARDING_DATA_DELETED", "USER", userId, "by user before activation");
+    }
+
     /** DELETION_PURGE_DATA — o'chirish matni haqiqatga mos bo'lishi uchun (M-23). */
     public boolean purgeEnabled() {
         return props.deletion() != null && props.deletion().purgeData();

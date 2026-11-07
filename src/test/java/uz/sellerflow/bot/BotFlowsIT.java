@@ -286,6 +286,33 @@ class BotFlowsIT extends IntegrationTest {
         assertThat(tg.forChat(u)).isNotEmpty();
     }
 
+    /** M-26: onboardingda «Ortga» va ma'lumotni o'chirish (tugma va /delete). */
+    @Test
+    void onboarding_backNavigation_andWipeBeforeActivation() {
+        long u = newUserId();
+        text(u, "/start");
+        click(u, "Boshlash");
+        click(u, "Roziman");
+        assertThat(lastText(u)).isNotBlank();
+        click(u, "Uzum Market");          // -> biznes nomi
+        click(u, "Ortga");                // -> kanal
+        assertThat(tg.last(u).buttons()).anyMatch(b -> b.text().equals("Uzum Market"));
+        click(u, "Ortga");                // -> xush kelibsiz
+        assertThat(tg.last(u).buttons()).anyMatch(b -> b.text().contains("ma’lumotni o‘chirish"));
+
+        text(u, "/delete");
+        assertThat(lastText(u)).contains("Ro‘yxatdan o‘tishni bekor qilish");
+        click(u, "Ha, o‘chirilsin");
+        assertThat(lastText(u)).contains("o‘chirildi");
+        assertThat(count("select count(*) from users where telegram_user_id = " + u)).isZero();
+        assertThat(count("select count(*) from users where status = 'CLOSED' and telegram_user_id < 0")).isEqualTo(1);
+        assertThat(count("select count(*) from consents")).isEqualTo(1); // dalil sifatida, shaxssiz
+        assertThat(count("select count(*) from audit_events where action = 'ONBOARDING_DATA_DELETED'")).isEqualTo(1);
+
+        text(u, "/start"); // yangidan
+        assertThat(count("select count(*) from users where telegram_user_id = " + u + " and status = 'ONBOARDING'")).isEqualTo(1);
+    }
+
     @Test
     void groupChat_noBusinessFlow() {
         long u = newUserId();

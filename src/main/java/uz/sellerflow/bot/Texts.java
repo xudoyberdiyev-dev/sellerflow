@@ -41,6 +41,14 @@ public final class Texts {
 
     // ------------------------------------------------ umumiy tugmalar
     public static final String BTN_BACK = "⬅️ Ortga";
+    // M-26: onboarding tugallanmagan foydalanuvchi uchun ma'lumotni o'chirish
+    public static final String BTN_WIPE = "🗑 Bekor qilish va ma’lumotni o‘chirish";
+    public static final String WIPE_CONFIRM =
+            "🗑 <b>Ro‘yxatdan o‘tishni bekor qilish</b>\n\nKiritgan ma’lumotlaringiz (qoralama, biznes nomi, ism) o‘chiriladi va "
+                    + "Telegram ID’ingiz bu yozuvdan ajratiladi. Agar shartlarga rozilik bergan bo‘lsangiz, rozilik yozuvi qonuniy dalil "
+                    + "sifatida shaxssiz holda saqlanadi.\n\nIstalgan payt /start bilan qaytadan boshlashingiz mumkin. Davom etasizmi?";
+    public static final String BTN_WIPE_CONFIRM = "Ha, o‘chirilsin";
+    public static final String WIPE_DONE = "✅ Ma’lumotlaringiz o‘chirildi. Qaytadan boshlash uchun /start yuboring.";
     public static final String BTN_MAIN = "🏠 Bosh menyu";
     public static final String BTN_CANCEL = "✖️ Bekor qilish";
     public static final String BTN_SKIP = "⏭ O‘tkazib yuborish";

@@ -90,16 +90,20 @@ public class OnboardingHandler {
         switch (s.step()) {
             case W -> ctx.send(Texts.WELCOME, Kb.create()
                     .row(b(rev, Texts.BTN_START, "start"))
-                    .row(b(rev, Texts.BTN_ABOUT, "about")));
+                    .row(b(rev, Texts.BTN_ABOUT, "about"))
+                    .row(b(rev, Texts.BTN_WIPE, "wipe")));
             case CONS -> ctx.send(String.format(Texts.CONSENT, accounts.currentTermsVersion(), Ctx.esc(termsText)),
-                    Kb.create().row(b(rev, Texts.BTN_AGREE, "agree"), b(rev, Texts.BTN_DECLINE, "decline")));
+                    Kb.create().row(b(rev, Texts.BTN_AGREE, "agree"), b(rev, Texts.BTN_DECLINE, "decline"))
+                            .row(b(rev, Texts.BTN_BACK, "back")));
             case CHN -> {
                 List<Tg.InlineButton> bs = new ArrayList<>();
                 for (SalesChannel c : SalesChannel.values()) bs.add(b(rev, c.label(), "ch:" + c.name()));
-                ctx.send(Texts.ASK_CHANNEL, Kb.create().rows(bs, 2));
+                ctx.send(Texts.ASK_CHANNEL, Kb.create().rows(bs, 2).row(b(rev, Texts.BTN_BACK, "back")));
             }
-            case BN -> ctx.send(Texts.ASK_BUSINESS_NAME, Kb.create().row(b(rev, Texts.BTN_SKIP, "skip")));
-            case DN -> ctx.send(Texts.ASK_DISPLAY_NAME, Kb.create().row(b(rev, Texts.BTN_SKIP, "skip")));
+            case BN -> ctx.send(Texts.ASK_BUSINESS_NAME, Kb.create().row(b(rev, Texts.BTN_SKIP, "skip"))
+                    .row(b(rev, Texts.BTN_BACK, "back")));
+            case DN -> ctx.send(Texts.ASK_DISPLAY_NAME, Kb.create().row(b(rev, Texts.BTN_SKIP, "skip"))
+                    .row(b(rev, Texts.BTN_BACK, "back")));
             case REV -> ctx.send(String.format(Texts.ONB_REVIEW,
                             CalcModel.channelLabel(s.str("ch")),
                             Ctx.esc(s.str("bn") == null ? Business.DEFAULT_BUSINESS_NAME : s.str("bn")),
@@ -125,6 +129,7 @@ public class OnboardingHandler {
         String action = p[2];
         String arg = p.length > 3 ? p[3] : null;
         switch (action) {
+            case "back0" -> { } // tasdiqdan qaytish — joriy qadam qayta ko'rsatiladi
             case "about" -> {
                 ctx.send(Texts.ABOUT, Kb.create().row(b(s.revision(), Texts.BTN_START, "start")));
                 return;
@@ -136,7 +141,28 @@ public class OnboardingHandler {
             }
             case "decline" -> {
                 // Rad etilsa ACTIVE bo'lmaydi; rozilik o'ylab topilmaydi
-                ctx.send(Texts.CONSENT_DECLINED, Kb.create().row(b(s.revision(), Texts.BTN_TERMS_AGAIN, "start")));
+                ctx.send(Texts.CONSENT_DECLINED, Kb.create().row(b(s.revision(), Texts.BTN_TERMS_AGAIN, "start"))
+                        .row(b(s.revision(), Texts.BTN_WIPE, "wipe")));
+                return;
+            }
+            case "back" -> {
+                // M-26: bir qadam ortga (ko'rib chiqishdan kelgan bo'lsa — ko'rib chiqishga)
+                if (s.data().path("fromReview").asBoolean(false) && !CONS.equals(s.step())) s.step(REV);
+                else s.step(switch (s.step()) {
+                    case DN -> BN;
+                    case BN -> CHN;
+                    default -> W;
+                });
+            }
+            case "wipe" -> {
+                askWipe(ctx);
+                return;
+            }
+            case "wipe!" -> {
+                ctx.clearSourceButtons();
+                accounts.wipeOnboarding(ctx.account.user().getId());
+                s.clear();
+                ctx.send(Texts.WIPE_DONE, new Tg.RemoveKeyboard(true));
                 return;
             }
             case "ch" -> {
@@ -164,6 +190,14 @@ public class OnboardingHandler {
         }
         ctx.clearSourceButtons();
         render(ctx);
+    }
+
+    /** M-26: /delete yoki «Bekor qilish va ma'lumotni o'chirish» — ikki bosqichli tasdiq. */
+    public void askWipe(Ctx ctx) {
+        Session s = ctx.session;
+        if (!s.isFlow(Session.ONBOARDING)) s.start(Session.ONBOARDING, W);
+        int rev = s.revision();
+        ctx.send(Texts.WIPE_CONFIRM, Kb.create().row(b(rev, Texts.BTN_WIPE_CONFIRM, "wipe!"), b(rev, Texts.BTN_BACK, "back0")));
     }
 
     private void activate(Ctx ctx) {
