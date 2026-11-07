@@ -63,9 +63,11 @@ public class AdminController {
     private final AccessGrantService grants;
     private final BotStatus bot;
     private final ObjectMapper mapper;
+    private final LoginRateLimiter loginLimiter;
 
     public AdminController(JdbcTemplate jdbc, AccountService accounts, SupportService support, AuditService audit,
-                           AdminAuthService auth, AccessGrantService grants, BotStatus bot, ObjectMapper mapper) {
+                           AdminAuthService auth, AccessGrantService grants, BotStatus bot, ObjectMapper mapper,
+                           LoginRateLimiter loginLimiter) {
         this.jdbc = jdbc;
         this.accounts = accounts;
         this.support = support;
@@ -74,20 +76,44 @@ public class AdminController {
         this.grants = grants;
         this.bot = bot;
         this.mapper = mapper;
+        this.loginLimiter = loginLimiter;
     }
 
     // ================================================================= auth (ochiq endpointlar)
 
     @PublicAdminEndpoint
     @PostMapping("/auth/login")
-    public Map<String, Object> login(@RequestBody LoginRequest r) {
-        return loginView(auth.login(r.email(), r.password(), r.code()));
+    public Map<String, Object> login(@RequestBody LoginRequest r, HttpServletRequest req) {
+        return limited(req, () -> auth.login(r.email(), r.password(), r.code()));
     }
 
     @PublicAdminEndpoint
     @PostMapping("/auth/totp/confirm")
-    public Map<String, Object> confirm(@RequestBody TotpConfirm r) {
-        return loginView(auth.confirmTotp(r.setupToken(), r.code()));
+    public Map<String, Object> confirm(@RequestBody TotpConfirm r, HttpServletRequest req) {
+        return limited(req, () -> auth.confirmTotp(r.setupToken(), r.code()));
+    }
+
+    /** M-2: IP bo'yicha limit — limitdan oshgan IP uchun parol umuman tekshirilmaydi (429). */
+    private Map<String, Object> limited(HttpServletRequest req, java.util.function.Supplier<LoginResult> attempt) {
+        String ip = req.getRemoteAddr();
+        if (loginLimiter.isBlocked(ip)) throw new TooManyAttempts();
+        try {
+            return loginView(attempt.get());
+        } catch (Errors.Forbidden e) {
+            loginLimiter.recordFailure(ip);
+            throw e;
+        }
+    }
+
+    static class TooManyAttempts extends RuntimeException {
+        TooManyAttempts() { super("TOO_MANY_ATTEMPTS"); }
+    }
+
+    @ExceptionHandler(TooManyAttempts.class)
+    public ResponseEntity<Map<String, Object>> tooMany(TooManyAttempts e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(LoginRateLimiter.WINDOW.toSeconds()))
+                .body(m("error", "TOO_MANY_ATTEMPTS"));
     }
 
     private static Map<String, Object> loginView(LoginResult r) {

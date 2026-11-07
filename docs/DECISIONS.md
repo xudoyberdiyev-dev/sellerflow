@@ -25,7 +25,7 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 
 | ID | Qaror |
 |---|---|
-| ADM-AUTH | Admin identifikatsiyasi sotuvchi Telegram ID'sidan alohida: email, parol (BCrypt, kamida 12 belgi) va **majburiy TOTP 2FA**. Sessiya 8 soat; token DB'da faqat SHA-256 xeshi sifatida saqlanadi. 5 ta xato urinishdan keyin 15 daqiqa blok. |
+| ADM-AUTH | Admin identifikatsiyasi sotuvchi Telegram ID'sidan alohida: email, parol (BCrypt, kamida 12 belgi) va **majburiy TOTP 2FA**. Sessiya 8 soat; token DB'da faqat SHA-256 xeshi sifatida saqlanadi. 10 ta xato urinishdan keyin akkaunt 15 daqiqa bloklanadi (atomik hisoblagich); bitta IP'dan 15 daqiqada 5 ta xatodan keyin 429 `TOO_MANY_ATTEMPTS` (M-2/M-3, 2026-11-07) — IP limiti lockout chegarasidan past, shuning uchun bitta IP adminni bloklay olmaydi. |
 | ADM-ROLES | `SUPERADMIN` — hamma amallar. `SUPPORT` — statistika, tizim holati, sotuvchilar ro'yxati, o'z kirish so'rovlari. Bloklash/tiklash, support kontakti, audit va adminlarni boshqarish — faqat SUPERADMIN. |
 | ADM-BOOTSTRAP | Birinchi SUPERADMIN `.env` (ADMIN_BOOTSTRAP_EMAIL/PASSWORD) orqali, faqat bazada birorta ham admin bo'lmaganda yaratiladi. |
 | ADM-UI | Panel `/admin/` manzilida, Spring Boot orqali beriladi. Server porti faqat 127.0.0.1 da ochiq; tashqaridan kirish SSH tunnel yoki HTTPS reverse proxy orqali. UI: React + TypeScript + Vite + Tailwind. shadcn/ui CLI ishlatilmadi — uning registriga tarmoq ruxsati yo'q edi, shuning uchun shu uslubdagi komponentlar qo'lda yozildi. |

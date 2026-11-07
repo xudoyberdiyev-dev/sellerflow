@@ -38,7 +38,7 @@ import java.util.Optional;
 /**
  * Admin identifikatsiyasi (sotuvchi Telegram ID'sidan alohida, Master 16.4).
  * Parol (BCrypt) + majburiy TOTP 2FA, rollar, sessiya tokenlari (DB'da faqat SHA-256 xeshi),
- * 5 ta xato urinishdan keyin 15 daqiqalik blok.
+ * 10 ta xato urinishdan keyin 15 daqiqalik blok (IP limiti — LoginRateLimiter).
  */
 @Service
 public class AdminAuthService {
@@ -50,7 +50,8 @@ public class AdminAuthService {
 
     static final Duration SESSION_TTL = Duration.ofHours(8);
     static final Duration SETUP_TTL = Duration.ofMinutes(15);
-    static final int MAX_FAILED = 5;
+    /** Akkaunt lockout chegarasi; IP limiti (LoginRateLimiter, 5) undan past — bitta IP adminni bloklay olmaydi (M-2). */
+    static final int MAX_FAILED = 10;
     static final Duration LOCK = Duration.ofMinutes(15);
     static final int MIN_PASSWORD = 12;
 
@@ -141,6 +142,28 @@ public class AdminAuthService {
         @Query(nativeQuery = true, value = "update admins set totp_last_step = ?2 where id = ?1"
                 + " and (totp_last_step is null or totp_last_step < ?2)")
         int consumeTotpStep(Long adminId, long step);
+
+        /**
+         * M-3: atomik "failed_attempts + 1"; chegaraga yetganda bloklab, hisoblagichni nollaydi.
+         * Qaytaradi: 1 — shu chaqiruv akkauntni blokladi, 0 — yo'q. Persistence context tozalanadi,
+         * eskirgan entity keyinroq hisoblagichni qayta yozib yubormasligi uchun.
+         */
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
+        @Query(nativeQuery = true, value = """
+                update admins set
+                  locked_until    = case when failed_attempts + 1 >= ?2 then ?3 else locked_until end,
+                  failed_attempts = case when failed_attempts + 1 >= ?2 then -1 else failed_attempts + 1 end
+                where id = ?1""")
+        int bumpFailures(Long adminId, int max, Instant lockUntil);
+
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
+        @Query(nativeQuery = true, value = "update admins set failed_attempts = 0 where id = ?1 and failed_attempts = -1")
+        int markLocked(Long adminId);
+
+        default int registerFailure(Long adminId, int max, Instant lockUntil) {
+            bumpFailures(adminId, max, lockUntil);
+            return markLocked(adminId);
+        }
     }
 
     public interface SessionRepository extends JpaRepository<AdminSession, String> {
@@ -210,9 +233,12 @@ public class AdminAuthService {
             throw new Errors.Forbidden("INVALID_CREDENTIALS");
         }
         Admin a = found.get();
+        // M-2: bloklangan/o'chirilgan akkaunt uchun ham BCrypt bajariladi va javob parolga bog'liq emas —
+        // na javob, na vaqt parol to'g'riligini oshkor qilmaydi.
+        boolean passwordOk = password != null && encoder.matches(password, a.passwordHash);
         if (a.status != Status.ACTIVE) throw new Errors.Forbidden("INVALID_CREDENTIALS");
         if (a.lockedUntil != null && now.isBefore(a.lockedUntil)) throw new Errors.Forbidden("LOCKED");
-        if (password == null || !encoder.matches(password, a.passwordHash)) {
+        if (!passwordOk) {
             registerFailure(a, now, "password");
             throw new Errors.Forbidden("INVALID_CREDENTIALS");
         }
@@ -270,14 +296,11 @@ public class AdminAuthService {
         return new LoginResult("OK", token, null, null, null, principal(a), a.mustChangePassword);
     }
 
+    /** M-3: hisoblagich DB'da atomik oshiriladi (parallel so'rovlarda o'sish yo'qolmaydi). */
     private void registerFailure(Admin a, Instant now, String what) {
-        a.failedAttempts++;
-        if (a.failedAttempts >= MAX_FAILED) {
-            a.lockedUntil = now.plus(LOCK);
-            a.failedAttempts = 0;
+        if (admins.registerFailure(a.id, MAX_FAILED, now.plus(LOCK)) > 0) {
             audit.record(Actor.SYSTEM, "auth", null, "ADMIN_LOCKED", "ADMIN", a.id, "after failed " + what);
         }
-        admins.save(a);
     }
 
     /** Har so'rovda: token -> faol admin. Rol va holat DB'dan o'qiladi (o'chirilgan admin darhol chiqariladi). */

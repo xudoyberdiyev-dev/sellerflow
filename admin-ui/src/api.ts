@@ -59,6 +59,7 @@ const MESSAGES: Record<string, string> = {
   INVALID_CODE: 'Tasdiqlash kodi noto‘g‘ri yoki eskirgan.',
   INVALID_SESSION: 'Sessiya muddati tugagan. Qaytadan kiring.',
   LOCKED: 'Ko‘p marta xato kiritildi. 15 daqiqadan keyin urinib ko‘ring.',
+  TOO_MANY_ATTEMPTS: 'Bu qurilmadan juda ko‘p xato urinish. 15 daqiqadan keyin urinib ko‘ring.',
   UNAUTHORIZED: 'Avval tizimga kiring.',
   SUPERADMIN_REQUIRED: 'Bu amal faqat SUPERADMIN uchun.',
   NOT_FOUND: 'Topilmadi.',

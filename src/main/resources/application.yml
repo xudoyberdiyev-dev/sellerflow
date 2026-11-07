@@ -20,6 +20,8 @@ spring:
 
 server:
   port: ${PORT:8080}
+  # Reverse proxy (Caddy) ortida haqiqiy mijoz IP'si — faqat ichki (private) proxy'dan kelgan X-Forwarded-For ishoniladi.
+  forward-headers-strategy: native
 
 management:
   endpoints:

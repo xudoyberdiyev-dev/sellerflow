@@ -23,6 +23,13 @@ class AdminApiIT extends IntegrationTest {
     @org.springframework.boot.test.web.server.LocalServerPort int port;
     @Autowired ObjectMapper mapper;
     @Autowired DeletionJob deletionJob;
+    @Autowired uz.sellerflow.admin.LoginRateLimiter loginLimiter;
+    @Autowired uz.sellerflow.admin.AdminAuthService authService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void resetLoginLimiter() {
+        loginLimiter.reset();
+    }
 
     // ------------------------------------------------------------ helpers
 
@@ -35,7 +42,9 @@ class AdminApiIT extends IntegrationTest {
                             : java.net.http.HttpRequest.BodyPublishers.ofString(body));
             if (token != null) b.header("Authorization", "Bearer " + token);
             var r = java.net.http.HttpClient.newHttpClient().send(b.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
-            return ResponseEntity.status(r.statusCode()).body(r.body());
+            var h = new org.springframework.http.HttpHeaders();
+            r.headers().map().forEach(h::addAll);
+            return ResponseEntity.status(r.statusCode()).headers(h).body(r.body());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -149,14 +158,68 @@ class AdminApiIT extends IntegrationTest {
     }
 
     @Test
-    void lockoutAfterFiveFailures() {
+    void accountLockout_afterTenFailures_responseDoesNotRevealPassword() {
         jdbc.update("update admins set failed_attempts = 0, locked_until = null");
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
+            loginLimiter.reset(); // turli IP'lardan kelgandek (IP limiti alohida testda)
             call(HttpMethod.POST, "/auth/login", null, "{\"email\":\"" + OWNER + "\",\"password\":\"wrong-" + i + "\"}");
         }
-        ResponseEntity<String> r = call(HttpMethod.POST, "/auth/login", null,
+        loginLimiter.reset();
+        ResponseEntity<String> right = call(HttpMethod.POST, "/auth/login", null,
                 "{\"email\":\"" + OWNER + "\",\"password\":\"" + OWNER_PASS + "\"}");
-        assertThat(r.getBody()).contains("LOCKED");
+        loginLimiter.reset();
+        ResponseEntity<String> wrong = call(HttpMethod.POST, "/auth/login", null,
+                "{\"email\":\"" + OWNER + "\",\"password\":\"still-wrong\"}");
+        assertThat(right.getBody()).contains("LOCKED");
+        // M-2: bloklangan akkauntda javob parol to'g'ri/noto'g'riligiga bog'liq emas
+        assertThat(wrong.getStatusCode()).isEqualTo(right.getStatusCode());
+        assertThat(wrong.getBody()).isEqualTo(right.getBody());
+        jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+    }
+
+    /** M-2 regression: bitta IP'dan 5 ta xatodan keyin 429, akkaunt esa bloklanmaydi (lockout DoS yo'q). */
+    @Test
+    void ipRateLimit_blocksBeforeAccountLockout() throws Exception {
+        jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        for (int i = 0; i < 5; i++) {
+            assertThat(call(HttpMethod.POST, "/auth/login", null,
+                    "{\"email\":\"" + OWNER + "\",\"password\":\"wrong-" + i + "\"}").getStatusCode().value()).isEqualTo(401);
+        }
+        ResponseEntity<String> blocked = call(HttpMethod.POST, "/auth/login", null,
+                "{\"email\":\"" + OWNER + "\",\"password\":\"" + OWNER_PASS + "\"}");
+        assertThat(blocked.getStatusCode().value()).isEqualTo(429);
+        assertThat(blocked.getBody()).contains("TOO_MANY_ATTEMPTS");
+        assertThat(blocked.getHeaders().getFirst("Retry-After")).isNotBlank();
+        assertThat(jdbc.queryForObject("select locked_until from admins where lower(email) = lower(?)", Instant.class, OWNER)).isNull();
+        loginLimiter.reset();
+        assertThat(owner()).isNotBlank();
+    }
+
+    /** M-3 regression: parallel xato urinishlar hisoblagichda yo'qolmaydi. */
+    @Test
+    void failedAttemptCounter_isAtomicUnderConcurrency() throws Exception {
+        jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        int n = 8;
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(n);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        var futures = new java.util.ArrayList<java.util.concurrent.Future<?>>();
+        for (int i = 0; i < n; i++) {
+            int k = i;
+            futures.add(pool.submit(() -> {
+                start.await();
+                try {
+                    authService.login(OWNER, "wrong-parallel-" + k, null);
+                } catch (uz.sellerflow.common.Errors.Forbidden expected) {
+                    // kutilgan
+                }
+                return null;
+            }));
+        }
+        start.countDown();
+        for (var f : futures) f.get(60, java.util.concurrent.TimeUnit.SECONDS);
+        pool.shutdown();
+        assertThat(jdbc.queryForObject("select failed_attempts from admins where lower(email) = lower(?)", Integer.class, OWNER))
+                .isEqualTo(n);
         jdbc.update("update admins set failed_attempts = 0, locked_until = null");
     }
 
