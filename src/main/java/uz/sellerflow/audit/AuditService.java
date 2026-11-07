@@ -44,6 +44,9 @@ public class AuditService {
         @Column(name = "entity_id")
         private String entityId;
         private String summary;
+        /** M-6: web so'rov manba IP'si (RemoteIpValve'dan keyin); bot/tizim hodisalari uchun null. */
+        @Column(name = "source_ip")
+        private String sourceIp;
         @Column(name = "created_at", nullable = false)
         private Instant createdAt = Instant.now();
 
@@ -58,6 +61,7 @@ public class AuditService {
             this.entityType = entityType;
             this.entityId = entityId;
             this.summary = summary == null ? null : summary.substring(0, Math.min(summary.length(), 500));
+            this.sourceIp = currentRequestIp();
         }
 
         public Long getId() { return id; }
@@ -68,7 +72,18 @@ public class AuditService {
         public String getEntityType() { return entityType; }
         public String getEntityId() { return entityId; }
         public String getSummary() { return summary; }
+        public String getSourceIp() { return sourceIp; }
         public Instant getCreatedAt() { return createdAt; }
+    }
+
+    /** Joriy HTTP so'rov bo'lsa — mijoz IP'si (forward-headers-strategy=native hisobga olingan). */
+    static String currentRequestIp() {
+        var attrs = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (attrs instanceof org.springframework.web.context.request.ServletRequestAttributes sra) {
+            String ip = sra.getRequest().getRemoteAddr();
+            return ip == null ? null : ip.substring(0, Math.min(ip.length(), 45));
+        }
+        return null;
     }
 
     public interface AuditRepository extends JpaRepository<AuditEvent, Long> {}
@@ -82,7 +97,9 @@ public class AuditService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(Actor actor, Object actorId, Long businessId, String action,
                        String entityType, Object entityId, String summary) {
-        repo.save(new AuditEvent(actor.name(), actorId == null ? null : actorId.toString(), businessId, action,
+        String aid = actorId == null ? null : actorId.toString();
+        if (aid != null && aid.length() > 64) aid = aid.substring(0, 64);
+        repo.save(new AuditEvent(actor.name(), aid, businessId, action,
                 entityType, entityId == null ? null : entityId.toString(), summary));
     }
 

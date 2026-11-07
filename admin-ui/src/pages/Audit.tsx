@@ -3,7 +3,7 @@ import { api, fmtDate } from '../api'
 import { Alert, Button, Card, PageTitle, Table, Td } from '../ui'
 import { useLoad } from './useLoad'
 
-interface Event { id: number; at: string; actorType: string; actorId: string | null; businessId: number | null; action: string; entityType: string | null; entityId: string | null; summary: string | null }
+interface Event { id: number; at: string; actorType: string; actorId: string | null; businessId: number | null; action: string; entityType: string | null; entityId: string | null; summary: string | null; sourceIp?: string | null }
 interface Page { total: number; page: number; items: Event[] }
 
 export function AuditPage() {
@@ -15,7 +15,7 @@ export function AuditPage() {
       <PageTitle title="Audit jurnali" desc="Muhim amallar: kim, qachon, nima. Tijoriy qiymatlar yozilmaydi." />
       <Card>
         {list.error && <Alert>{list.error}</Alert>}
-        <Table head={['Vaqt', 'Kim', 'Amal', 'Obyekt', 'Biznes', 'Izoh']} empty={!!list.data && list.data.items.length === 0}>
+        <Table head={['Vaqt', 'Kim', 'Amal', 'Obyekt', 'Biznes', 'IP', 'Izoh']} empty={!!list.data && list.data.items.length === 0}>
           {list.data?.items.map((e) => (
             <tr key={e.id} className="hover:bg-stone-50">
               <Td className="text-stone-500">{fmtDate(e.at)}</Td>
@@ -23,6 +23,7 @@ export function AuditPage() {
               <Td className="font-mono text-xs">{e.action}</Td>
               <Td className="text-stone-500">{e.entityType ? `${e.entityType} #${e.entityId}` : '—'}</Td>
               <Td className="text-stone-500">{e.businessId ?? '—'}</Td>
+              <Td className="font-mono text-xs text-stone-500">{e.sourceIp ?? '—'}</Td>
               <Td className="max-w-[280px] truncate text-stone-500" >{e.summary ?? ''}</Td>
             </tr>
           ))}

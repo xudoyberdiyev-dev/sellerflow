@@ -236,15 +236,23 @@ public class AdminAuthService {
         Optional<Admin> found = email == null ? Optional.empty() : admins.findByEmailIgnoreCase(email.strip());
         if (found.isEmpty()) {
             encoder.matches(password == null ? "" : password, dummyHash);
+            loginFailed(null, email, "unknown_email");
             throw new Errors.Forbidden("INVALID_CREDENTIALS");
         }
         Admin a = found.get();
         // M-2: bloklangan/o'chirilgan akkaunt uchun ham BCrypt bajariladi va javob parolga bog'liq emas —
         // na javob, na vaqt parol to'g'riligini oshkor qilmaydi.
         boolean passwordOk = password != null && encoder.matches(password, a.passwordHash);
-        if (a.status != Status.ACTIVE) throw new Errors.Forbidden("INVALID_CREDENTIALS");
-        if (a.lockedUntil != null && now.isBefore(a.lockedUntil)) throw new Errors.Forbidden("LOCKED");
+        if (a.status != Status.ACTIVE) {
+            loginFailed(a.id, a.email, "disabled");
+            throw new Errors.Forbidden("INVALID_CREDENTIALS");
+        }
+        if (a.lockedUntil != null && now.isBefore(a.lockedUntil)) {
+            loginFailed(a.id, a.email, "locked");
+            throw new Errors.Forbidden("LOCKED");
+        }
         if (!passwordOk) {
+            loginFailed(a.id, a.email, "password");
             registerFailure(a, now, "password");
             throw new Errors.Forbidden("INVALID_CREDENTIALS");
         }
@@ -259,6 +267,7 @@ public class AdminAuthService {
             return new LoginResult("TOTP_REQUIRED", null, null, null, null, null, false);
         }
         if (!consumeTotp(a, code, now)) {
+            loginFailed(a.id, a.email, "totp");
             registerFailure(a, now, "totp");
             throw new Errors.Forbidden("INVALID_CODE");
         }
@@ -272,6 +281,7 @@ public class AdminAuthService {
         if (s.revoked || !"TOTP_SETUP".equals(s.kind) || now.isAfter(s.expiresAt)) throw new Errors.Forbidden("INVALID_SESSION");
         Admin a = admins.findById(s.adminId).orElseThrow(() -> new Errors.Forbidden("INVALID_SESSION"));
         if (!consumeTotp(a, code, now)) {
+            loginFailed(a.id, a.email, "totp-setup");
             registerFailure(a, now, "totp-setup");
             throw new Errors.Forbidden("INVALID_CODE");
         }
@@ -300,6 +310,13 @@ public class AdminAuthService {
         String token = newSession(a.id, "FULL", now.plus(SESSION_TTL));
         audit.record(Actor.ADMIN, a.email, null, "ADMIN_LOGIN", "ADMIN", a.id, null);
         return new LoginResult("OK", token, null, null, null, principal(a), a.mustChangePassword);
+    }
+
+    /** M-6: muvaffaqiyatsiz login auditga (manba IP AuditService'da avtomatik). Parol/kod yozilmaydi. */
+    private void loginFailed(Long adminId, String email, String reason) {
+        String who = email == null ? null : email.strip();
+        audit.record(Actor.SYSTEM, "auth", null, "ADMIN_LOGIN_FAILED", "ADMIN", adminId,
+                "reason=" + reason + (who == null || who.isEmpty() ? "" : " email=" + who));
     }
 
     /** M-3: hisoblagich DB'da atomik oshiriladi (parallel so'rovlarda o'sish yo'qolmaydi). */

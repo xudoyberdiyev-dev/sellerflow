@@ -306,7 +306,8 @@ public class AdminController {
         return m("total", pg.getTotalElements(), "page", page, "items", pg.map(e -> m(
                 "id", e.getId(), "at", e.getCreatedAt().toString(), "actorType", e.getActorType(),
                 "actorId", e.getActorId(), "businessId", e.getBusinessId(), "action", e.getAction(),
-                "entityType", e.getEntityType(), "entityId", e.getEntityId(), "summary", e.getSummary())).getContent());
+                "entityType", e.getEntityType(), "entityId", e.getEntityId(), "summary", e.getSummary(),
+                "sourceIp", e.getSourceIp())).getContent());
     }
 
     // ================================================================= admins (SUPERADMIN)

@@ -213,6 +213,32 @@ class AdminApiIT extends IntegrationTest {
         assertThat(call(HttpMethod.POST, "/auth/logout", t, null).getStatusCode().value()).isEqualTo(200);
     }
 
+    /** M-6 regression: muvaffaqiyatsiz login va lockout manba IP bilan auditga yoziladi; parol yozilmaydi. */
+    @Test
+    void failedLoginsAndLockout_areAudited_withSourceIp() throws Exception {
+        jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        call(HttpMethod.POST, "/auth/login", null, "{\"email\":\"nobody@x.uz\",\"password\":\"secret-guess-1\"}");
+        for (int i = 0; i < 10; i++) {
+            loginLimiter.reset();
+            call(HttpMethod.POST, "/auth/login", null, "{\"email\":\"" + OWNER + "\",\"password\":\"secret-guess-" + i + "\"}");
+        }
+        var failed = jdbc.queryForList("select summary, source_ip from audit_events where action = 'ADMIN_LOGIN_FAILED' order by id");
+        assertThat(failed).hasSize(11);
+        assertThat(failed.get(0).get("summary").toString()).contains("unknown_email");
+        assertThat(failed.get(1).get("summary").toString()).contains("reason=password").contains(OWNER);
+        assertThat(failed).allSatisfy(r -> {
+            assertThat(r.get("source_ip")).isNotNull();
+            assertThat(r.get("summary").toString()).doesNotContain("secret-guess");
+        });
+        var locked = jdbc.queryForList("select source_ip from audit_events where action = 'ADMIN_LOCKED'");
+        assertThat(locked).hasSize(1);
+        assertThat(locked.get(0).get("source_ip")).isNotNull();
+        jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        loginLimiter.reset();
+        String token = owner();
+        assertThat(json(call(HttpMethod.GET, "/audit", token, null)).path("items").get(0).has("sourceIp")).isTrue();
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();
