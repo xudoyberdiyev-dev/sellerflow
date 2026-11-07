@@ -25,7 +25,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **LOW (admin):** HSTS sarlavhasi; parol uzunligi yuqori chegarasi (72 bayt, BCrypt); `/sellers` paging overflow → 400; SUPPORT uchun grant so'rovlariga limit (masalan, 1 sotuvchiga 24 soatda 3 ta). — HSTS (faqat HTTPS), `PASSWORD_TOO_LONG`, `PAGE_RANGE` (sellers + audit), `GRANT_LIMIT`; test `adminHardening_hstsPasswordLengthPagingAndGrantLimit`.
 
 ## 2-bosqich — Backup va ishonchlilik
-- [ ] **H-2 / M-17:** `backup-loop.sh`: rotatsiya faqat muvaffaqiyatli backupdan keyin, kamida oxirgi 7 nusxa doim saqlanadi; holat fayli (`/backups/status.json`: lastSuccessAt, lastError) yoziladi; xatoda Telegram alert (`ALERT_TELEGRAM_CHAT_ID`, bot tokeni orqali) — ixtiyoriy env.
+- [x] **H-2 / M-17:** `backup-loop.sh`: rotatsiya faqat muvaffaqiyatli backupdan keyin, kamida oxirgi 7 nusxa doim saqlanadi; holat fayli (`/backups/status.json`: lastSuccessAt, lastError) yoziladi; xatoda Telegram alert (`ALERT_TELEGRAM_CHAT_ID`, bot tokeni orqali) — ixtiyoriy env. — rotatsiya faqat muvaffaqiyatdan keyin, MIN_KEEP=7, `status.json`, fayl 600; test `scripts/tests/backup-loop.test.sh` (CI). Telegram alert postgres image'da curl yo'qligi sababli ilovada (keyingi band) qilinadi.
 - [ ] **H-2 (davomi):** ilova `status.json` ni o'qiydi → admin `/health` va `/actuator/health` da backup holati; compose'da backup healthcheck (oxirgi muvaffaqiyat < 26 soat).
 - [ ] **M-15 / M-16:** backupni shifrlash (`BACKUP_ENCRYPTION_PASSPHRASE` berilsa `gpg --symmetric` yoki `age`), fayl huquqlari 600; off-site nusxa uchun `rclone` misoli (`docs/OPERATIONS.md`).
 - [ ] **M-18:** `restore.sh`: tiklashdan oldin joriy bazaning xavfsizlik snapshoti; `--single-transaction`; xatoda to'xtash.

@@ -36,7 +36,8 @@ services:
       # Admin panel va API faqat serverning o'zidan ochiq. Tashqaridan kirish: SSH tunnel yoki HTTPS reverse proxy (docs/OPERATIONS.md)
       - "127.0.0.1:8080:8080"
 
-  # Kunlik avtomatik backup: ./backups papkasiga, oxirgi 14 kun saqlanadi
+  # Kunlik avtomatik backup: ./backups papkasiga. Rotatsiya faqat muvaffaqiyatli backupdan keyin,
+  # eng yangi BACKUP_MIN_KEEP (7) nusxa doim saqlanadi; holat: ./backups/status.json
   backup:
     image: postgres:16
     restart: unless-stopped
@@ -49,6 +50,7 @@ services:
       PGPASSWORD: ${DB_PASSWORD}
       PGDATABASE: sellerflow
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_MIN_KEEP: ${BACKUP_MIN_KEEP:-7}
     volumes:
       - ./backups:/backups
       - ./scripts/backup-loop.sh:/backup-loop.sh:ro

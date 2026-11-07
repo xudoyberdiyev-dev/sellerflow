@@ -62,7 +62,8 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
    qo'llanmaydi — logda ogohlantirish chiqadi — lekin sirni `.env` da qoldirmang.)
 
 ## 5. Backup va tiklash
-- `backup` servisi har 24 soatda `./backups/sellerflow_*.dump` faylini yaratadi va 14 kundan eskilarini o'chiradi.
+- `backup` servisi har 24 soatda `./backups/sellerflow_*.dump` (huquq 600) faylini yaratadi. Eski nusxalar (`BACKUP_KEEP_DAYS`, 14 kun) **faqat muvaffaqiyatli backupdan keyin** o'chiriladi va eng yangi `BACKUP_MIN_KEEP` (7) nusxa hech qachon o'chirilmaydi — backup ketma-ket xato bersa ham eski nusxalar qoladi.
+- Holat fayli: `./backups/status.json` (`lastSuccessAt`, `lastError`, `consecutiveFailures`). Qo'lda tekshirish: `cat backups/status.json`.
 - **Backuplarni server tashqarisiga nusxalang** (server yo'qolsa backup ham yo'qoladi). Masalan, cron orqali `rclone` yoki `scp` bilan.
 - Tiklash: `./scripts/restore.sh backups/<fayl>.dump`
 - Oylik tiklash sinovi: `./scripts/restore-drill.sh` (ishlab turgan bazaga tegmaydi).

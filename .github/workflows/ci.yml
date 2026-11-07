@@ -48,6 +48,14 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
+      - name: Backup skripti testi
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: sellerflow_test
+        run: bash scripts/tests/backup-loop.test.sh
       - name: Backend tests
         env:
           SELLERFLOW_TEST_DB_URL: jdbc:postgresql://localhost:5432/sellerflow_test
