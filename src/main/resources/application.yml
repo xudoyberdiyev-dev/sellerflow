@@ -43,6 +43,8 @@ sellerflow:
     api-base-url: ${TELEGRAM_API_BASE_URL:https://api.telegram.org}
     polling-enabled: ${TELEGRAM_POLLING_ENABLED:true}
     polling-timeout-seconds: 30
+    # M-9: update'larni parallel qayta ishlovchi oqimlar (bitta foydalanuvchi doim bitta oqimda)
+    workers: ${TELEGRAM_WORKERS:4}
   admin:
     # Faqat birorta ham admin bo'lmaganda birinchi SUPERADMIN yaratiladi (parol >= 12 belgi)
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}

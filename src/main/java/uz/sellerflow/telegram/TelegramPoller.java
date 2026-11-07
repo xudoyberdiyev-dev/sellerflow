@@ -10,12 +10,23 @@ import uz.sellerflow.bot.BotDispatcher;
 import uz.sellerflow.common.Infra;
 import uz.sellerflow.common.SellerFlowProperties;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Long polling. Update'lar bitta oqimda, ketma-ket qayta ishlanadi — bitta foydalanuvchining
- * parallel callback'lari holatni buzmasligi uchun eng oddiy kafolat.
+ * Long polling. M-9: bitta getUpdates partiyasi foydalanuvchi bo'yicha bo'linadi ({@code userId % workers}) va
+ * {@code sellerflow.telegram.workers} ta oqimda parallel qayta ishlanadi. Bitta foydalanuvchining update'lari
+ * doim bitta oqimda, kelgan tartibda — holat buzilmaydi; sekin foydalanuvchi boshqalarni to'xtatmaydi.
+ * Offset faqat butun partiya tugagach suriladi.
  */
 @Component
 @ConditionalOnExpression("'${sellerflow.telegram.bot-token:}' != '' and '${sellerflow.telegram.polling-enabled:true}' == 'true'")
@@ -30,21 +41,30 @@ public class TelegramPoller {
     private final BotStatus status;
     private volatile boolean running = true;
     private volatile Thread thread;
+    private final int workers;
+    private final ExecutorService pool;
 
     @org.springframework.beans.factory.annotation.Autowired
     public TelegramPoller(HttpTelegramGateway gateway, BotDispatcher dispatcher, SellerFlowProperties props,
-                          BotStatus status) {
-        this(gateway, gateway, dispatcher, props.telegram().pollingTimeoutSeconds(), status);
+                          BotStatus status, @Value("${sellerflow.telegram.workers:4}") int workers) {
+        this(gateway, gateway, dispatcher, props.telegram().pollingTimeoutSeconds(), status, workers);
     }
 
     /** Testlar uchun: soxta gateway va handler bilan. */
     TelegramPoller(HttpTelegramGateway http, TelegramGateway gateway, UpdateHandler dispatcher, int timeoutSeconds,
-                   BotStatus status) {
+                   BotStatus status, int workers) {
         this.http = http;
         this.gateway = gateway;
         this.dispatcher = dispatcher;
         this.timeoutSeconds = timeoutSeconds;
         this.status = status;
+        this.workers = Math.max(1, workers);
+        AtomicInteger n = new AtomicInteger();
+        this.pool = this.workers == 1 ? null : Executors.newFixedThreadPool(this.workers, r -> {
+            Thread t = new Thread(r, "telegram-worker-" + n.incrementAndGet());
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -89,8 +109,44 @@ public class TelegramPoller {
     long pollOnce(long offset) {
         List<Tg.Update> updates = gateway.getUpdates(offset, timeoutSeconds);
         status.pollOk();
+        if (updates.isEmpty() || !running) return offset;
+
+        // foydalanuvchi bo'yicha bo'lish (tartib saqlanadi)
+        Map<Integer, List<Tg.Update>> parts = new LinkedHashMap<>();
         for (Tg.Update u : updates) {
-            if (!running) break;
+            parts.computeIfAbsent(Math.floorMod(userKey(u), workers), k -> new ArrayList<>()).add(u);
+        }
+        RuntimeException transientFailure = null;
+        if (pool == null || parts.size() == 1) {
+            for (List<Tg.Update> part : parts.values()) {
+                RuntimeException f = runPartition(part);
+                if (f != null && transientFailure == null) transientFailure = f;
+            }
+        } else {
+            List<Future<RuntimeException>> futures = new ArrayList<>();
+            for (List<Tg.Update> part : parts.values()) futures.add(pool.submit(() -> runPartition(part)));
+            for (Future<RuntimeException> f : futures) {
+                try {
+                    RuntimeException r = f.get();
+                    if (r != null && transientFailure == null) transientFailure = r;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("interrupted", e);
+                } catch (ExecutionException e) {
+                    throw new IllegalStateException("worker failed", e.getCause());
+                }
+            }
+        }
+        if (transientFailure != null) throw transientFailure; // offset surilmaydi — partiya qayta keladi
+        long next = offset;
+        for (Tg.Update u : updates) next = Math.max(next, u.updateId() + 1);
+        return next;
+    }
+
+    /** Bitta foydalanuvchi guruhi ketma-ket. Vaqtinchalik xatoda shu guruhning qolgani to'xtatiladi (tartib uchun). */
+    private RuntimeException runPartition(List<Tg.Update> part) {
+        for (Tg.Update u : part) {
+            if (!running) return null;
             try {
                 dispatcher.handle(u);
                 status.processed();
@@ -98,14 +154,19 @@ public class TelegramPoller {
                 if (Infra.isTransient(e)) {
                     status.error("update handling (will retry): " + e.getClass().getSimpleName());
                     log.warn("Update {} deferred — transient failure: {}", u.updateId(), e.getClass().getSimpleName());
-                    throw e;
+                    return e;
                 }
                 status.error("update handling: " + e.getClass().getSimpleName());
                 log.error("Update {} handling failed", u.updateId(), e);
             }
-            offset = Math.max(offset, u.updateId() + 1);
         }
-        return offset;
+        return null;
+    }
+
+    static long userKey(Tg.Update u) {
+        if (u.message() != null && u.message().from() != null) return u.message().from().id();
+        if (u.callbackQuery() != null && u.callbackQuery().from() != null) return u.callbackQuery().from().id();
+        return u.updateId();
     }
 
     private static void sleep(long ms) {
@@ -120,6 +181,7 @@ public class TelegramPoller {
     @jakarta.annotation.PreDestroy
     public void stop() {
         running = false;
+        if (pool != null) pool.shutdown();
         Thread t = thread;
         if (t != null && t != Thread.currentThread()) {
             try {

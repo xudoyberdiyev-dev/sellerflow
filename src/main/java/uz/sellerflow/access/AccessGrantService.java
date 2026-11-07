@@ -166,7 +166,7 @@ public class AccessGrantService {
         Grant g = grants.saveAndFlush(new Grant(b.getId(), admin.id(), p.length() > 300 ? p.substring(0, 300) : p, minutes));
         audit.record(Actor.ADMIN, admin.email(), b.getId(), "ACCESS_REQUESTED", "ACCESS_GRANT", g.getId(),
                 "minutes=" + minutes + "; purpose: " + g.purpose);
-        tg.sendMessage(telegramUserId, String.format(
+        sendAfterCommit(telegramUserId, String.format(
                 "🔐 <b>Qo‘llab-quvvatlash so‘rovi</b>\n\nSellerFlow administratori sizning <b>mahsulotlaringiz va saqlangan hisoblashlaringizni</b> "
                         + "faqat <b>ko‘rish</b> (o‘zgartirmasdan) uchun <b>%d daqiqaga</b> ruxsat so‘ramoqda.\n\nSabab: <i>%s</i>\n\n"
                         + "Ruxsat bermasangiz, hech narsa ko‘rsatilmaydi. Ruxsatni istalgan payt bekor qilishingiz mumkin.",
@@ -174,6 +174,24 @@ public class AccessGrantService {
                 .row(Kb.cb("✅ Ruxsat berish", "g:" + g.getId() + ":a"), Kb.cb("❌ Rad etish", "g:" + g.getId() + ":d"))
                 .build());
         return g;
+    }
+
+    /**
+     * M-9: Telegram HTTP chaqiruvi DB tranzaksiyasi ichida bajarilmaydi (ulanish band turmaydi, rollback'da
+     * sotuvchiga yolg'on xabar ketmaydi) — commit'dan keyin yuboriladi.
+     */
+    private void sendAfterCommit(long chatId, String html, uz.sellerflow.telegram.Tg.Markup markup) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            tg.sendMessage(chatId, html, markup);
+                        }
+                    });
+        } else {
+            tg.sendMessage(chatId, html, markup);
+        }
     }
 
     @Transactional(readOnly = true)
