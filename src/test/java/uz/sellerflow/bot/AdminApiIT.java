@@ -420,6 +420,35 @@ class AdminApiIT extends IntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ADMIN_SESSIONS_REVOKED'", Long.class)).isEqualTo(1);
     }
 
+    /** D-5: /sellers filtrlari, saralash, holatlar bo'yicha sonlar, validatsiya. */
+    @Test
+    void sellers_filtersSortAndCounts() throws Exception {
+        String token = owner();
+        long u1 = onboardedUser();
+        long u2 = onboardedUser();
+        call(HttpMethod.POST, "/sellers/" + u2 + "/suspend", token, "{\"reason\":\"tekshiruv uchun blok\"}");
+        jdbc.update("update users set created_at = '2026-01-10T10:00:00Z' where telegram_user_id = ?", u1);
+
+        JsonNode all = json(call(HttpMethod.GET, "/sellers?status=ACTIVE,SUSPENDED&sort=created_asc", token, null));
+        assertThat(all.path("total").asLong()).isEqualTo(2);
+        assertThat(all.path("items").get(0).path("telegramUserId").asLong()).isEqualTo(u1);
+        assertThat(all.path("counts").path("ACTIVE").asLong()).isEqualTo(1);
+        assertThat(all.path("counts").path("SUSPENDED").asLong()).isEqualTo(1);
+
+        JsonNode sus = json(call(HttpMethod.GET, "/sellers?status=SUSPENDED", token, null));
+        assertThat(sus.path("total").asLong()).isEqualTo(1);
+        assertThat(sus.path("counts").path("ACTIVE").asLong()).isEqualTo(1); // sonlar status filtrisiz
+
+        JsonNode jan = json(call(HttpMethod.GET, "/sellers?from=2026-01-01&to=2026-01-31", token, null));
+        assertThat(jan.path("total").asLong()).isEqualTo(1);
+        assertThat(json(call(HttpMethod.GET, "/sellers?channel=UZUM", token, null)).path("total").asLong()).isEqualTo(2);
+        assertThat(json(call(HttpMethod.GET, "/sellers?channel=OZON", token, null)).path("total").asLong()).isZero();
+
+        for (String bad : new String[]{"status=NOPE", "channel=NOPE", "from=2026-13-01", "sort=random"}) {
+            assertThat(call(HttpMethod.GET, "/sellers?" + bad, token, null).getStatusCode().value()).as(bad).isEqualTo(400);
+        }
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();

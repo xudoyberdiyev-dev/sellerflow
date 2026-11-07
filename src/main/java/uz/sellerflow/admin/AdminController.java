@@ -259,21 +259,52 @@ public class AdminController {
     public Map<String, Object> sellers(@RequestParam(defaultValue = "0") int page,
                                        @RequestParam(defaultValue = "50") int size,
                                        @RequestParam(required = false) String status,
-                                       @RequestParam(required = false) Long telegramUserId) {
+                                       @RequestParam(required = false) Long telegramUserId,
+                                       @RequestParam(required = false) String channel,
+                                       @RequestParam(required = false) String from,
+                                       @RequestParam(required = false) String to,
+                                       @RequestParam(defaultValue = "created_desc") String sort) {
         int limit = Math.min(Math.max(size, 1), 200);
         if (page < 0 || page > MAX_PAGE) throw new Errors.Validation("PAGE_RANGE");
-        StringBuilder where = new StringBuilder(" where 1=1");
-        List<Object> args = new java.util.ArrayList<>();
-        if (status != null && !status.isBlank()) {
-            AccountStatus.valueOf(status);
-            where.append(" and u.status = ?");
-            args.add(status);
-        }
+        String order = switch (sort) {
+            case "created_desc" -> " order by u.created_at desc, u.id desc";
+            case "created_asc" -> " order by u.created_at asc, u.id asc";
+            default -> throw new Errors.Validation("SORT_INVALID");
+        };
+        // D-5: status dan tashqari filtrlar (holatlar bo'yicha sonlar shu filtrlar bilan hisoblanadi)
+        StringBuilder base = new StringBuilder(" where 1=1");
+        List<Object> baseArgs = new java.util.ArrayList<>();
         if (telegramUserId != null) {
-            where.append(" and u.telegram_user_id = ?");
-            args.add(telegramUserId);
+            base.append(" and u.telegram_user_id = ?");
+            baseArgs.add(telegramUserId);
         }
-        long total = jdbc.queryForObject("select count(*) from users u" + where, Long.class, args.toArray());
+        if (channel != null && !channel.isBlank()) {
+            base.append(" and b.primary_channel = ?");
+            baseArgs.add(uz.sellerflow.account.AccountEntities.SalesChannel.valueOf(channel).name());
+        }
+        java.time.ZoneId tz = java.time.ZoneId.of("Asia/Tashkent");
+        if (from != null && !from.isBlank()) {
+            base.append(" and u.created_at >= ?");
+            baseArgs.add(java.sql.Timestamp.from(day(from).atStartOfDay(tz).toInstant()));
+        }
+        if (to != null && !to.isBlank()) {
+            base.append(" and u.created_at < ?");
+            baseArgs.add(java.sql.Timestamp.from(day(to).plusDays(1).atStartOfDay(tz).toInstant()));
+        }
+        StringBuilder where = new StringBuilder(base);
+        List<Object> args = new java.util.ArrayList<>(baseArgs);
+        if (status != null && !status.isBlank()) {
+            List<String> st = new java.util.ArrayList<>();
+            for (String x : status.split(",")) st.add(AccountStatus.valueOf(x.strip()).name());
+            where.append(" and u.status in (").append(String.join(",", java.util.Collections.nCopies(st.size(), "?"))).append(")");
+            args.addAll(st);
+        }
+        String fromSql = " from users u left join businesses b on b.owner_user_id = u.id";
+        long total = jdbc.queryForObject("select count(*)" + fromSql + where, Long.class, args.toArray());
+        Map<String, Object> counts = new LinkedHashMap<>();
+        for (AccountStatus st : AccountStatus.values()) counts.put(st.name(), 0L);
+        jdbc.query("select u.status, count(*)" + fromSql + base + " group by u.status",
+                rs -> { counts.put(rs.getString(1), rs.getLong(2)); }, baseArgs.toArray());
         List<Object> pageArgs = new java.util.ArrayList<>(args);
         pageArgs.add(limit);
         pageArgs.add((long) page * limit);
@@ -282,9 +313,16 @@ public class AdminController {
                        u.deletion_requested_at as "deletionRequestedAt",
                        b.id as "businessId", b.primary_channel as "primaryChannel", b.plan_code as "planCode",
                        b.created_at as "activatedAt"
-                from users u left join businesses b on b.owner_user_id = u.id""" + where + " order by u.id desc limit ? offset ?",
-                pageArgs.toArray());
-        return m("total", total, "page", page, "size", limit, "items", items);
+                """ + fromSql + where + order + " limit ? offset ?", pageArgs.toArray());
+        return m("total", total, "page", page, "size", limit, "counts", counts, "items", items);
+    }
+
+    private static java.time.LocalDate day(String v) {
+        try {
+            return java.time.LocalDate.parse(v.strip());
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new Errors.Validation("DATE_INVALID");
+        }
     }
 
     @PostMapping("/sellers/{telegramUserId}/suspend")
