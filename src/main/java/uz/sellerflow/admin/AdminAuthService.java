@@ -494,6 +494,7 @@ public class AdminAuthService {
         Admin a = admins.findById(adminId).orElseThrow(() -> new Errors.NotFound("admin"));
         a.totpEnabled = false;
         a.totpSecret = null;
+        a.totpLastStep = null;
         admins.save(a);
         sessions.revokeAll(adminId);
         audit.record(Actor.ADMIN, by.email(), null, "ADMIN_2FA_RESET", "ADMIN", adminId, null);

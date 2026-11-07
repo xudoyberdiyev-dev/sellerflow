@@ -53,7 +53,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **LOW (DB):** `users`, `access_grants`, `admins` uchun `@Version`; DeletionJob har akkaunt alohida tranzaksiyada; purge yo'lidagi FK'larga indekslar; `audit_events` saqlash muddati (konfiguratsiya, standart 365 kun); Hikari pool/timeout sozlamalari; grant ro'yxatidagi N+1. — V7: `version` ustunlari + `@Version`, FK indekslari (calculation_history product/source/user); DeletionJob har akkaunt `REQUIRES_NEW`; `AuditRetentionJob` (`AUDIT_RETENTION_DAYS`, 365); Hikari sozlamalari; `/grants` N+1 → 2 so'rov; test `auditRetention_deletesOldEvents_andVersionColumnsBump` + grant ro'yxati.
 
 ## 6-bosqich — Testlar, CI va UI
-- [ ] **M-21:** admin boshqaruvi (create/disable/enable/reset-2fa) va parol almashtirish uchun testlar.
+- [x] **M-21:** admin boshqaruvi (create/disable/enable/reset-2fa) va parol almashtirish uchun testlar. — `adminManagement_createDisableEnableReset2fa` (+ M-4/M-5 parol testlari); reset-2fa `totp_last_step` ni ham tozalaydi.
 - [ ] **M-22:** `TelegramPoller` testlari (offset, backoff, xato ishlash) — soxta gateway bilan.
 - [ ] **LOW (testlar):** DeletionJob purge=true; rate-limit yo'llari; `IntegrationTest` faqat nomi `_test` bilan tugaydigan bazada TRUNCATE qilsin (aks holda to'xtasin); Maven enforcer (Java 21).
 - [ ] **LOW (CI):** Docker image build, admin-ui lint, `npm audit --omit=dev`, OWASP dependency-check yoki `mvn versions` hisobot, shellcheck.

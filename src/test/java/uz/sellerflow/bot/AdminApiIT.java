@@ -312,6 +312,54 @@ class AdminApiIT extends IntegrationTest {
         assertThat(r.body()).contains("\"status\":\"UP\"");
     }
 
+    /** M-21: adminlarni boshqarish — create validatsiyasi, disable/enable, reset-2fa, o'zini o'zgartira olmaslik. */
+    @Test
+    void adminManagement_createDisableEnableReset2fa() throws Exception {
+        String token = owner();
+        long ownerId = jdbc.queryForObject("select id from admins where lower(email) = lower(?)", Long.class, OWNER);
+        String email = "mgmt" + System.nanoTime() + "@sellerflow.test";
+
+        assertThat(call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"not-an-email\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}").getBody()).contains("EMAIL_INVALID");
+        assertThat(call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"short\"}").getBody()).contains("PASSWORD_TOO_SHORT");
+        JsonNode created = json(call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}"));
+        long id = created.path("id").asLong();
+        assertThat(call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email.toUpperCase() + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}").getBody()).contains("EMAIL_TAKEN");
+        assertThat(json(call(HttpMethod.GET, "/admins", token, null)).toString()).contains(email);
+
+        String support = loginWithNewPassword(email, "temporary-pass-123");
+        assertThat(call(HttpMethod.GET, "/admins", support, null).getStatusCode().value()).isEqualTo(403); // SUPPORT boshqara olmaydi
+        assertThat(call(HttpMethod.POST, "/admins/" + ownerId + "/disable", support, null).getStatusCode().value()).isEqualTo(403);
+
+        // o'zini o'chira olmaydi
+        assertThat(call(HttpMethod.POST, "/admins/" + ownerId + "/disable", token, null).getBody()).contains("CANNOT_CHANGE_SELF");
+
+        // disable → sessiyalar bekor, login yo'q
+        assertThat(call(HttpMethod.POST, "/admins/" + id + "/disable", token, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.GET, "/auth/me", support, null).getStatusCode().value()).isEqualTo(401);
+        loginLimiter.reset();
+        assertThat(call(HttpMethod.POST, "/auth/login", null,
+                "{\"email\":\"" + email + "\",\"password\":\"changed-temporary-pass-123\"}").getStatusCode().value()).isEqualTo(401);
+
+        // enable → yana kira oladi
+        assertThat(call(HttpMethod.POST, "/admins/" + id + "/enable", token, null).getStatusCode().value()).isEqualTo(200);
+        loginLimiter.reset();
+        String again = login(email, "changed-temporary-pass-123");
+        assertThat(call(HttpMethod.GET, "/auth/me", again, null).getStatusCode().value()).isEqualTo(200);
+
+        // reset-2fa → sessiyalar bekor, keyingi login 2FA ni qayta ulaydi
+        assertThat(call(HttpMethod.POST, "/admins/" + id + "/reset-2fa", token, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.GET, "/auth/me", again, null).getStatusCode().value()).isEqualTo(401);
+        JsonNode r = json(call(HttpMethod.POST, "/auth/login", null,
+                "{\"email\":\"" + email + "\",\"password\":\"changed-temporary-pass-123\"}"));
+        assertThat(r.path("status").asText()).isEqualTo("TOTP_SETUP_REQUIRED");
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action in ('ADMIN_CREATED','ADMIN_STATUS_DISABLED','ADMIN_STATUS_ACTIVE','ADMIN_2FA_RESET')", Long.class))
+                .isEqualTo(4);
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();
