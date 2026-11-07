@@ -88,3 +88,4 @@ Audit bandlari (1–6-bosqich) tugagach boshlanadi.
 |---|---|---|---|
 | 2026-11-07 00:10 | Reja tuzildi; `.env.example` dagi sirlar olib tashlandi (292cd7b) | — | Avtomatik ish 2026-11-07 11:30 dan boshlanadi |
 | 2026-11-07 11:10 | Superadmin dizayni repoga qo'shildi (`design/superadmin/`), 6½-bosqich rejaga kiritildi | — | Dizayn audit tugagach ko'chiriladi |
+| 2026-11-07 11:30–13:15 | 1–6-bosqich to'liq: C-1, H-1, M-1…M-8, LOW(admin); H-2, M-15…M-18, M-12, M-20, LOW(DevOps); M-19, M-11, M-10, M-9, M-14, M-13; M-23…M-26, LOW(maxfiylik); LOW(hisob), LOW(DB); M-21, M-22, LOW(testlar/CI/UI). 6½: D-1…D-4 [x], D-5 [~] | 9227471 … 719df77 (40 ta `audit:` commit) | 142 test yashil, CI (gitleaks, shellcheck, docker build) yashil. Engine 1.0.0→1.0.1 (DECISIONS). Keyingi: D-5 qolgani (dashboard, grants tablari, health DB latency, support meta, bildirishnomalar), so'ng D-6, D-7, 7-bosqich. |
