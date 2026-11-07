@@ -1,0 +1,138 @@
+/* SellerFlow Admin — color tokens. Base scales + semantic aliases. Light on :root, dark on [data-theme="dark"]. */
+:root {
+  /* Stone (neutral) */
+  --stone-50: #fafaf9; --stone-100: #f5f5f4; --stone-200: #e7e5e4; --stone-300: #d6d3d1;
+  --stone-400: #a8a29e; --stone-500: #78716c; --stone-600: #57534e; --stone-700: #44403c;
+  --stone-800: #292524; --stone-900: #1c1917; --stone-950: #0c0a09;
+
+  /* Brand — deep green (600 = #18734B) */
+  --brand-50: #eef8f2; --brand-100: #d5efdf; --brand-200: #ade0c3; --brand-300: #78c9a0;
+  --brand-400: #43ab7b; --brand-500: #238e5f; --brand-600: #18734b; --brand-700: #135c3d;
+  --brand-800: #104932; --brand-900: #0d3c2a;
+
+  /* Raw semantic hues */
+  --green-50: #f0fdf4; --green-200: #bbf7d0; --green-600: #16a34a; --green-800: #166534;
+  --amber-50: #fffbeb; --amber-200: #fde68a; --amber-600: #d97706; --amber-800: #92400e;
+  --red-50: #fef2f2; --red-200: #fecaca; --red-600: #dc2626; --red-700: #b91c1c; --red-800: #991b1b;
+  --sky-50: #f0f9ff; --sky-200: #bae6fd; --sky-600: #0284c7; --sky-800: #075985;
+  --orange-50: #fff7ed; --orange-200: #fed7aa; --orange-600: #ea580c; --orange-800: #9a3412;
+  --privacy-50: #f5f3f8; --privacy-100: #ebe7f1; --privacy-200: #d9d2e5; --privacy-500: #75679a;
+  --privacy-600: #5f5283; --privacy-700: #4c416a; --privacy-800: #3a3252;
+
+  /* Surfaces */
+  --bg-app: var(--stone-50);
+  --bg-surface: #ffffff;
+  --bg-subtle: var(--stone-100);
+  --bg-muted: var(--stone-200);
+  --bg-hover: var(--stone-100);
+  --bg-active: var(--stone-200);
+  --bg-inverse: var(--stone-900);
+  --bg-overlay: rgba(12, 10, 9, 0.48);
+
+  /* Text */
+  --text-primary: var(--stone-900);
+  --text-secondary: var(--stone-600);
+  --text-tertiary: #6e6862;      /* AA on white & stone-50 */
+  --text-disabled: var(--stone-400);
+  --text-inverse: #ffffff;
+  --text-link: var(--brand-700);
+
+  /* Borders */
+  --border-default: var(--stone-200);
+  --border-strong: var(--stone-300);
+  --border-input: #b5afaa;       /* 3:1 non-text contrast on white */
+  --border-focus: var(--brand-600);
+  --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--brand-500);
+
+  /* Brand roles */
+  --primary: var(--brand-600);
+  --primary-hover: var(--brand-700);
+  --primary-active: var(--brand-800);
+  --primary-fg: #ffffff;
+  --primary-subtle: var(--brand-50);
+  --primary-subtle-fg: var(--brand-700);
+
+  /* Semantic: bg / border / text / icon */
+  --success-bg: var(--green-50); --success-border: var(--green-200); --success-text: var(--green-800); --success-icon: var(--green-600);
+  --warning-bg: var(--amber-50); --warning-border: var(--amber-200); --warning-text: var(--amber-800); --warning-icon: var(--amber-600);
+  --danger-bg: var(--red-50);    --danger-border: var(--red-200);    --danger-text: var(--red-800);    --danger-icon: var(--red-600);
+  --info-bg: var(--sky-50);      --info-border: var(--sky-200);      --info-text: var(--sky-800);      --info-icon: var(--sky-600);
+  --orange-bg: var(--orange-50); --orange-border: var(--orange-200); --orange-text: var(--orange-800); --orange-icon: var(--orange-600);
+  --neutral-bg: var(--stone-100); --neutral-border: var(--stone-200); --neutral-text: var(--stone-700); --neutral-icon: var(--stone-500);
+  --danger-solid: var(--red-700); --danger-solid-hover: var(--red-800);
+
+  /* Privacy — protected commercial data */
+  --privacy-bg: var(--privacy-50);
+  --privacy-bg-strong: var(--privacy-100);
+  --privacy-border: var(--privacy-200);
+  --privacy-text: var(--privacy-700);
+  --privacy-icon: var(--privacy-600);
+  --privacy-solid: var(--privacy-700);
+  --privacy-solid-fg: #ffffff;
+
+  /* Chart series — 7 channels, CVD-safe (Okabe–Ito derived) */
+  --chart-1: #18734b; /* Uzum Market */
+  --chart-2: #0072b2; /* Wildberries */
+  --chart-3: #e69f00; /* Ozon */
+  --chart-4: #cc79a7; /* Instagram */
+  --chart-5: #56b4e9; /* Telegram savdo */
+  --chart-6: #d55e00; /* Offline do‘kon */
+  --chart-7: #78716c; /* Boshqa */
+  --chart-grid: var(--stone-200);
+  --chart-axis: var(--text-tertiary);
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg-app: var(--stone-950);
+  --bg-surface: var(--stone-900);
+  --bg-subtle: #231f1d;
+  --bg-muted: var(--stone-800);
+  --bg-hover: #26221f;
+  --bg-active: var(--stone-800);
+  --bg-inverse: var(--stone-100);
+  --bg-overlay: rgba(0, 0, 0, 0.64);
+
+  --text-primary: var(--stone-100);
+  --text-secondary: #c4bfbb;
+  --text-tertiary: #a29c97;
+  --text-disabled: var(--stone-600);
+  --text-inverse: var(--stone-900);
+  --text-link: var(--brand-300);
+
+  --border-default: #322d2a;
+  --border-strong: var(--stone-700);
+  --border-input: #736d68;
+  --border-focus: var(--brand-400);
+  --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--brand-400);
+
+  --primary: var(--brand-600);
+  --primary-hover: var(--brand-700);
+  --primary-active: var(--brand-800);
+  --primary-fg: #ffffff;
+  --primary-subtle: #12301f;
+  --primary-subtle-fg: var(--brand-300);
+
+  --success-bg: #0f2a1a; --success-border: #1d4a2e; --success-text: #86efac; --success-icon: #4ade80;
+  --warning-bg: #2b1f07; --warning-border: #573c0b; --warning-text: #fcd34d; --warning-icon: #fbbf24;
+  --danger-bg: #2d1212;  --danger-border: #5c1f1f;  --danger-text: #fca5a5;  --danger-icon: #f87171;
+  --info-bg: #0b2333;    --info-border: #154561;    --info-text: #7dd3fc;    --info-icon: #38bdf8;
+  --orange-bg: #2e1708;  --orange-border: #5e2e0e;  --orange-text: #fdba74;  --orange-icon: #fb923c;
+  --neutral-bg: #26221f; --neutral-border: #3a3431; --neutral-text: #d6d3d1; --neutral-icon: #a8a29e;
+  --danger-solid: #c42b2b; --danger-solid-hover: #dc2626;
+
+  --privacy-bg: #211d2b;
+  --privacy-bg-strong: #2b2539;
+  --privacy-border: #403757;
+  --privacy-text: #cdc3e3;
+  --privacy-icon: #ac9fd0;
+  --privacy-solid: #5f5283;
+  --privacy-solid-fg: #ffffff;
+
+  --chart-1: #3fae7c; --chart-2: #3d9ad6; --chart-3: #f0b429; --chart-4: #dd94bd;
+  --chart-5: #7cc6ef; --chart-6: #ef7a2e; --chart-7: #a8a29e;
+  --chart-grid: #322d2a;
+
+  color-scheme: dark;
+}

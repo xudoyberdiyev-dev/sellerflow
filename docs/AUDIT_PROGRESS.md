@@ -62,7 +62,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 ## 6½-bosqich — Yangi Superadmin dizaynini kodga ko'chirish
 Reja va qarorlar: `design/superadmin/INTEGRATION.md`. Manba: `design/superadmin/` (Claude Design eksporti, 2026-11-07).
 Audit bandlari (1–6-bosqich) tugagach boshlanadi.
-- [ ] **D-1:** tokenlar, components.css, self-host shriftlar (`@fontsource`), qorong'i mavzu.
+- [x] **D-1:** tokenlar, components.css, self-host shriftlar (`@fontsource`), qorong'i mavzu. — `admin-ui/src/styles/` (colors, typography, spacing, base, components.css), `@fontsource/inter` + `jetbrains-mono` (Google Fonts o'rniga, CSP 'self'), `theme.ts` (`[data-theme]`, localStorage try/catch; o'tish davrida standart light). Tailwind hozircha qoladi (D-7 da olib tashlanadi). Playwright: login sahifasi Inter bilan, konsol xatosiz.
 - [ ] **D-2:** `design/superadmin/components/**` primitivlarini `admin-ui/src/components/` ga TSX qilib ko'chirish; `format.ts`.
 - [ ] **D-3:** App shell — Sidebar, Topbar, CommandPalette (⌘K), ToastStack, ConfirmDialog (sabab majburiy → API).
 - [ ] **D-4:** Auth ekranlari — login, 2FA stepper, OTP, lockout, majburiy parol almashtirish, sessiya tugashi.

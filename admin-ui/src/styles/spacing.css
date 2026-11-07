@@ -1,0 +1,33 @@
+:root {
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  --radius-badge: 4px;
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-modal: 12px;
+  --radius-full: 999px;
+
+  /* Only two elevation levels. Cards are flat with a 1px border. */
+  --shadow-popover: 0 1px 2px rgba(28, 25, 23, 0.06), 0 4px 12px rgba(28, 25, 23, 0.10);
+  --shadow-modal: 0 2px 4px rgba(28, 25, 23, 0.06), 0 16px 40px rgba(28, 25, 23, 0.18);
+
+  --control-h-sm: 32px;
+  --control-h-md: 36px;
+  --row-h: 44px;
+  --sidebar-w: 248px;
+  --sidebar-w-collapsed: 60px;
+  --topbar-h: 56px;
+  --drawer-w: 480px;
+
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  --z-sticky: 10; --z-drawer: 40; --z-modal: 50; --z-popover: 60; --z-toast: 70; --z-tooltip: 80;
+}
+[data-density="compact"] { --row-h: 36px; --control-h-md: 32px; }
+[data-theme="dark"] {
+  --shadow-popover: 0 1px 2px rgba(0,0,0,0.4), 0 6px 16px rgba(0,0,0,0.45);
+  --shadow-modal: 0 2px 4px rgba(0,0,0,0.4), 0 20px 48px rgba(0,0,0,0.6);
+}

@@ -1,0 +1,8 @@
+/* D-1: SellerFlow Admin dizayn tizimi (manba: design/superadmin/tokens, components/components.css).
+   Tailwind (index.css) dan OLDIN ulanadi — o'tish davrida eski Tailwind sahifalari buzilmasin. */
+@import "./fonts.css";
+@import "./colors.css";
+@import "./typography.css";
+@import "./spacing.css";
+@import "./base.css";
+@import "./components.css";
