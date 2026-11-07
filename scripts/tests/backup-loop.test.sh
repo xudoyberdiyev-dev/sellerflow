@@ -40,7 +40,9 @@ if command -v gpg >/dev/null 2>&1; then
   BACKUP_DIR="${ENC}" BACKUP_ENCRYPTION_PASSPHRASE="test-passphrase-123" BACKUP_RUN_ONCE=1 bash "${HERE}/backup-loop.sh" || fail "shifrlangan backup"
   g="$(ls -1 "${ENC}"/sellerflow_*.dump.gpg | head -n1)"
   [ -n "${g}" ] || fail ".dump.gpg yaratilmadi"
-  [ -z "$(ls -1 "${ENC}" | grep -E '\.dump$|\.tmp$' || true)" ] || fail "shifrlanmagan/vaqtinchalik fayl qoldi: $(ls "${ENC}")"
+  for f in "${ENC}"/*.dump "${ENC}"/*.tmp; do
+    [ -e "${f}" ] && fail "shifrlanmagan/vaqtinchalik fayl qoldi: ${f}"
+  done
   [ "$(stat -c %a "${g}")" = "600" ] || fail "shifrlangan fayl huquqi 600 emas"
   GNUPGHOME="$(mktemp -d)" gpg --batch --quiet --pinentry-mode loopback --passphrase "test-passphrase-123" -d "${g}" | pg_restore --list >/dev/null \
     || fail "shifrlangan backup ochilmadi"

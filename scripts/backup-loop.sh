@@ -55,7 +55,9 @@ rotate() {
     if [ -n "$(find "${f}" -maxdepth 0 -mtime +"${KEEP_DAYS}" 2>/dev/null)" ]; then
       rm -f -- "${f}" && echo "[backup] rotated ${f}"
     fi
-  done < <(ls -1 "${BACKUP_DIR}"/sellerflow_*.dump* 2>/dev/null | grep -v '\.tmp$' | sort -r)
+  done < <(for f in "${BACKUP_DIR}"/sellerflow_*.dump "${BACKUP_DIR}"/sellerflow_*.dump.gpg; do
+             [ -f "${f}" ] && printf '%s\n' "${f}"
+           done | sort -r)
 }
 
 run_backup() {
