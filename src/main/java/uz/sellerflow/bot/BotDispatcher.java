@@ -35,6 +35,12 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
     private final InfoHandler info;
     private final AccessHandler access;
     private final RateLimiter rateLimiter;
+    private uz.sellerflow.account.ActivityTracker activity;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setActivityTracker(uz.sellerflow.account.ActivityTracker activity) {
+        this.activity = activity;
+    }
 
     public BotDispatcher(TelegramGateway tg, AccountService accounts, FlowStore flows, JdbcTemplate jdbc,
                          OnboardingHandler onboarding, CalcHandler calc, ProductHandler products,
@@ -122,6 +128,7 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
 
     private Ctx context(long chatId, long telegramUserId, Long sourceMessageId) {
         AccountContext account = accounts.findOrCreate(telegramUserId);
+        if (activity != null) activity.touch(account.user().getId());
         Session session = flows.load(account.user().getId());
         return new Ctx(chatId, telegramUserId, account, session, tg, sourceMessageId);
     }

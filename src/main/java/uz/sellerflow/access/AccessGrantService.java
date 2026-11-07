@@ -114,6 +114,10 @@ public class AccessGrantService {
     public interface GrantRepository extends JpaRepository<Grant, Long> {
         List<Grant> findByAdminId(Long adminId, org.springframework.data.domain.Pageable p);
 
+        List<Grant> findByBusinessId(Long businessId, org.springframework.data.domain.Pageable p);
+
+        List<Grant> findByAdminIdAndBusinessId(Long adminId, Long businessId, org.springframework.data.domain.Pageable p);
+
         @Modifying
         @Query(nativeQuery = true, value = """
                 update access_grants set status = 'EXPIRED', version = version + 1
@@ -127,7 +131,8 @@ public class AccessGrantService {
         long countRecent(Long adminId, Long businessId);
     }
 
-    public record DataView(Grant grant, List<Product> products, List<HistoryEntry> history) {}
+    public record DataView(Grant grant, List<Product> products, List<HistoryEntry> history,
+                           long productTotal, int productPages, long historyTotal, int historyPages) {}
 
     private final GrantRepository grants;
     private final UserRepository users;
@@ -198,13 +203,28 @@ public class AccessGrantService {
 
     @Transactional(readOnly = true)
     public List<Grant> listFor(Principal admin) {
+        return listFor(admin, null);
+    }
+
+    /** D-5: ixtiyoriy sotuvchi (biznes) filtri bilan. */
+    public List<Grant> listFor(Principal admin, Long businessId) {
         var page = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "id"));
-        return admin.isSuperadmin() ? grants.findAll(page).getContent() : grants.findByAdminId(admin.id(), page);
+        if (businessId == null) {
+            return admin.isSuperadmin() ? grants.findAll(page).getContent() : grants.findByAdminId(admin.id(), page);
+        }
+        return admin.isSuperadmin() ? grants.findByBusinessId(businessId, page)
+                : grants.findByAdminIdAndBusinessId(admin.id(), businessId, page);
     }
 
     /** Faqat so'ragan admin, faqat tasdiqlangan va muddati tugamagan ruxsat bilan, faqat faol akkaunt uchun. */
     @Transactional(noRollbackFor = Errors.Forbidden.class)
     public DataView view(Principal admin, long grantId) {
+        return view(admin, grantId, 0, 0);
+    }
+
+    /** D-5: sahifalangan READ-ONLY ko'rinish (har chaqiruv auditga yoziladi). */
+    @Transactional(noRollbackFor = Errors.Forbidden.class)
+    public DataView view(Principal admin, long grantId, int productPage, int historyPage) {
         Grant g = grants.findById(grantId).orElseThrow(() -> new Errors.NotFound("grant"));
         if (!g.adminId.equals(admin.id())) throw new Errors.Forbidden("NOT_YOUR_GRANT");
         if (g.effectiveStatus(Instant.now()) != Status.APPROVED) throw new Errors.Forbidden("GRANT_NOT_ACTIVE");
@@ -216,10 +236,12 @@ public class AccessGrantService {
             g.revokedBy = "SYSTEM";
             throw new Errors.Forbidden("GRANT_NOT_ACTIVE");
         }
-        List<Product> ps = new java.util.ArrayList<>(products.list(b.getId(), Product.Status.ACTIVE, 0).getContent());
-        List<HistoryEntry> hs = history.list(b.getId(), new HistoryService.Filter(null, null, null, null, null, null), 0).getContent();
-        audit.record(Actor.ADMIN, admin.email(), b.getId(), "ACCESS_DATA_VIEWED", "ACCESS_GRANT", g.getId(), "read-only");
-        return new DataView(g, ps, hs);
+        var pp = products.list(b.getId(), Product.Status.ACTIVE, productPage);
+        var hp = history.list(b.getId(), new HistoryService.Filter(null, null, null, null, null, null), historyPage);
+        audit.record(Actor.ADMIN, admin.email(), b.getId(), "ACCESS_DATA_VIEWED", "ACCESS_GRANT", g.getId(),
+                "read-only p" + productPage + "/h" + historyPage);
+        return new DataView(g, new java.util.ArrayList<>(pp.getContent()), hp.getContent(),
+                pp.getTotalElements(), pp.getTotalPages(), hp.getTotalElements(), hp.getTotalPages());
     }
 
     @Transactional

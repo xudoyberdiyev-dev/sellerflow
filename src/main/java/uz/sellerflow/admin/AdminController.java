@@ -67,11 +67,14 @@ public class AdminController {
     private final ObjectMapper mapper;
     private final LoginRateLimiter loginLimiter;
     private final uz.sellerflow.ops.BackupMonitor backup;
+    private final DashboardService dashboard;
 
     public AdminController(JdbcTemplate jdbc, AccountService accounts, SupportService support, AuditService audit,
                            AdminAuthService auth, AccessGrantService grants, BotStatus bot, ObjectMapper mapper,
-                           LoginRateLimiter loginLimiter, uz.sellerflow.ops.BackupMonitor backup) {
+                           LoginRateLimiter loginLimiter, uz.sellerflow.ops.BackupMonitor backup,
+                           DashboardService dashboard) {
         this.backup = backup;
+        this.dashboard = dashboard;
         this.jdbc = jdbc;
         this.accounts = accounts;
         this.support = support;
@@ -186,17 +189,54 @@ public class AdminController {
                 "channels", jdbc.queryForList("select primary_channel as channel, count(*) as count from businesses group by 1 order by 2 desc"));
     }
 
+    /** D-5: davr (7/30/90 kun) bo'yicha KPI, kunlik seriyalar, kanallar, onboarding voronkasi, 7 kunlik retention. */
+    @GetMapping("/dashboard")
+    public Map<String, Object> dashboard(@RequestParam(defaultValue = "30") int period) {
+        return dashboard.dashboard(period);
+    }
+
+    /**
+     * D-5: bildirishnomalar — so'nggi muhim hodisalar (audit asosida). SUPERADMIN hammasini,
+     * SUPPORT faqat o'z ruxsat so'rovlariga oid hodisalarni ko'radi.
+     */
+    @GetMapping("/notifications")
+    public Map<String, Object> notifications(@RequestAttribute(PRINCIPAL) Principal p,
+                                             @RequestParam(defaultValue = "20") int size) {
+        int limit = Math.min(Math.max(size, 1), 50);
+        String cols = "select e.id, e.created_at as \"at\", e.action, e.actor_type as \"actorType\", e.actor_id as \"actorId\","
+                + " e.entity_type as \"entityType\", e.entity_id as \"entityId\", e.summary from audit_events e";
+        List<Map<String, Object>> items;
+        if (p.isSuperadmin()) {
+            List<Object> args = new java.util.ArrayList<>(NOTIFY_SUPER);
+            args.add(limit);
+            items = jdbc.queryForList(cols + " where e.action in (" + String.join(",", java.util.Collections.nCopies(
+                    NOTIFY_SUPER.size(), "?")) + ") order by e.id desc limit ?", args.toArray());
+        } else {
+            items = jdbc.queryForList(cols + " join access_grants g on e.entity_type = 'ACCESS_GRANT' and e.entity_id = g.id::text"
+                    + " where g.admin_id = ? and e.action in ('ACCESS_APPROVED','ACCESS_DECLINED','ACCESS_REVOKED')"
+                    + " order by e.id desc limit ?", p.id(), limit);
+        }
+        return m("items", items, "backupState", backup.read().state().name());
+    }
+
+    static final List<String> NOTIFY_SUPER = List.of("ACCESS_APPROVED", "ACCESS_DECLINED", "ACCESS_REVOKED",
+            "ADMIN_LOCKED", "ADMIN_CREATED", "ADMIN_RECOVERED", "ADMIN_STATUS_CHANGE", "DELETION_REQUESTED",
+            "ACCOUNT_CLOSED", "SUPPORT_UPDATED", "EXPORT_SELLERS", "EXPORT_AUDIT");
+
     @GetMapping("/health")
     public Map<String, Object> health() {
         boolean dbOk;
+        Long dbLatencyMs = null;
+        long t0 = System.nanoTime();
         try {
             dbOk = Integer.valueOf(1).equals(jdbc.queryForObject("select 1", Integer.class));
+            dbLatencyMs = (System.nanoTime() - t0) / 1_000_000;
         } catch (RuntimeException e) {
             dbOk = false;
         }
         Instant lastPoll = bot.getLastPollOkAt();
         boolean botOk = bot.isPollingEnabled() && lastPoll != null && lastPoll.isAfter(Instant.now().minusSeconds(120));
-        return m("database", dbOk ? "UP" : "DOWN",
+        return m("database", dbOk ? "UP" : "DOWN", "dbLatencyMs", dbLatencyMs,
                 "bot", !bot.isPollingEnabled() ? "DISABLED" : botOk ? "UP" : "DEGRADED",
                 "lastPollOkAt", str(lastPoll), "lastErrorAt", str(bot.getLastErrorAt()), "lastError", bot.getLastError(),
                 "processedUpdates", bot.getProcessedUpdates(),
@@ -352,9 +392,24 @@ public class AdminController {
     }
 
     @GetMapping("/grants")
-    public List<Map<String, Object>> listGrants(@RequestAttribute(PRINCIPAL) Principal p) {
+    public List<Map<String, Object>> listGrants(@RequestAttribute(PRINCIPAL) Principal p,
+                                                @RequestParam(required = false) String status,
+                                                @RequestParam(required = false) Long telegramUserId) {
+        // D-5: sotuvchi filtri (DB darajasida) va holat tablari (samarali holat bo'yicha)
+        Long businessId = null;
+        if (telegramUserId != null) {
+            List<Long> b = jdbc.queryForList("select b.id from businesses b join users u on u.id = b.owner_user_id"
+                    + " where u.telegram_user_id = ?", Long.class, telegramUserId);
+            if (b.isEmpty()) return List.of();
+            businessId = b.get(0);
+        }
+        java.util.Set<String> statuses = new java.util.HashSet<>();
+        if (status != null && !status.isBlank()) {
+            for (String x : status.split(",")) statuses.add(AccessGrantService.Status.valueOf(x.strip()).name());
+        }
         // LOW (DB): N+1 o'rniga ikki so'rov — sotuvchi Telegram ID'lari va admin email'lari bir yo'la
-        List<Grant> list = grants.listFor(p);
+        List<Grant> list = grants.listFor(p, businessId).stream()
+                .filter(g -> statuses.isEmpty() || statuses.contains(grants.statusOf(g).name())).toList();
         if (list.isEmpty()) return List.of();
         Long[] bids = list.stream().map(Grant::getBusinessId).distinct().toArray(Long[]::new);
         Long[] aids = list.stream().map(Grant::getAdminId).distinct().toArray(Long[]::new);
@@ -374,9 +429,16 @@ public class AdminController {
 
     /** READ-ONLY ko'rinish. Har chaqiruv auditga yoziladi. */
     @GetMapping("/grants/{id}/data")
-    public Map<String, Object> grantData(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id) {
-        var v = grants.view(p, id);
+    public Map<String, Object> grantData(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id,
+                                         @RequestParam(defaultValue = "0") int productPage,
+                                         @RequestParam(defaultValue = "0") int historyPage) {
+        if (productPage < 0 || productPage > MAX_PAGE || historyPage < 0 || historyPage > MAX_PAGE) {
+            throw new Errors.Validation("PAGE_RANGE");
+        }
+        var v = grants.view(p, id, productPage, historyPage);
         return m("grant", grantView(v.grant()),
+                "productPage", m("page", productPage, "total", v.productTotal(), "totalPages", v.productPages()),
+                "historyPage", m("page", historyPage, "total", v.historyTotal(), "totalPages", v.historyPages()),
                 "products", v.products().stream().map(x -> m("id", x.getId(), "name", x.getName(),
                         "unitCost", x.getUnitCost(), "plannedSalePrice", x.getPlannedSalePrice(), "sku", x.getSku())).toList(),
                 "history", v.history().stream().map(h -> m("id", h.getId(), "type", h.getType().name(),
@@ -403,15 +465,23 @@ public class AdminController {
 
     @GetMapping("/support")
     public Map<String, Object> getSupport() {
-        var s = support.settings();
-        return m("enabled", s.isEnabled(), "label", s.getContactLabel(), "url", s.getContactUrl());
+        return supportView(support.settings());
+    }
+
+    /** D-5: «oxirgi o'zgartirgan admin/vaqt» — audit'dagi oxirgi SUPPORT_UPDATED dan. */
+    private Map<String, Object> supportView(SupportService.SupportSettings s) {
+        List<Map<String, Object>> last = jdbc.queryForList("select actor_id as \"by\", created_at as \"at\" from audit_events"
+                + " where action = 'SUPPORT_UPDATED' order by id desc limit 1");
+        Object at = last.isEmpty() ? null : last.get(0).get("at");
+        return m("enabled", s.isEnabled(), "label", s.getContactLabel(), "url", s.getContactUrl(),
+                "updatedBy", last.isEmpty() ? null : last.get(0).get("by"),
+                "updatedAt", at instanceof java.sql.Timestamp t ? t.toInstant().toString() : null);
     }
 
     @PutMapping("/support")
     public Map<String, Object> putSupport(@RequestAttribute(PRINCIPAL) Principal p, @RequestBody SupportUpdate body) {
         AdminAuthService.requireSuper(p);
-        var s = support.update(body.enabled(), body.label(), body.url(), p.email());
-        return m("enabled", s.isEnabled(), "label", s.getContactLabel(), "url", s.getContactUrl());
+        return supportView(support.update(body.enabled(), body.label(), body.url(), p.email()));
     }
 
     @GetMapping("/audit")
