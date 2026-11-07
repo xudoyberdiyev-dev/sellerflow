@@ -3,6 +3,7 @@ import { api, errorText, fmtDate, type Me } from '../api'
 import { Alert, Badge, Button, Card, Field, Input, PageTitle, Select, Table, Td } from '../ui'
 import { useLoad } from './useLoad'
 import { useBusy } from './useBusy'
+import { useShell } from '../shell'
 
 interface Admin { id: number; email: string; role: string; status: string; totpEnabled: boolean; mustChangePassword: boolean; createdAt: string; lastLoginAt: string | null }
 
@@ -13,6 +14,7 @@ export function Admins({ me }: { me: Me }) {
   const [pass, setPass] = useState('')
   const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
   const { busy, run } = useBusy()
+  const { confirm, toast } = useShell()
 
   async function create(e: FormEvent) {
     e.preventDefault()
@@ -27,10 +29,16 @@ export function Admins({ me }: { me: Me }) {
   }
 
   async function act(id: number, action: 'disable' | 'enable' | 'reset-2fa') {
-    const q = action === 'disable' ? 'Adminni o‘chirasizmi? Barcha sessiyalari yopiladi.' : action === 'reset-2fa' ? '2FA qayta ulansinmi? Keyingi kirishda yangi QR kod beriladi.' : 'Adminni yoqasizmi?'
-    if (!window.confirm(q)) return
+    // D-3: window.confirm o'rniga ConfirmDialog
+    const ok = await confirm(action === 'disable'
+      ? { title: 'Adminni o‘chirib qo‘yish', description: 'Admin panelga kira olmaydi. Barcha sessiyalari darhol yopiladi.', confirmLabel: 'O‘chirib qo‘yish', tone: 'danger' }
+      : action === 'reset-2fa'
+        ? { title: '2FA’ni qayta o‘rnatish', description: 'Keyingi kirishda yangi QR kod beriladi. Joriy sessiyalar yopiladi.', confirmLabel: '2FA’ni qayta o‘rnatish', tone: 'warning' }
+        : { title: 'Adminni yoqish', description: 'Admin yana panelga kira oladi.', confirmLabel: 'Yoqish', tone: 'info' })
+    if (ok === null) return
     await run(async () => { try {
       await api(`/admins/${id}/${action}`, { method: 'POST' })
+      toast({ tone: 'success', title: action === 'disable' ? 'Admin o‘chirib qo‘yildi' : action === 'reset-2fa' ? '2FA qayta o‘rnatildi' : 'Admin yoqildi', audit: true })
       list.reload()
     } catch (err) {
       setMsg({ kind: 'error', text: errorText(err) })

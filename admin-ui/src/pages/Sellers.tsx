@@ -5,6 +5,7 @@ import { api, errorText, fmtDate, type Me } from '../api'
 import { Alert, Badge, Button, Card, Input, PageTitle, Select, Table, Td } from '../ui'
 import { useLoad } from './useLoad'
 import { useBusy } from './useBusy'
+import { useShell } from '../shell'
 
 interface Seller {
   telegramUserId: number; status: string; createdAt: string; deletionRequestedAt: string | null
@@ -22,6 +23,7 @@ export function Sellers({ me }: { me: Me }) {
   const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
   const nav = useNavigate()
   const { run } = useBusy()
+  const { confirm, toast } = useShell()
   const list = useLoad((signal) => {
     const q = new URLSearchParams({ page: String(page), size: String(SIZE) })
     if (status) q.set('status', status)
@@ -31,11 +33,15 @@ export function Sellers({ me }: { me: Me }) {
   const superadmin = me.role === 'SUPERADMIN'
 
   async function act(id: number, action: 'suspend' | 'reactivate') {
-    const reason = window.prompt(action === 'suspend' ? 'Bloklash sababi (auditga yoziladi):' : 'Qayta faollashtirish sababi:')
+    // D-3: window.prompt o'rniga ConfirmDialog — sabab majburiy (kamida 10 belgi), auditga yoziladi
+    const reason = await confirm(action === 'suspend'
+      ? { title: 'Sotuvchini bloklash', description: `Sotuvchi ${id} botdan foydalana olmaydi. Ma’lumotlari saqlanadi, faol kirish ruxsatlari bekor qilinadi.`, confirmLabel: 'Bloklash', tone: 'danger', requireReason: true }
+      : { title: 'Qayta faollashtirish', description: `Sotuvchi ${id} botdan yana foydalana oladi.`, confirmLabel: 'Faollashtirish', tone: 'warning', requireReason: true })
     if (reason === null) return
     await run(async () => { try {
       await api(`/sellers/${id}/${action}`, { method: 'POST', body: { reason } })
-      setMsg({ kind: 'success', text: action === 'suspend' ? 'Sotuvchi bloklandi.' : 'Sotuvchi qayta faollashtirildi.' })
+      toast({ tone: 'success', title: action === 'suspend' ? 'Sotuvchi bloklandi' : 'Sotuvchi qayta faollashtirildi', audit: true })
+      setMsg(null)
       list.reload()
     } catch (e) {
       setMsg({ kind: 'error', text: errorText(e) })

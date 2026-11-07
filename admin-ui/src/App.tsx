@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
-import { HashRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import clsx from 'clsx'
-import { Activity, CircleUser, FileClock, KeyRound, LayoutDashboard, LifeBuoy, LogOut, ShieldCheck, Users, UserCog } from 'lucide-react'
-import { api, getToken, setToken, type Me } from './api'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { ApiError, api, getToken, setToken, type Me } from './api'
 import { Login } from './Login'
 import { Dashboard } from './pages/Dashboard'
 import { Sellers } from './pages/Sellers'
@@ -11,6 +9,24 @@ import { SupportPage } from './pages/Support'
 import { AuditPage } from './pages/Audit'
 import { Admins } from './pages/Admins'
 import { Profile } from './pages/Profile'
+import {
+  Badge, CommandPalette, Icon, IconButton, InlineAlert, Sidebar, Topbar,
+  type CommandItem, type Crumb, type NavGroup,
+} from './components'
+import { ShellProvider } from './shell'
+import { applyTheme, setTheme, storedTheme, type Theme } from './theme'
+
+/** D-3: sahifalar reestri — Sidebar, breadcrumbs va ⌘K shu ro'yxatdan. `superOnly` — SUPPORT'dan yashiriladi. */
+interface PageDef { id: string; path: string; label: string; icon: string; group: string; superOnly?: boolean }
+const PAGES: PageDef[] = [
+  { id: 'dashboard', path: '/', label: 'Boshqaruv paneli', icon: 'layout-dashboard', group: 'Asosiy' },
+  { id: 'sellers', path: '/sellers', label: 'Sotuvchilar', icon: 'users', group: 'Asosiy' },
+  { id: 'grants', path: '/grants', label: 'Kirish so‘rovlari', icon: 'key-round', group: 'Asosiy' },
+  { id: 'support', path: '/support', label: 'Qo‘llab-quvvatlash', icon: 'life-buoy', group: 'Boshqaruv', superOnly: true },
+  { id: 'audit', path: '/audit', label: 'Audit jurnali', icon: 'scroll-text', group: 'Boshqaruv', superOnly: true },
+  { id: 'admins', path: '/admins', label: 'Administratorlar', icon: 'user-cog', group: 'Boshqaruv', superOnly: true },
+  { id: 'profile', path: '/profile', label: 'Profil va xavfsizlik', icon: 'user-round', group: 'Hisob' },
+]
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null)
@@ -44,92 +60,151 @@ export default function App() {
   if (loading) return <div className="p-10 text-sm text-stone-500">Yuklanmoqda…</div>
   if (!me) return <Login onLogin={(m, mc) => { setMe(m); setMustChange(mc) }} />
 
-  const superadmin = me.role === 'SUPERADMIN'
-  // M-5: vaqtinchalik parol almashtirilmaguncha server boshqa API'ni yopadi — UI ham faqat Profil sahifasini ko'rsatadi.
-  const nav = mustChange ? [] : [
-    { to: '/', label: 'Boshqaruv paneli', icon: LayoutDashboard, show: true },
-    { to: '/sellers', label: 'Sotuvchilar', icon: Users, show: true },
-    { to: '/grants', label: 'Kirish so‘rovlari', icon: KeyRound, show: true },
-    { to: '/support', label: 'Qo‘llab-quvvatlash', icon: LifeBuoy, show: superadmin },
-    { to: '/audit', label: 'Audit jurnali', icon: FileClock, show: superadmin },
-    { to: '/admins', label: 'Administratorlar', icon: UserCog, show: superadmin },
-  ]
-
   return (
     <HashRouter>
-      <div className="flex min-h-screen">
-        <aside className="hidden w-60 shrink-0 flex-col border-r border-stone-200 bg-white md:flex">
-          <div className="flex items-center gap-2 px-5 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-stone-900 text-white"><ShieldCheck size={15} /></div>
-            <span className="text-sm font-semibold">SellerFlow Admin</span>
-          </div>
-          <nav className="flex-1 space-y-0.5 px-3">
-            {nav.filter((n) => n.show).map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.to === '/'}
-                className={({ isActive }) =>
-                  clsx('flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm',
-                    isActive ? 'bg-stone-100 font-medium text-stone-900' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900')}
-              >
-                <n.icon size={16} />
-                {n.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="border-t border-stone-200 p-3">
-            <NavLink to="/profile" className="block truncate rounded-md px-2.5 py-1.5 text-xs text-stone-600 hover:bg-stone-50">
-              {me.email}
-              <span className="ml-1 text-stone-400">· {me.role}</span>
-            </NavLink>
-            <button onClick={logout} className="mt-1 flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-stone-600 hover:bg-stone-50">
-              <LogOut size={15} /> Chiqish
-            </button>
-          </div>
-        </aside>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3 md:hidden">
-            <span className="text-sm font-semibold">SellerFlow Admin</span>
-            <div className="flex gap-3 text-sm">
-              {nav.filter((n) => n.show).map((n) => (
-                <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => (isActive ? 'font-medium' : 'text-stone-500')}>
-                  <n.icon size={16} aria-label={n.label} />
-                </NavLink>
-              ))}
-              {/* LOW (UI): mobil menyuda Profil (parol almashtirish) */}
-              <NavLink to="/profile" aria-label="Profil" className={({ isActive }) => (isActive ? 'font-medium' : 'text-stone-500')}>
-                <CircleUser size={16} />
-              </NavLink>
-              <button onClick={logout} aria-label="Chiqish"><LogOut size={16} /></button>
-            </div>
-          </header>
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-8">
-            {mustChange && (
-              <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                Vaqtinchalik parol bilan kirdingiz. Davom etish uchun quyida parolni almashtiring.
-              </div>
-            )}
-            {mustChange ? (
-              <Routes>
-                <Route path="*" element={<Profile onChanged={() => setMustChange(false)} />} />
-              </Routes>
-            ) : (
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/sellers" element={<Sellers me={me} />} />
-              <Route path="/grants" element={<Grants me={me} />} />
-              {superadmin && <Route path="/support" element={<SupportPage />} />}
-              {superadmin && <Route path="/audit" element={<AuditPage />} />}
-              {superadmin && <Route path="/admins" element={<Admins me={me} />} />}
-              <Route path="/profile" element={<Profile onChanged={() => setMustChange(false)} />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            )}
-          </main>
-          <footer className="px-8 pb-4 text-xs text-stone-400"><Activity size={11} className="mr-1 inline" />Tijoriy ma’lumotlar faqat sotuvchi roziligi bilan ko‘rsatiladi.</footer>
-        </div>
-      </div>
+      <ShellProvider>
+        <Shell me={me} mustChange={mustChange} onPasswordChanged={() => setMustChange(false)} onLogout={logout} />
+      </ShellProvider>
     </HashRouter>
+  )
+}
+
+function Shell({ me, mustChange, onPasswordChanged, onLogout }:
+  { me: Me; mustChange: boolean; onPasswordChanged: () => void; onLogout: () => void }) {
+  const loc = useLocation()
+  const nav = useNavigate()
+  const superadmin = me.role === 'SUPERADMIN'
+  const [collapsed, setCollapsed] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [cmdOpen, setCmdOpen] = useState(false)
+  const [theme, setThemeState] = useState<Theme>(() => storedTheme() ?? 'light')
+
+  // M-5: vaqtinchalik parol bilan faqat Profil
+  const visible = useMemo(() => PAGES.filter((p) => (mustChange ? p.id === 'profile' : superadmin || !p.superOnly)), [mustChange, superadmin])
+  const current = PAGES.find((p) => p.path === loc.pathname) ?? PAGES[0]
+
+  const groups: NavGroup[] = useMemo(() => {
+    const out: NavGroup[] = []
+    for (const p of visible.filter((x) => x.id !== 'profile')) {
+      let g = out.find((x) => x.label === p.group)
+      if (!g) { g = { label: p.group, items: [] }; out.push(g) }
+      g.items.push({ id: p.id, label: p.label, icon: p.icon })
+    }
+    return out
+  }, [visible])
+
+  const go = (id: string) => {
+    const p = PAGES.find((x) => x.id === id)
+    if (p) nav(p.path)
+    setMenuOpen(false)
+  }
+
+  const crumbs: Crumb[] = [{ label: 'SellerFlow Admin' }, { label: mustChange ? 'Profil va xavfsizlik' : current.label }]
+
+  const toggleTheme = () => {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    setThemeState(next)
+  }
+  useEffect(() => { applyTheme(theme) }, [theme])
+
+  const commands: CommandItem[] = [
+    ...visible.map((p) => ({ id: p.id, label: p.label, icon: p.icon, group: 'Sahifalar', onSelect: () => go(p.id) })),
+    { id: 'theme', label: theme === 'dark' ? 'Yorug‘ mavzu' : 'Qorong‘i mavzu', icon: theme === 'dark' ? 'sun' : 'moon', group: 'Amallar', onSelect: toggleTheme },
+    { id: 'logout', label: 'Chiqish', icon: 'log-out', group: 'Amallar', onSelect: onLogout },
+  ]
+
+  const footer = (
+    <>
+      <button type="button" className="sf-nav-item" aria-current={current.id === 'profile' ? 'page' : undefined}
+        aria-label={collapsed ? 'Profil' : undefined} onClick={() => go('profile')}>
+        <Icon name="user-round" size={16} /><span className="sf-nav-item__label">Profil</span>
+      </button>
+      <button type="button" className="sf-nav-item" aria-label={collapsed ? 'Chiqish' : undefined} onClick={onLogout}>
+        <Icon name="log-out" size={16} /><span className="sf-nav-item__label">Chiqish</span>
+      </button>
+    </>
+  )
+
+  return (
+    <div className="sf-shell" data-menu-open={menuOpen || undefined}>
+      <div className="sf-shell__side">
+        <Sidebar groups={groups} active={current.id} onNavigate={go} collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed((c) => !c)} footer={footer} role={me.role} />
+      </div>
+      <div className="sf-shell__scrim" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+      <div className="sf-shell__body">
+        <Topbar
+          breadcrumbs={crumbs}
+          onOpenSearch={mustChange ? undefined : () => setCmdOpen(true)}
+          user={{ name: me.email, role: me.role }}
+          onUserClick={() => go('profile')}
+          actions={<>
+            <span className="sf-shell__menu-btn"><IconButton icon="menu" label="Menyuni ochish" onClick={() => setMenuOpen(true)} /></span>
+            {!mustChange && <HealthIndicator />}
+            <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label={theme === 'dark' ? 'Yorug‘ mavzu' : 'Qorong‘i mavzu'} onClick={toggleTheme} />
+          </>}
+        />
+        <main className="sf-shell__main">
+          <div className="sf-shell__content">
+            {mustChange ? (
+              <>
+                <div className="mb-4">
+                  <InlineAlert tone="warning" title="Vaqtinchalik parol">Davom etish uchun quyida parolni almashtiring.</InlineAlert>
+                </div>
+                <Routes>
+                  <Route path="*" element={<Profile onChanged={onPasswordChanged} />} />
+                </Routes>
+              </>
+            ) : (
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/sellers" element={<Sellers me={me} />} />
+                <Route path="/grants" element={<Grants me={me} />} />
+                {superadmin && <Route path="/support" element={<SupportPage />} />}
+                {superadmin && <Route path="/audit" element={<AuditPage />} />}
+                {superadmin && <Route path="/admins" element={<Admins me={me} />} />}
+                <Route path="/profile" element={<Profile onChanged={onPasswordChanged} />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            )}
+          </div>
+        </main>
+      </div>
+      {!mustChange && <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} items={commands} placeholder="Sahifa yoki amalni qidiring…" />}
+    </div>
+  )
+}
+
+interface HealthLite { database: string; bot: string; backup?: { state: string } }
+
+/** Topbar'dagi tizim holati: har 60 s da /health; 401/403 da so'rov to'xtaydi (spam yo'q). */
+function HealthIndicator() {
+  const [state, setState] = useState<'ok' | 'degraded' | 'unknown'>('unknown')
+  const stopped = useRef(false)
+  useEffect(() => {
+    let timer: number | undefined
+    const ctrl = new AbortController()
+    const tick = async () => {
+      if (stopped.current) return
+      try {
+        const h = await api<HealthLite>('/health', { signal: ctrl.signal })
+        const bad = h.database !== 'UP' || h.bot === 'DEGRADED' || h.backup?.state === 'FAILED' || h.backup?.state === 'STALE'
+        setState(bad ? 'degraded' : 'ok')
+      } catch (e) {
+        if (ctrl.signal.aborted) return
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) { stopped.current = true; return }
+        setState('degraded')
+      }
+      timer = window.setTimeout(tick, 60_000)
+    }
+    tick()
+    return () => { ctrl.abort(); window.clearTimeout(timer) }
+  }, [])
+  if (state === 'unknown') return null
+  return (
+    <span className="sf-health" title="Tizim holati (har 60 soniyada)">
+      <Badge tone={state === 'ok' ? 'success' : 'warning'}>{state === 'ok' ? 'Tizim ishlayapti' : 'Tizimda muammo'}</Badge>
+    </span>
   )
 }
