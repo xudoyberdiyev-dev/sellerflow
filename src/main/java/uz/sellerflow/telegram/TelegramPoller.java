@@ -95,7 +95,7 @@ public class TelegramPoller {
                 status.error("polling: " + e.getClass().getSimpleName());
                 log.warn("Polling error: {}; retry in {} ms", e.getClass().getSimpleName(), backoffMs);
                 sleep(backoffMs);
-                backoffMs = Math.min(backoffMs * 2, 30_000);
+                backoffMs = nextBackoff(backoffMs);
             }
         }
         log.info("Telegram long polling stopped");
@@ -161,6 +161,11 @@ public class TelegramPoller {
             }
         }
         return null;
+    }
+
+    /** Eksponensial backoff: 1 s → 2 → 4 … ko'pi bilan 30 s. */
+    static int nextBackoff(int currentMs) {
+        return Math.min(Math.max(currentMs, 1000) * 2, 30_000);
     }
 
     static long userKey(Tg.Update u) {

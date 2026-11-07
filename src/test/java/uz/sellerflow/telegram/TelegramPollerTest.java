@@ -128,6 +128,33 @@ class TelegramPollerTest {
     }
 
     @Test
+    void backoff_isExponential_cappedAt30s() {
+        int b = 1000;
+        List<Integer> seq = new ArrayList<>();
+        for (int i = 0; i < 7; i++) { b = TelegramPoller.nextBackoff(b); seq.add(b); }
+        assertThat(seq).containsExactly(2000, 4000, 8000, 16000, 30000, 30000, 30000);
+    }
+
+    @Test
+    void emptyBatch_keepsOffset_andMarksPollOk() {
+        FakeGateway g = new FakeGateway();
+        BotStatus st = new BotStatus();
+        TelegramPoller p = new TelegramPoller(null, g, u -> { throw new AssertionError("no updates"); }, 1, st, 2);
+        assertThat(p.pollOnce(42)).isEqualTo(42);
+        assertThat(g.offsets).containsExactly(42L);
+        assertThat(st.getLastPollOkAt()).isNotNull();
+        p.stop();
+    }
+
+    @Test
+    void callbackUpdates_arePartitionedByFromUser() {
+        Tg.CallbackQuery q = new Tg.CallbackQuery("c", new Tg.User(99, false, "B", null, null),
+                new Tg.Message(1, null, new Tg.Chat(99, "private"), "x"), "m");
+        assertThat(TelegramPoller.userKey(new Tg.Update(5, null, q))).isEqualTo(99);
+        assertThat(TelegramPoller.userKey(new Tg.Update(6, null, null))).isEqualTo(6);
+    }
+
+    @Test
     void stop_beforeStart_isSafe() {
         TelegramPoller p = new TelegramPoller(null, new FakeGateway(), u -> {}, 1, new BotStatus(), 1);
         p.stop();
