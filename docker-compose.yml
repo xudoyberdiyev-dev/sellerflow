@@ -36,6 +36,13 @@ services:
     volumes:
       # Backup holati (status.json) — faqat o'qish uchun
       - ./backups:/backups:ro
+    healthcheck:
+      # M-12: baza va Telegram poller (oxirgi muvaffaqiyatli so'rov < 120 s). Image'da curl yo'q — bash /dev/tcp.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health/container HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"UP\"' <&3"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 90s
     ports:
       # Admin panel va API faqat serverning o'zidan ochiq. Tashqaridan kirish: SSH tunnel yoki HTTPS reverse proxy (docs/OPERATIONS.md)
       - "127.0.0.1:8080:8080"

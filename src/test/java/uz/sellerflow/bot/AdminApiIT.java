@@ -279,6 +279,16 @@ class AdminApiIT extends IntegrationTest {
         assertThat(call(HttpMethod.POST, "/grants", token, req).getStatusCode().value()).isEqualTo(200);
     }
 
+    /** M-12: Docker healthcheck uchun /actuator/health/container (db + bot). */
+    @Test
+    void containerHealthGroup_isExposed() throws Exception {
+        var r = java.net.http.HttpClient.newHttpClient().send(java.net.http.HttpRequest.newBuilder(
+                java.net.URI.create("http://localhost:" + port + "/actuator/health/container")).build(),
+                java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertThat(r.statusCode()).isEqualTo(200);
+        assertThat(r.body()).contains("\"status\":\"UP\"");
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();

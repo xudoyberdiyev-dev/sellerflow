@@ -12,8 +12,12 @@ public class BotStatus {
     private volatile Instant lastErrorAt;
     private volatile String lastError;
     private volatile long processedUpdates;
+    private volatile Instant startedAt;
 
-    public void started() { pollingEnabled = true; }
+    public void started() {
+        pollingEnabled = true;
+        startedAt = Instant.now();
+    }
     public void pollOk() { lastPollOkAt = Instant.now(); }
     public void processed() { processedUpdates++; }
     public void error(String what) {
@@ -26,4 +30,5 @@ public class BotStatus {
     public Instant getLastErrorAt() { return lastErrorAt; }
     public String getLastError() { return lastError; }
     public long getProcessedUpdates() { return processedUpdates; }
+    public Instant getStartedAt() { return startedAt; }
 }

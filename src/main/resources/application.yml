@@ -31,6 +31,10 @@ management:
   endpoint:
     health:
       show-details: never
+      group:
+        # Docker healthcheck uchun (M-12): baza + bot. Backup holati bunga kirmaydi (konteyner sog'ligiga aloqasi yo'q).
+        container:
+          include: db,bot
 
 sellerflow:
   telegram:
