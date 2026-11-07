@@ -89,15 +89,22 @@ public class AuditService {
     public interface AuditRepository extends JpaRepository<AuditEvent, Long> {}
 
     private final AuditRepository repo;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    public AuditService(AuditRepository repo) {
+    public AuditService(AuditRepository repo, org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.repo = repo;
+        this.jdbc = jdbc;
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(Actor actor, Object actorId, Long businessId, String action,
                        String entityType, Object entityId, String summary) {
         String aid = actorId == null ? null : actorId.toString();
+        if (aid == null && actor == Actor.USER && businessId != null) {
+            // LOW (maxfiylik): USER hodisasida kim qilgani — biznes egasining ichki user ID'si
+            aid = jdbc.query("select owner_user_id from businesses where id = ?",
+                    rs -> rs.next() ? String.valueOf(rs.getLong(1)) : null, businessId);
+        }
         aid = uz.sellerflow.common.TextUtil.truncate(aid, 64);
         repo.save(new AuditEvent(actor.name(), aid, businessId, action,
                 entityType, entityId == null ? null : entityId.toString(), summary));

@@ -26,6 +26,7 @@ class AdminApiIT extends IntegrationTest {
     @Autowired uz.sellerflow.common.SellerFlowProperties props;
     @Autowired uz.sellerflow.audit.AuditService auditService;
     @Autowired org.springframework.transaction.support.TransactionTemplate txTemplate;
+    @Autowired uz.sellerflow.account.TermsGuard termsGuard;
     @Autowired uz.sellerflow.admin.LoginRateLimiter loginLimiter;
     @Autowired uz.sellerflow.admin.AdminAuthService authService;
 
@@ -582,6 +583,45 @@ class AdminApiIT extends IntegrationTest {
         click(u, "Faollashtirish");
         assertThat(lastText(u)).contains("faollashtirildi");
         assertThat(jdbc.queryForObject("select count(*) from businesses", Long.class)).isEqualTo(2);
+    }
+
+    /** LOW (maxfiylik): shartlar matni o'zgarib versiya o'zgarmasa — xato. */
+    @Test
+    void termsVersion_isBoundToTextHash() {
+        String v = "test-" + System.nanoTime();
+        termsGuard.verify(v, "Shartlar matni A");
+        termsGuard.verify(v, "Shartlar matni A"); // bir xil — OK
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> termsGuard.verify(v, "Shartlar matni B"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("TERMS_VERSION");
+        termsGuard.verify(v + "-2", "Shartlar matni B"); // yangi versiya — OK
+    }
+
+    /** LOW (maxfiylik): bloklashda faol grantlar DB'da bekor; USER audit yozuvida actor_id bor. */
+    @Test
+    void suspend_revokesGrantsInDb_andUserAuditHasActorId() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        long gid = json(call(HttpMethod.POST, "/grants", token,
+                "{\"telegramUserId\":" + u + ",\"purpose\":\"Hisob natijasini tekshirish uchun\",\"minutes\":30}")).path("id").asLong();
+        click(u, "Ruxsat berish");
+        assertThat(jdbc.queryForObject("select status from access_grants where id = ?", String.class, gid)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject("select actor_id from audit_events where action = 'ACCESS_APPROVED'", String.class)).isNotNull();
+        call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"test\"}");
+        assertThat(jdbc.queryForObject("select status from access_grants where id = ?", String.class, gid)).isEqualTo("REVOKED");
+    }
+
+    /** LOW (maxfiylik): purge keyin yoqilsa, oldin yopilgan akkauntlar ham tozalanadi. */
+    @Test
+    void enablingPurgeLater_cleansPreviouslyClosedAccounts() {
+        long u = onboardedUser();
+        long bid = jdbc.queryForObject("select b.id from businesses b join users x on x.id = b.owner_user_id where x.telegram_user_id = ?", Long.class, u);
+        jdbc.update("update users set status = 'CLOSED' where telegram_user_id = ?", u);
+        var base = props;
+        var purgeProps = new uz.sellerflow.common.SellerFlowProperties(base.telegram(), base.admin(), base.terms(), base.draft(),
+                base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true), base.rateLimit());
+        txTemplate.executeWithoutResult(st -> new DeletionJob(jdbc, auditService, purgeProps).run());
+        assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, u)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACCOUNT_PURGED'", Long.class)).isEqualTo(1);
     }
 
     /** M-23: purge yoqilganda Telegram ID ham psevdonimga almashtiriladi. */

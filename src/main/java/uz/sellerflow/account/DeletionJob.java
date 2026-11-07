@@ -65,6 +65,29 @@ public class DeletionJob {
                     "grace " + grace + " days; commercial data " + (purge ? "purged, telegram id pseudonymized" : "retained (pending legal policy)"));
         }
         if (!due.isEmpty()) log.info("Closed {} accounts after deletion grace period", due.size());
+        if (purge) purgePreviouslyClosed();
         return due.size();
+    }
+
+    /**
+     * LOW (maxfiylik): DELETION_PURGE_DATA keyinroq yoqilsa — avval (purge'siz) yopilgan akkauntlar ham tozalanadi:
+     * tijoriy ma'lumot o'chiriladi va Telegram ID psevdonimga almashtiriladi.
+     */
+    private void purgePreviouslyClosed() {
+        List<Long> old = jdbc.queryForList("select id from users where status = 'CLOSED' and telegram_user_id > 0", Long.class);
+        for (Long userId : old) {
+            Long businessId = jdbc.query("select id from businesses where owner_user_id = ?",
+                    rs -> rs.next() ? rs.getLong(1) : null, userId);
+            if (businessId != null) {
+                jdbc.update("delete from calculation_history where business_id = ?", businessId);
+                jdbc.update("delete from products where business_id = ?", businessId);
+            }
+            jdbc.update("delete from telegram_flows where user_id = ?", userId);
+            jdbc.update("update users set telegram_user_id = ?, updated_at = now() where id = ?",
+                    AccountService.pseudonymousTelegramId(), userId);
+            audit.record(Actor.SYSTEM, "deletion-job", businessId, "ACCOUNT_PURGED", "USER", userId,
+                    "previously closed account purged after DELETION_PURGE_DATA was enabled");
+        }
+        if (!old.isEmpty()) log.info("Purged {} previously closed accounts", old.size());
     }
 }

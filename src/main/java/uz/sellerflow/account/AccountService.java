@@ -33,9 +33,22 @@ public class AccountService {
     private final ConsentRepository consents;
     private final AuditService audit;
     private final SellerFlowProperties props;
+    private final GrantRevoker revokeGrants;
+
+    /** access paketiga bog'liqlik aylanasi bo'lmasligi uchun kichik JDBC yordamchi. */
+    @org.springframework.stereotype.Component
+    public static class GrantRevoker {
+        private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+        public GrantRevoker(org.springframework.jdbc.core.JdbcTemplate jdbc) { this.jdbc = jdbc; }
+        public int revokeActive(long businessId) {
+            return jdbc.update("update access_grants set status = 'REVOKED', revoked_at = now(), revoked_by = 'SYSTEM' "
+                    + "where business_id = ? and status in ('REQUESTED','APPROVED')", businessId);
+        }
+    }
 
     public AccountService(UserRepository users, BusinessRepository businesses, ConsentRepository consents,
-                          AuditService audit, SellerFlowProperties props) {
+                          AuditService audit, SellerFlowProperties props, GrantRevoker revokeGrants) {
+        this.revokeGrants = revokeGrants;
         this.users = users;
         this.businesses = businesses;
         this.consents = consents;
@@ -223,6 +236,10 @@ public class AccountService {
         }
         u.setStatus(target);
         Long businessId = businesses.findByOwnerUserId(u.getId()).map(Business::getId).orElse(null);
+        if (target == AccountStatus.SUSPENDED && businessId != null) {
+            // LOW (maxfiylik): bloklashda faol/kutilayotgan kirish ruxsatlari DB'da ham bekor qilinadi
+            revokeGrants.revokeActive(businessId);
+        }
         audit.record(Actor.ADMIN, adminId, businessId, "ADMIN_STATUS_CHANGE", "USER", u.getId(),
                 old + " -> " + target + (reason == null ? "" : "; reason: " + reason));
         return u;

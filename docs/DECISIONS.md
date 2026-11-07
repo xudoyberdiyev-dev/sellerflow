@@ -54,6 +54,8 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
   - 30 kunlik kutish davrida foydalanuvchi so'rovni botning o'zida bekor qiladi (`dc:` callback, audit `DELETION_CANCELLED`).
   - `DELETION_PURGE_DATA=true` da yopishda `users.telegram_user_id` **tasodifiy manfiy psevdonimga** almashtiriladi. Audit «hash» deb tavsiya qilgan, lekin Telegram ID maydoni kichik (≈10¹⁰) — hash'ni brute-force bilan qaytarish mumkin, shuning uchun bog'lanmaydigan tasodifiy qiymat tanlandi.
   - CLOSED akkaunt egasi «Yangi akkaunt ochish» tugmasi bilan yangidan boshlaydi: eski yozuv Telegram ID'dan ajratiladi (psevdonim), eski ma'lumot yangi akkauntga o'tmaydi; audit `CLOSED_ACCOUNT_DETACHED`.
+- **Shartlar versiyasi ↔ matn (LOW maxfiylik, 2026-11-07):** `TermsGuard` startupda `terms_uz.txt` SHA-256 ni `terms_versions` jadvaliga bog'laydi. Matn o'zgarib `TERMS_VERSION` o'zgarmasa ilova **ishga tushmaydi** (xato xabari versiyani oshirishni aytadi). Versiyani oshirish — barcha foydalanuvchidan qayta rozilik.
+- **Bloklash va audit (LOW maxfiylik):** SUSPENDED qilinganda REQUESTED/APPROVED grantlar DB'da `REVOKED (SYSTEM)`. USER audit hodisalarida `actor_id` — biznes egasining ichki user ID'si (Telegram ID emas). `DELETION_PURGE_DATA` keyin yoqilsa, DeletionJob oldin yopilgan akkauntlarni ham tozalaydi (`ACCOUNT_PURGED`).
 
 ## Ochiq qolganlar (ishga tushirishdan oldin)
 
