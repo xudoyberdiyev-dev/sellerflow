@@ -61,6 +61,8 @@ public class AdminAuthService {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
+        @jakarta.persistence.Version
+        private long version;
         @Column(nullable = false)
         private String email;
         @Column(name = "password_hash", nullable = false)

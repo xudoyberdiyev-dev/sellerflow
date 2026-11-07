@@ -36,6 +36,10 @@ public class UserAccount {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 
+    /** LOW (DB): parallel yangilashda lost update bo'lmasin (bot + admin bir vaqtda). */
+    @jakarta.persistence.Version
+    private long version;
+
     protected UserAccount() {}
 
     public UserAccount(Long telegramUserId) {

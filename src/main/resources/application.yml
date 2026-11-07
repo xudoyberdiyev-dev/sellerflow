@@ -5,6 +5,15 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/sellerflow}
     username: ${DB_USER:sellerflow}
     password: ${DB_PASSWORD:sellerflow}
+    hikari:
+      # LOW (DB): 4 ta bot worker + admin so'rovlari + rejalashtirilgan ishlar uchun yetarli; DB uzilsa tez xato
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 5000
+      validation-timeout: 3000
+      max-lifetime: 1800000
+      idle-timeout: 600000
+      leak-detection-threshold: 60000
   jpa:
     open-in-view: false
     hibernate:
@@ -66,6 +75,9 @@ sellerflow:
     max-age-hours: 26
     # Ixtiyoriy: backup xatosi/eskirishi haqida shu Telegram chat'ga (bot orqali) ogohlantirish
     alert-chat-id: ${ALERT_TELEGRAM_CHAT_ID:}
+  audit:
+    # LOW (DB): audit_events saqlash muddati (kun). Rozilik yozuvlari (consents) bunga kirmaydi.
+    retention-days: ${AUDIT_RETENTION_DAYS:365}
   rate-limit:
     max-updates: 20
     window-seconds: 10

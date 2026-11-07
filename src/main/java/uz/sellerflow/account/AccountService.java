@@ -41,7 +41,7 @@ public class AccountService {
         private final org.springframework.jdbc.core.JdbcTemplate jdbc;
         public GrantRevoker(org.springframework.jdbc.core.JdbcTemplate jdbc) { this.jdbc = jdbc; }
         public int revokeActive(long businessId) {
-            return jdbc.update("update access_grants set status = 'REVOKED', revoked_at = now(), revoked_by = 'SYSTEM' "
+            return jdbc.update("update access_grants set status = 'REVOKED', revoked_at = now(), revoked_by = 'SYSTEM', version = version + 1 "
                     + "where business_id = ? and status in ('REQUESTED','APPROVED')", businessId);
         }
     }

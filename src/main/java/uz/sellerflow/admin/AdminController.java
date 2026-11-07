@@ -262,7 +262,18 @@ public class AdminController {
 
     @GetMapping("/grants")
     public List<Map<String, Object>> listGrants(@RequestAttribute(PRINCIPAL) Principal p) {
-        return grants.listFor(p).stream().map(this::grantView).toList();
+        // LOW (DB): N+1 o'rniga ikki so'rov — sotuvchi Telegram ID'lari va admin email'lari bir yo'la
+        List<Grant> list = grants.listFor(p);
+        if (list.isEmpty()) return List.of();
+        Long[] bids = list.stream().map(Grant::getBusinessId).distinct().toArray(Long[]::new);
+        Long[] aids = list.stream().map(Grant::getAdminId).distinct().toArray(Long[]::new);
+        Map<Long, Long> tg = new java.util.HashMap<>();
+        jdbc.query("select b.id, u.telegram_user_id from businesses b join users u on u.id = b.owner_user_id where b.id = any(?)",
+                rs -> { tg.put(rs.getLong(1), rs.getLong(2)); }, (Object) bids);
+        Map<Long, String> emails = new java.util.HashMap<>();
+        jdbc.query("select id, email from admins where id = any(?)", rs -> { emails.put(rs.getLong(1), rs.getString(2)); },
+                (Object) aids);
+        return list.stream().map(g -> grantView(g, tg.get(g.getBusinessId()), emails.get(g.getAdminId()))).toList();
     }
 
     @PostMapping("/grants/{id}/revoke")
@@ -288,6 +299,10 @@ public class AdminController {
         Long tgId = jdbc.query("select u.telegram_user_id from businesses b join users u on u.id = b.owner_user_id where b.id = ?",
                 rs -> rs.next() ? rs.getLong(1) : null, g.getBusinessId());
         String adminEmail = jdbc.query("select email from admins where id = ?", rs -> rs.next() ? rs.getString(1) : null, g.getAdminId());
+        return grantView(g, tgId, adminEmail);
+    }
+
+    private Map<String, Object> grantView(Grant g, Long tgId, String adminEmail) {
         return m("id", g.getId(), "telegramUserId", tgId, "adminEmail", adminEmail, "purpose", g.getPurpose(),
                 "minutes", g.getMinutes(), "status", grants.statusOf(g).name(), "requestedAt", str(g.getRequestedAt()),
                 "decidedAt", str(g.getDecidedAt()), "expiresAt", str(g.getExpiresAt()), "revokedBy", g.getRevokedBy());

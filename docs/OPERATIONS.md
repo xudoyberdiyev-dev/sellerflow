@@ -86,6 +86,9 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 - Backup holati: admin panel «Tizim holati» → Backup; `docker compose ps` (backup servisi `unhealthy` bo'lsa — oxirgi muvaffaqiyatli backup 26 soatdan eski); `/actuator/health` backup xato/eskirgan bo'lsa `DOWN`; `docker compose logs backup | tail`.
 - Alert: `.env` da `ALERT_TELEGRAM_CHAT_ID` berilsa, backup xato bersa yoki eskirsa bot shu chat'ga yozadi (bir muammo uchun 24 soatda bir marta).
 
+- Audit jurnali `AUDIT_RETENTION_DAYS` (standart 365) kundan keyin avtomatik tozalanadi (har kuni 03:45). Rozilik yozuvlari bunga kirmaydi.
+- DB ulanishlar puli: `DB_POOL_SIZE` (standart 10).
+
 ## 7. Xavfsizlik eslatmalari
 - `.env` faylini hech kimga yubormang. Token oshkor bo'lsa, @BotFather → `/revoke` qiling.
 - Admin chiqib ketsa yoki telefonini yo'qotsa: panel → Administratorlar → «O'chirish» yoki «2FA reset».

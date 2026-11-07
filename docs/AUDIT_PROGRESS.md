@@ -50,7 +50,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 
 ## 5-bosqich — Hisob-kitob va DB
 - [x] **LOW (hisob):** `"0,075"` → 0.075 (minglik ajratgich qoidasini aniqlashtirish: faqat vergul+3 raqam va butun qism 1–3 raqam bo'lsa ham kontekstga qarab — foiz maydonlarida minglik ajratgich qabul qilinmasin); `RoundingMode.UNNECESSARY` xavfi yo'qotilsin; `PlanService.isAllowed` `LIMIT_APPLIED` ni to'g'ri talqin qilsin; tavsiya narxi ortiqcha qadam masalasi tekshirilsin. — engine 1.0.1 (pastga tekshiruv), HALF_UP, `THOUSANDS` regex + `Money.parsePercent`, `PlanService.isAllowed(…, used)`; testlar `CalculationEngineTest` (+5, jumladan fuzz), `PlanServiceIT`.
-- [ ] **LOW (DB):** `users`, `access_grants`, `admins` uchun `@Version`; DeletionJob har akkaunt alohida tranzaksiyada; purge yo'lidagi FK'larga indekslar; `audit_events` saqlash muddati (konfiguratsiya, standart 365 kun); Hikari pool/timeout sozlamalari; grant ro'yxatidagi N+1.
+- [x] **LOW (DB):** `users`, `access_grants`, `admins` uchun `@Version`; DeletionJob har akkaunt alohida tranzaksiyada; purge yo'lidagi FK'larga indekslar; `audit_events` saqlash muddati (konfiguratsiya, standart 365 kun); Hikari pool/timeout sozlamalari; grant ro'yxatidagi N+1. — V7: `version` ustunlari + `@Version`, FK indekslari (calculation_history product/source/user); DeletionJob har akkaunt `REQUIRES_NEW`; `AuditRetentionJob` (`AUDIT_RETENTION_DAYS`, 365); Hikari sozlamalari; `/grants` N+1 → 2 so'rov; test `auditRetention_deletesOldEvents_andVersionColumnsBump` + grant ro'yxati.
 
 ## 6-bosqich — Testlar, CI va UI
 - [ ] **M-21:** admin boshqaruvi (create/disable/enable/reset-2fa) va parol almashtirish uchun testlar.

@@ -27,6 +27,8 @@ class AdminApiIT extends IntegrationTest {
     @Autowired uz.sellerflow.audit.AuditService auditService;
     @Autowired org.springframework.transaction.support.TransactionTemplate txTemplate;
     @Autowired uz.sellerflow.account.TermsGuard termsGuard;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
+    @Autowired uz.sellerflow.audit.AuditRetentionJob auditRetention;
     @Autowired uz.sellerflow.admin.LoginRateLimiter loginLimiter;
     @Autowired uz.sellerflow.admin.AdminAuthService authService;
 
@@ -585,6 +587,22 @@ class AdminApiIT extends IntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from businesses", Long.class)).isEqualTo(2);
     }
 
+    /** LOW (DB): audit saqlash muddati; @Version lost update'ni to'xtatadi. */
+    @Test
+    void auditRetention_deletesOldEvents_andVersionColumnsBump() {
+        long u = onboardedUser();
+        jdbc.update("update audit_events set created_at = now() - interval '400 days' where action = 'USER_REGISTERED'");
+        long before = jdbc.queryForObject("select count(*) from audit_events", Long.class);
+        assertThat(auditRetention.run()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events", Long.class)).isEqualTo(before - 1);
+        long v0 = jdbc.queryForObject("select version from users where telegram_user_id = ?", Long.class, u);
+        text(u, Texts.BTN_SETTINGS);
+        click(u, "Akkauntni o‘chirish");
+        click(u, "Davom etish");
+        click(u, "Ha, so‘rov yuborilsin");
+        assertThat(jdbc.queryForObject("select version from users where telegram_user_id = ?", Long.class, u)).isGreaterThan(v0);
+    }
+
     /** LOW (maxfiylik): shartlar matni o'zgarib versiya o'zgarmasa — xato. */
     @Test
     void termsVersion_isBoundToTextHash() {
@@ -606,6 +624,9 @@ class AdminApiIT extends IntegrationTest {
         click(u, "Ruxsat berish");
         assertThat(jdbc.queryForObject("select status from access_grants where id = ?", String.class, gid)).isEqualTo("APPROVED");
         assertThat(jdbc.queryForObject("select actor_id from audit_events where action = 'ACCESS_APPROVED'", String.class)).isNotNull();
+        JsonNode list = json(call(HttpMethod.GET, "/grants", token, null));
+        assertThat(list.get(0).path("telegramUserId").asLong()).isEqualTo(u); // LOW (DB): batch so'rov
+        assertThat(list.get(0).path("adminEmail").asText()).isEqualToIgnoringCase(OWNER);
         call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"test\"}");
         assertThat(jdbc.queryForObject("select status from access_grants where id = ?", String.class, gid)).isEqualTo("REVOKED");
     }
@@ -619,7 +640,7 @@ class AdminApiIT extends IntegrationTest {
         var base = props;
         var purgeProps = new uz.sellerflow.common.SellerFlowProperties(base.telegram(), base.admin(), base.terms(), base.draft(),
                 base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true), base.rateLimit());
-        txTemplate.executeWithoutResult(st -> new DeletionJob(jdbc, auditService, purgeProps).run());
+        txTemplate.executeWithoutResult(st -> new DeletionJob(jdbc, auditService, purgeProps, txManager).run());
         assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, u)).isZero();
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACCOUNT_PURGED'", Long.class)).isEqualTo(1);
     }
@@ -632,7 +653,7 @@ class AdminApiIT extends IntegrationTest {
         var base = props;
         var purgeProps = new uz.sellerflow.common.SellerFlowProperties(base.telegram(), base.admin(), base.terms(), base.draft(),
                 base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true), base.rateLimit());
-        var job = new DeletionJob(jdbc, auditService, purgeProps);
+        var job = new DeletionJob(jdbc, auditService, purgeProps, txManager);
         assertThat((int) txTemplate.execute(st -> job.run())).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, u)).isZero();
         assertThat(jdbc.queryForObject("select count(*) from users where status = 'CLOSED' and telegram_user_id < 0", Long.class)).isEqualTo(1);

@@ -56,6 +56,8 @@ public class AccessGrantService {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
+        @jakarta.persistence.Version
+        private long version;
         @Column(name = "business_id", nullable = false)
         private Long businessId;
         @Column(name = "admin_id", nullable = false)
@@ -114,7 +116,7 @@ public class AccessGrantService {
 
         @Modifying
         @Query(nativeQuery = true, value = """
-                update access_grants set status = 'EXPIRED'
+                update access_grants set status = 'EXPIRED', version = version + 1
                 where (status = 'APPROVED' and expires_at <= now())
                    or (status = 'REQUESTED' and requested_at < now() - interval '24 hours')""")
         int expireOld();

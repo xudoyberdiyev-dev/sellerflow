@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import uz.sellerflow.audit.AuditService;
 import uz.sellerflow.audit.AuditService.Actor;
 import uz.sellerflow.common.SellerFlowProperties;
@@ -26,47 +25,61 @@ public class DeletionJob {
     private final JdbcTemplate jdbc;
     private final AuditService audit;
     private final SellerFlowProperties props;
+    private final org.springframework.transaction.support.TransactionTemplate tx;
 
-    public DeletionJob(JdbcTemplate jdbc, AuditService audit, SellerFlowProperties props) {
+    public DeletionJob(JdbcTemplate jdbc, AuditService audit, SellerFlowProperties props,
+                       org.springframework.transaction.PlatformTransactionManager tm) {
         this.jdbc = jdbc;
         this.audit = audit;
         this.props = props;
+        this.tx = new org.springframework.transaction.support.TransactionTemplate(tm);
+        // LOW (DB): har akkaunt alohida tranzaksiyada — bittasi xato bersa qolganlari qaytarilmaydi
+        this.tx.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Scheduled(cron = "0 15 3 * * *", zone = "Asia/Tashkent")
-    @Transactional
     public int run() {
         int grace = props.deletion() == null ? 30 : props.deletion().graceDays();
         boolean purge = props.deletion() != null && props.deletion().purgeData();
         List<Long> due = jdbc.queryForList("""
                 select id from users where status = 'DELETION_REQUESTED'
                   and deletion_requested_at < now() - make_interval(days => ?)""", Long.class, grace);
+        int closed = 0;
         for (Long userId : due) {
-            Long businessId = jdbc.query("select id from businesses where owner_user_id = ?",
-                    rs -> rs.next() ? rs.getLong(1) : null, userId);
-            jdbc.update("delete from telegram_flows where user_id = ?", userId);
-            if (businessId != null) {
-                jdbc.update("update businesses set business_name = null, display_name = null, updated_at = now() where id = ?", businessId);
-                jdbc.update("update access_grants set status = 'REVOKED', revoked_at = now(), revoked_by = 'SYSTEM' "
-                        + "where business_id = ? and status in ('REQUESTED','APPROVED')", businessId);
-                if (purge) {
-                    jdbc.update("delete from calculation_history where business_id = ?", businessId);
-                    jdbc.update("delete from products where business_id = ?", businessId);
-                }
+            try {
+                tx.executeWithoutResult(st -> closeOne(userId, grace, purge));
+                closed++;
+            } catch (RuntimeException e) {
+                log.error("Deletion job failed for user {} — will retry next run", userId, e);
             }
-            if (purge) {
-                // M-23: purge yoqilgan bo'lsa Telegram ID ham psevdonimga almashtiriladi (shaxs bilan bog'lanish uziladi)
-                jdbc.update("update users set status = 'CLOSED', telegram_user_id = ?, updated_at = now() where id = ?",
-                        AccountService.pseudonymousTelegramId(), userId);
-            } else {
-                jdbc.update("update users set status = 'CLOSED', updated_at = now() where id = ?", userId);
-            }
-            audit.record(Actor.SYSTEM, "deletion-job", businessId, "ACCOUNT_CLOSED", "USER", userId,
-                    "grace " + grace + " days; commercial data " + (purge ? "purged, telegram id pseudonymized" : "retained (pending legal policy)"));
         }
-        if (!due.isEmpty()) log.info("Closed {} accounts after deletion grace period", due.size());
+        if (closed > 0) log.info("Closed {} accounts after deletion grace period", closed);
         if (purge) purgePreviouslyClosed();
-        return due.size();
+        return closed;
+    }
+
+    private void closeOne(Long userId, int grace, boolean purge) {
+        Long businessId = jdbc.query("select id from businesses where owner_user_id = ?",
+                rs -> rs.next() ? rs.getLong(1) : null, userId);
+        jdbc.update("delete from telegram_flows where user_id = ?", userId);
+        if (businessId != null) {
+            jdbc.update("update businesses set business_name = null, display_name = null, updated_at = now() where id = ?", businessId);
+            jdbc.update("update access_grants set status = 'REVOKED', revoked_at = now(), revoked_by = 'SYSTEM', version = version + 1 "
+                    + "where business_id = ? and status in ('REQUESTED','APPROVED')", businessId);
+            if (purge) {
+                jdbc.update("delete from calculation_history where business_id = ?", businessId);
+                jdbc.update("delete from products where business_id = ?", businessId);
+            }
+        }
+        if (purge) {
+            // M-23: purge yoqilgan bo'lsa Telegram ID ham psevdonimga almashtiriladi (shaxs bilan bog'lanish uziladi)
+            jdbc.update("update users set status = 'CLOSED', telegram_user_id = ?, updated_at = now(), version = version + 1 where id = ?",
+                    AccountService.pseudonymousTelegramId(), userId);
+        } else {
+            jdbc.update("update users set status = 'CLOSED', updated_at = now(), version = version + 1 where id = ?", userId);
+        }
+        audit.record(Actor.SYSTEM, "deletion-job", businessId, "ACCOUNT_CLOSED", "USER", userId,
+                "grace " + grace + " days; commercial data " + (purge ? "purged, telegram id pseudonymized" : "retained (pending legal policy)"));
     }
 
     /**
@@ -76,18 +89,22 @@ public class DeletionJob {
     private void purgePreviouslyClosed() {
         List<Long> old = jdbc.queryForList("select id from users where status = 'CLOSED' and telegram_user_id > 0", Long.class);
         for (Long userId : old) {
-            Long businessId = jdbc.query("select id from businesses where owner_user_id = ?",
-                    rs -> rs.next() ? rs.getLong(1) : null, userId);
-            if (businessId != null) {
-                jdbc.update("delete from calculation_history where business_id = ?", businessId);
-                jdbc.update("delete from products where business_id = ?", businessId);
-            }
-            jdbc.update("delete from telegram_flows where user_id = ?", userId);
-            jdbc.update("update users set telegram_user_id = ?, updated_at = now() where id = ?",
-                    AccountService.pseudonymousTelegramId(), userId);
-            audit.record(Actor.SYSTEM, "deletion-job", businessId, "ACCOUNT_PURGED", "USER", userId,
-                    "previously closed account purged after DELETION_PURGE_DATA was enabled");
+            tx.executeWithoutResult(st -> purgeOne(userId));
         }
         if (!old.isEmpty()) log.info("Purged {} previously closed accounts", old.size());
+    }
+
+    private void purgeOne(Long userId) {
+        Long businessId = jdbc.query("select id from businesses where owner_user_id = ?",
+                rs -> rs.next() ? rs.getLong(1) : null, userId);
+        if (businessId != null) {
+            jdbc.update("delete from calculation_history where business_id = ?", businessId);
+            jdbc.update("delete from products where business_id = ?", businessId);
+        }
+        jdbc.update("delete from telegram_flows where user_id = ?", userId);
+        jdbc.update("update users set telegram_user_id = ?, updated_at = now(), version = version + 1 where id = ?",
+                AccountService.pseudonymousTelegramId(), userId);
+        audit.record(Actor.SYSTEM, "deletion-job", businessId, "ACCOUNT_PURGED", "USER", userId,
+                "previously closed account purged after DELETION_PURGE_DATA was enabled");
     }
 }
