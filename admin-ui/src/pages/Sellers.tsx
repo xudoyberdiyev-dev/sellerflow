@@ -1,112 +1,141 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ban, KeyRound, RotateCcw, Search } from 'lucide-react'
-import { api, errorText, fmtDate, type Me } from '../api'
-import { Alert, Badge, Button, Card, Input, PageTitle, Select, Table, Td } from '../ui'
-import { useLoad } from './useLoad'
-import { useBusy } from './useBusy'
+import { api, download, errorText, type Me } from '../api'
+import {
+  Badge, Button, ChannelTag, DataTable, Drawer, Input, PrivacyGuard, Select, SkeletonText, Tabs,
+  formatDate, formatDateTime, formatNumber, type Column,
+} from '../components'
 import { useShell } from '../shell'
+import { AccountBadge, PageHeader, Pager, PeriodSelect } from './common'
+import { ACCOUNT_STATUS, CHANNEL_OPTIONS, channelId, periodParams, sellerName, today } from './labels'
+import { useSellerStatusAction } from './useSellerStatusAction'
+import { useLoad } from './useLoad'
 
-interface Seller {
+export interface SellerRow {
   telegramUserId: number; status: string; createdAt: string; deletionRequestedAt: string | null
   businessId: number | null; primaryChannel: string | null; planCode: string | null; activatedAt: string | null
 }
-interface Page { total: number; page: number; size: number; items: Seller[] }
+export interface SellerCard extends SellerRow {
+  businessName: string | null; displayName: string | null; terms: { version: string; acceptedAt: string } | null
+  productCount: number; savedCalculationCount: number; lastActivityAt: string | null; lastStatusChange: string | null
+}
+interface Page { total: number; page: number; size: number; counts: Record<string, number>; items: SellerRow[] }
 
 const SIZE = 25
 
 export function Sellers({ me }: { me: Me }) {
   const [page, setPage] = useState(0)
-  const [status, setStatus] = useState('')
-  const [query, setQuery] = useState('')
-  const [tgId, setTgId] = useState('')
-  const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
+  const [tab, setTab] = useState('all')
+  const [q, setQ] = useState('')
+  const [tg, setTg] = useState('')
+  const [channel, setChannel] = useState('')
+  const [range, setRange] = useState('')
+  const [preview, setPreview] = useState<SellerRow | null>(null)
+  const [exporting, setExporting] = useState(false)
   const nav = useNavigate()
-  const { run } = useBusy()
-  const { confirm, toast } = useShell()
-  const list = useLoad((signal) => {
-    const q = new URLSearchParams({ page: String(page), size: String(SIZE) })
-    if (status) q.set('status', status)
-    if (tgId) q.set('telegramUserId', tgId)
-    return api<Page>(`/sellers?${q}`, { signal })
-  }, [page, status, tgId])
+  const { toast } = useShell()
+  const statusAction = useSellerStatusAction()
   const superadmin = me.role === 'SUPERADMIN'
 
-  async function act(id: number, action: 'suspend' | 'reactivate') {
-    // D-3: window.prompt o'rniga ConfirmDialog — sabab majburiy (kamida 10 belgi), auditga yoziladi
-    const reason = await confirm(action === 'suspend'
-      ? { title: 'Sotuvchini bloklash', description: `Sotuvchi ${id} botdan foydalana olmaydi. Ma’lumotlari saqlanadi, faol kirish ruxsatlari bekor qilinadi.`, confirmLabel: 'Bloklash', tone: 'danger', requireReason: true }
-      : { title: 'Qayta faollashtirish', description: `Sotuvchi ${id} botdan yana foydalana oladi.`, confirmLabel: 'Faollashtirish', tone: 'warning', requireReason: true })
-    if (reason === null) return
-    await run(async () => { try {
-      await api(`/sellers/${id}/${action}`, { method: 'POST', body: { reason } })
-      toast({ tone: 'success', title: action === 'suspend' ? 'Sotuvchi bloklandi' : 'Sotuvchi qayta faollashtirildi', audit: true })
-      setMsg(null)
-      list.reload()
+  const list = useLoad((signal) => {
+    const p = new URLSearchParams({ page: String(page), size: String(SIZE) })
+    if (tab !== 'all') p.set('status', tab)
+    if (tg) p.set('telegramUserId', tg)
+    if (channel) p.set('channel', channel)
+    periodParams(range, p)
+    return api<Page>(`/sellers?${p}`, { signal })
+  }, [page, tab, tg, channel, range])
+  const counts = list.data?.counts ?? {}
+  const totalAll = Object.values(counts).reduce((a, b) => a + b, 0)
+  const reset = (fn: () => void) => { fn(); setPage(0) }
+
+  const exportCsv = async () => {
+    setExporting(true)
+    try {
+      await download('/sellers/export.csv', `sellerflow-sotuvchilar-${today()}.csv`)
+      toast({ tone: 'success', title: 'Eksport tayyor', description: 'Faqat metadata — tijoriy qiymatlar yo‘q.', audit: true })
     } catch (e) {
-      setMsg({ kind: 'error', text: errorText(e) })
-    } })
+      toast({ tone: 'danger', title: errorText(e) })
+    } finally {
+      setExporting(false)
+    }
   }
 
-  const d = list.data
-  const pages = d ? Math.max(1, Math.ceil(d.total / SIZE)) : 1
+  const columns: Column<SellerRow>[] = [
+    { key: 'telegramUserId', header: 'Telegram ID', hideable: false, render: (r) => <span className="sf-id">{r.telegramUserId}</span> },
+    { key: 'status', header: 'Holat', render: (r) => <AccountBadge status={r.status} /> },
+    { key: 'primaryChannel', header: 'Asosiy kanal', render: (r) => (r.primaryChannel ? <ChannelTag channel={channelId(r.primaryChannel)} /> : <span className="sf-cell-sub">—</span>) },
+    { key: 'planCode', header: 'Tarif', render: (r) => (r.planCode ? <Badge tone="brand" dot={false}>{r.planCode}</Badge> : <span className="sf-cell-sub">—</span>) },
+    { key: 'createdAt', header: 'Ro‘yxatdan o‘tgan', sortable: true, render: (r) => <span className="sf-num">{formatDateTime(r.createdAt)}</span> },
+    { key: 'activatedAt', header: 'Profil yaratilgan', defaultHidden: true, render: (r) => <span className="sf-num">{r.activatedAt ? formatDate(r.activatedAt) : '—'}</span> },
+    { key: 'deletionRequestedAt', header: 'O‘chirish so‘ralgan', defaultHidden: true, render: (r) => <span className="sf-num">{r.deletionRequestedAt ? formatDate(r.deletionRequestedAt) : '—'}</span> },
+  ]
+
   return (
-    <div>
-      <PageTitle title="Sotuvchilar" desc="Faqat metadata: holat, kanal, tarif va sanalar. Tannarx, foyda va tarix ko‘rsatilmaydi." />
-      {msg && <div className="mb-3"><Alert kind={msg.kind}>{msg.text}</Alert></div>}
-      <Card
-        title={d ? `Jami: ${d.total}` : 'Ro‘yxat'}
-        actions={
-          <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); setPage(0); setTgId(query.trim()) }}>
-            <Select value={status} onChange={(e) => { setPage(0); setStatus(e.target.value) }} aria-label="Holat">
-              <option value="">Barcha holatlar</option>
-              <option value="ACTIVE">Faol</option>
-              <option value="ONBOARDING">Ro‘yxatdan o‘tmoqda</option>
-              <option value="SUSPENDED">Bloklangan</option>
-              <option value="DELETION_REQUESTED">O‘chirish so‘ralgan</option>
-              <option value="CLOSED">Yopilgan</option>
-            </Select>
-            <Input placeholder="Telegram ID" value={query} onChange={(e) => setQuery(e.target.value.replace(/\D/g, ''))} className="w-36" />
-            <Button variant="secondary" type="submit" aria-label="Qidirish"><Search size={14} /></Button>
-          </form>
-        }
-      >
-        {list.error && <Alert>{list.error}</Alert>}
-        <Table head={['Telegram ID', 'Holat', 'Kanal', 'Tarif', 'Ro‘yxatdan o‘tgan', 'Amallar']} empty={!!d && d.items.length === 0}>
-          {d?.items.map((s) => (
-            <tr key={s.telegramUserId} className="hover:bg-stone-50">
-              <Td className="font-mono">{s.telegramUserId}</Td>
-              <Td>
-                <Badge value={s.status} />
-                {s.deletionRequestedAt && <div className="mt-0.5 text-xs text-stone-500">so‘rov: {fmtDate(s.deletionRequestedAt)}</div>}
-              </Td>
-              <Td>{s.primaryChannel ?? '—'}</Td>
-              <Td>{s.planCode ?? '—'}</Td>
-              <Td>{fmtDate(s.activatedAt ?? s.createdAt)}</Td>
-              <Td>
-                <div className="flex gap-1">
-                  {s.status === 'ACTIVE' && (
-                    <Button variant="ghost" title="Kirish so‘rovi" onClick={() => nav(`/grants?tg=${s.telegramUserId}`)}><KeyRound size={14} /></Button>
-                  )}
-                  {superadmin && s.status === 'ACTIVE' && (
-                    <Button variant="ghost" title="Bloklash" onClick={() => act(s.telegramUserId, 'suspend')}><Ban size={14} /></Button>
-                  )}
-                  {superadmin && (s.status === 'SUSPENDED' || s.status === 'DELETION_REQUESTED') && (
-                    <Button variant="ghost" title="Qayta faollashtirish" onClick={() => act(s.telegramUserId, 'reactivate')}><RotateCcw size={14} /></Button>
-                  )}
-                </div>
-              </Td>
-            </tr>
-          ))}
-        </Table>
-        <div className="mt-4 flex items-center justify-between text-sm text-stone-500">
-          <span>Sahifa {page + 1} / {pages}</span>
-          <div className="flex gap-2">
-            <Button variant="secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>Oldingi</Button>
-            <Button variant="secondary" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Keyingi</Button>
-          </div>
-        </div>
-      </Card>
+    <div className="sf-page">
+      <PageHeader title="Sotuvchilar" description="Bot foydalanuvchilari — faqat metadata. Tijoriy ma’lumot faqat sotuvchi roziligi bilan ochiladi."
+        actions={superadmin && <Button icon="download" loading={exporting} onClick={exportCsv}>Eksport (CSV)</Button>} />
+      <Tabs label="Holat bo‘yicha" value={tab} onChange={(v) => reset(() => setTab(v))} items={[
+        { value: 'all', label: 'Hammasi', count: totalAll },
+        ...['ACTIVE', 'ONBOARDING', 'SUSPENDED', 'DELETION_REQUESTED', 'CLOSED'].map((s) => ({ value: s, label: ACCOUNT_STATUS[s].label, count: counts[s] ?? 0 })),
+      ]} />
+      <DataTable caption="Sotuvchilar ro‘yxati" rowKey="telegramUserId" selectable={false} columns={columns} rows={list.data?.items ?? []} pageSize={SIZE}
+        loading={list.loading && !list.data} error={list.error} onRetry={list.reload}
+        emptyTitle={tg || channel || range ? 'Hech narsa topilmadi' : 'Hali sotuvchi yo‘q'}
+        emptyDescription={tg || channel || range ? 'Filtrlarni o‘zgartirib ko‘ring.' : 'Sotuvchilar botda /start bosgach shu yerda paydo bo‘ladi.'}
+        onRowClick={setPreview}
+        footer={list.data ? <Pager page={page} total={list.data.total} size={SIZE} onPage={setPage} /> : null}
+        toolbar={<>
+          <Input size="sm" icon="search" placeholder="Telegram ID" inputMode="numeric" value={q} style={{ width: 200 }} aria-label="Telegram ID bo‘yicha qidirish"
+            onChange={(e) => setQ(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => { if (e.key === 'Enter') reset(() => setTg(q)) }} />
+          <Select size="sm" aria-label="Kanal" value={channel} onChange={(e) => reset(() => setChannel(e.target.value))}
+            options={[{ value: '', label: 'Barcha kanallar' }, ...CHANNEL_OPTIONS]} />
+          <PeriodSelect value={range} onChange={(v) => reset(() => setRange(v))} />
+          {(tg || channel || range) && <Button size="sm" variant="ghost" icon="x" onClick={() => reset(() => { setQ(''); setTg(''); setChannel(''); setRange('') })}>Tozalash</Button>}
+        </>}
+        rowActions={(r) => [
+          { label: 'Tafsilotlarni ochish', icon: 'panel-right-open', onSelect: () => setPreview(r) },
+          { label: 'Sotuvchi kartasi', icon: 'arrow-up-right', onSelect: () => nav(`/sellers/${r.telegramUserId}`) },
+          { label: 'Telegram ID nusxalash', icon: 'copy', onSelect: () => { void navigator.clipboard?.writeText(String(r.telegramUserId)) } },
+          ...(superadmin && (r.status === 'ACTIVE' || r.status === 'SUSPENDED' || r.status === 'DELETION_REQUESTED')
+            ? [{ separator: true as const }, { label: r.status === 'ACTIVE' ? 'Bloklash' : 'Qayta faollashtirish', icon: 'ban', danger: r.status === 'ACTIVE',
+                onSelect: async () => { if (await statusAction(r.telegramUserId, r.status)) list.reload() } }] : []),
+        ]} />
+      <SellerDrawer row={preview} me={me} onClose={() => setPreview(null)} onChanged={() => { setPreview(null); list.reload() }} />
     </div>
+  )
+}
+
+function SellerDrawer({ row, me, onClose, onChanged }: { row: SellerRow | null; me: Me; onClose: () => void; onChanged: () => void }) {
+  const nav = useNavigate()
+  const statusAction = useSellerStatusAction()
+  const card = useLoad((signal) => (row ? api<SellerCard>(`/sellers/${row.telegramUserId}`, { signal }) : Promise.resolve(null)), [row?.telegramUserId])
+  const c = card.data
+  const canToggle = me.role === 'SUPERADMIN' && row && ['ACTIVE', 'SUSPENDED', 'DELETION_REQUESTED'].includes(row.status)
+  return (
+    <Drawer open={!!row} onClose={onClose} title={c ? sellerName(c) : row ? `Sotuvchi ${row.telegramUserId}` : ''}
+      subtitle={row && <span className="sf-row"><AccountBadge status={row.status} /><span className="sf-id">{row.telegramUserId}</span></span>}
+      footer={row && <>
+        <Button variant="primary" iconRight="arrow-up-right" onClick={() => nav(`/sellers/${row.telegramUserId}`)}>Kartani ochish</Button>
+        {canToggle && <Button variant={row.status === 'ACTIVE' ? 'danger' : 'secondary'} icon="ban"
+          onClick={async () => { if (await statusAction(row.telegramUserId, row.status)) onChanged() }}>
+          {row.status === 'ACTIVE' ? 'Bloklash' : 'Qayta faollashtirish'}</Button>}
+      </>}>
+      {!c ? (card.error ? <p className="sf-cell-sub">{card.error}</p> : <SkeletonText lines={7} gap={14} />) : (
+        <div className="sf-stack">
+          <dl className="sf-dl">
+            <dt>Tarif</dt><dd>{c.planCode ? <Badge tone="brand" dot={false}>{c.planCode}</Badge> : '—'}</dd>
+            <dt>Asosiy kanal</dt><dd>{c.primaryChannel ? <ChannelTag channel={channelId(c.primaryChannel)} /> : '—'}</dd>
+            <dt>Ro‘yxatdan o‘tgan</dt><dd className="sf-num">{formatDateTime(c.createdAt)}</dd>
+            <dt>Oxirgi faollik</dt><dd className="sf-num">{c.lastActivityAt ? formatDateTime(c.lastActivityAt) : '—'}</dd>
+            <dt>Mahsulotlar</dt><dd className="sf-num">{formatNumber(c.productCount)}</dd>
+            <dt>Saqlangan hisoblashlar</dt><dd className="sf-num">{formatNumber(c.savedCalculationCount)}</dd>
+            <dt>Shartlar versiyasi</dt><dd className="sf-id">{c.terms?.version ?? '—'}</dd>
+          </dl>
+          <PrivacyGuard fields={['Tannarx', 'Reja narxi', 'Foyda', 'Hisoblashlar']} canRequest={c.status === 'ACTIVE'}
+            onAction={() => nav(`/sellers/${c.telegramUserId}?tab=data`)} actionLabel="Kirish so‘rash" />
+        </div>
+      )}
+    </Drawer>
   )
 }

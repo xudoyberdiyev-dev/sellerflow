@@ -437,8 +437,8 @@ public class AdminController {
         }
         var v = grants.view(p, id, productPage, historyPage);
         return m("grant", grantView(v.grant()),
-                "productPage", m("page", productPage, "total", v.productTotal(), "totalPages", v.productPages()),
-                "historyPage", m("page", historyPage, "total", v.historyTotal(), "totalPages", v.historyPages()),
+                "productPage", m("page", productPage, "size", v.productSize(), "total", v.productTotal(), "totalPages", v.productPages()),
+                "historyPage", m("page", historyPage, "size", v.historySize(), "total", v.historyTotal(), "totalPages", v.historyPages()),
                 "products", v.products().stream().map(x -> m("id", x.getId(), "name", x.getName(),
                         "unitCost", x.getUnitCost(), "plannedSalePrice", x.getPlannedSalePrice(), "sku", x.getSku())).toList(),
                 "history", v.history().stream().map(h -> m("id", h.getId(), "type", h.getType().name(),

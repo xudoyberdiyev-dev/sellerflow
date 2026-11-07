@@ -742,6 +742,7 @@ class AdminApiIT extends IntegrationTest {
         JsonNode d = json(call(HttpMethod.GET, "/grants/" + ga + "/data?productPage=0&historyPage=0", token, null));
         assertThat(d.path("productPage").path("total").asLong()).isEqualTo(1);
         assertThat(d.path("productPage").path("totalPages").asInt()).isEqualTo(1);
+        assertThat(d.path("productPage").path("size").asInt()).isPositive();
         assertThat(d.path("products").size()).isEqualTo(1);
         JsonNode d2 = json(call(HttpMethod.GET, "/grants/" + ga + "/data?productPage=1", token, null));
         assertThat(d2.path("products").size()).isZero();

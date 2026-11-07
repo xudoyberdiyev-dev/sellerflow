@@ -16,3 +16,10 @@
   .sf-topbar .sf-crumbs { display: none; }
 }
 .sf-health { display: inline-flex; align-items: center; }
+button.sf-health { background: none; border: 0; padding: 0; cursor: pointer; border-radius: var(--radius-badge); }
+button.sf-health:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.sf-boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; background: var(--bg-app); }
+@media (max-width: 640px) { .sf-health { display: none; } }
+.sf-user, .sf-user__name { color: var(--text-primary); }
+@media (max-width: 1100px) { .sf-user .sf-user__name, .sf-user .sf-user__role { display: none; } }
+@media (max-width: 480px) { .sf-topbar__search kbd, .sf-topbar__search .sf-kbd { display: none; } .sf-topbar { gap: 4px; } }

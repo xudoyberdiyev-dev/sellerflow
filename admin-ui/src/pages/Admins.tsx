@@ -1,95 +1,114 @@
-import { useState, type FormEvent } from 'react'
-import { api, errorText, fmtDate, type Me } from '../api'
-import { Alert, Badge, Button, Card, Field, Input, PageTitle, Select, Table, Td } from '../ui'
-import { useLoad } from './useLoad'
-import { useBusy } from './useBusy'
+import { useState } from 'react'
+import { api, errorText, type Me } from '../api'
+import {
+  Avatar, Badge, Button, DataTable, Field, Icon, InlineAlert, Input, Modal, SegmentedControl, formatDateTime, type Column,
+} from '../components'
 import { useShell } from '../shell'
+import { PageHeader } from './common'
+import { ADMIN_STATUS, ROLE_LABEL } from './labels'
+import { useBusy } from './useBusy'
+import { useLoad } from './useLoad'
 
 interface Admin { id: number; email: string; role: string; status: string; totpEnabled: boolean; mustChangePassword: boolean; createdAt: string; lastLoginAt: string | null }
 
+/** D-6: administratorlar — «o'chirish» = DISABLED (qattiq o'chirish yo'q, audit izi saqlanadi). */
 export function Admins({ me }: { me: Me }) {
   const list = useLoad((signal) => api<Admin[]>('/admins', { signal }))
+  const [dialog, setDialog] = useState(false)
+  const { confirm, toast } = useShell()
+
+  const act = async (a: Admin, action: 'disable' | 'enable' | 'reset-2fa') => {
+    const ok = await confirm(action === 'disable'
+      ? { title: 'Adminni o‘chirib qo‘yish', description: `${a.email} panelga kira olmaydi, barcha sessiyalari darhol yopiladi. Hisob va audit izi saqlanadi — keyin qayta yoqish mumkin.`, confirmLabel: 'O‘chirib qo‘yish', tone: 'danger' }
+      : action === 'reset-2fa'
+        ? { title: '2FA’ni qayta o‘rnatish', description: `${a.email} keyingi kirishda yangi QR kodni skanerlaydi. Joriy sessiyalari yopiladi.`, confirmLabel: '2FA’ni qayta o‘rnatish', tone: 'warning' }
+        : { title: 'Adminni yoqish', description: `${a.email} yana panelga kira oladi.`, confirmLabel: 'Yoqish', tone: 'info' })
+    if (ok === null) return
+    try {
+      await api(`/admins/${a.id}/${action}`, { method: 'POST' })
+      toast({ tone: 'success', title: action === 'disable' ? 'Admin o‘chirib qo‘yildi' : action === 'reset-2fa' ? '2FA qayta o‘rnatildi' : 'Admin yoqildi', audit: true })
+      list.reload()
+    } catch (e) {
+      toast({ tone: 'danger', title: errorText(e) })
+    }
+  }
+
+  const columns: Column<Admin>[] = [
+    { key: 'email', header: 'Administrator', hideable: false, sortable: true, render: (a) => (
+      <span className="sf-row" style={{ flexWrap: 'nowrap' }}><Avatar name={a.email} size={28} />
+        <span className="sf-cell-stack"><span style={{ fontWeight: 500 }}>{a.email}{a.id === me.id ? ' (siz)' : ''}</span>
+          {a.mustChangePassword && <span className="sf-cell-sub">Vaqtinchalik parol</span>}</span></span>) },
+    { key: 'role', header: 'Rol', sortable: true, render: (a) => <Badge tone={a.role === 'SUPERADMIN' ? 'brand' : 'info'} dot={false}>{ROLE_LABEL[a.role] ?? a.role}</Badge> },
+    { key: 'status', header: 'Holat', render: (a) => <Badge tone={ADMIN_STATUS[a.status]?.tone ?? 'neutral'}>{ADMIN_STATUS[a.status]?.label ?? a.status}</Badge> },
+    { key: 'totpEnabled', header: '2FA', render: (a) => (a.totpEnabled
+      ? <span className="sf-row" style={{ color: 'var(--success-text)' }}><Icon name="shield-check" size={14} />Ulangan</span>
+      : <span className="sf-row" style={{ color: 'var(--warning-text)' }}><Icon name="shield-alert" size={14} />Ulanmagan</span>) },
+    { key: 'lastLoginAt', header: 'Oxirgi kirish', sortable: true, render: (a) => <span className="sf-num">{a.lastLoginAt ? formatDateTime(a.lastLoginAt) : '—'}</span> },
+    { key: 'createdAt', header: 'Yaratilgan', defaultHidden: true, render: (a) => <span className="sf-num">{formatDateTime(a.createdAt)}</span> },
+  ]
+
+  return (
+    <div className="sf-page">
+      <PageHeader title="Administratorlar" description="Superadmin — barcha amallar. Support — statistika, sotuvchilar ro‘yxati va o‘z kirish so‘rovlari."
+        actions={<Button variant="primary" icon="user-plus" onClick={() => setDialog(true)}>Admin qo‘shish</Button>} />
+      <DataTable caption="Administratorlar" selectable={false} columns={columns} rows={list.data ?? []} pageSize={25}
+        loading={list.loading && !list.data} error={list.error} onRetry={list.reload} emptyTitle="Administrator yo‘q"
+        rowActions={(a) => (a.id === me.id ? [{ label: 'Bu sizning hisobingiz', icon: 'user-round', disabled: true }] : [
+          a.status === 'ACTIVE'
+            ? { label: 'O‘chirib qo‘yish', icon: 'user-x', danger: true, onSelect: () => act(a, 'disable') }
+            : { label: 'Yoqish', icon: 'user-check', onSelect: () => act(a, 'enable') },
+          { label: '2FA’ni qayta o‘rnatish', icon: 'rotate-ccw-key', onSelect: () => act(a, 'reset-2fa') },
+        ])} />
+      <CreateAdminModal open={dialog} onClose={() => setDialog(false)} onCreated={(email) => {
+        setDialog(false)
+        toast({ tone: 'success', title: 'Admin yaratildi', description: `Vaqtinchalik parolni ${email} ga xavfsiz kanal orqali bering. Birinchi kirishda parol almashtiriladi va 2FA ulanadi.`, audit: true })
+        list.reload()
+      }} />
+    </div>
+  )
+}
+
+function CreateAdminModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (email: string) => void }) {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('SUPPORT')
   const [pass, setPass] = useState('')
-  const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
+  const [touched, setTouched] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { busy, run } = useBusy()
-  const { confirm, toast } = useShell()
-
-  async function create(e: FormEvent) {
-    e.preventDefault()
-    await run(async () => { try {
-      await api('/admins', { method: 'POST', body: { email, role, tempPassword: pass } })
-      setMsg({ kind: 'success', text: `Admin yaratildi. Vaqtinchalik parolni ${email} ga xavfsiz kanal orqali bering — birinchi kirishda 2FA ulanadi.` })
-      setEmail(''); setPass('')
-      list.reload()
+  const emailBad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const passBad = pass.length < 12 || new TextEncoder().encode(pass).length > 72
+  const close = () => { setEmail(''); setPass(''); setRole('SUPPORT'); setTouched(false); setError(null); onClose() }
+  const submit = () => run(async () => {
+    setTouched(true)
+    if (emailBad || passBad) return
+    try {
+      await api('/admins', { method: 'POST', body: { email: email.trim(), role, tempPassword: pass } })
+      const e = email.trim()
+      setEmail(''); setPass(''); setRole('SUPPORT'); setTouched(false); setError(null)
+      onCreated(e)
     } catch (err) {
-      setMsg({ kind: 'error', text: errorText(err) })
-    } })
-  }
-
-  async function act(id: number, action: 'disable' | 'enable' | 'reset-2fa') {
-    // D-3: window.confirm o'rniga ConfirmDialog
-    const ok = await confirm(action === 'disable'
-      ? { title: 'Adminni o‘chirib qo‘yish', description: 'Admin panelga kira olmaydi. Barcha sessiyalari darhol yopiladi.', confirmLabel: 'O‘chirib qo‘yish', tone: 'danger' }
-      : action === 'reset-2fa'
-        ? { title: '2FA’ni qayta o‘rnatish', description: 'Keyingi kirishda yangi QR kod beriladi. Joriy sessiyalar yopiladi.', confirmLabel: '2FA’ni qayta o‘rnatish', tone: 'warning' }
-        : { title: 'Adminni yoqish', description: 'Admin yana panelga kira oladi.', confirmLabel: 'Yoqish', tone: 'info' })
-    if (ok === null) return
-    await run(async () => { try {
-      await api(`/admins/${id}/${action}`, { method: 'POST' })
-      toast({ tone: 'success', title: action === 'disable' ? 'Admin o‘chirib qo‘yildi' : action === 'reset-2fa' ? '2FA qayta o‘rnatildi' : 'Admin yoqildi', audit: true })
-      list.reload()
-    } catch (err) {
-      setMsg({ kind: 'error', text: errorText(err) })
-    } })
-  }
-
+      setError(errorText(err))
+    }
+  })
   return (
-    <div>
-      <PageTitle title="Administratorlar" desc="SUPERADMIN — hamma amallar. SUPPORT — statistika, sotuvchilar ro‘yxati va o‘z kirish so‘rovlari." />
-      {msg && <div className="mb-3"><Alert kind={msg.kind}>{msg.text}</Alert></div>}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Yangi admin">
-          <form onSubmit={create} className="space-y-3">
-            <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-            <Field label="Rol">
-              <Select value={role} onChange={(e) => setRole(e.target.value)} className="w-full">
-                <option value="SUPPORT">SUPPORT</option>
-                <option value="SUPERADMIN">SUPERADMIN</option>
-              </Select>
-            </Field>
-            <Field label="Vaqtinchalik parol" hint="Kamida 12 belgi. Admin birinchi kirishda almashtiradi.">
-              <Input type="password" required minLength={12} autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} />
-            </Field>
-            <Button type="submit" className="w-full" disabled={busy}>Yaratish</Button>
-          </form>
-        </Card>
-        <Card title="Ro‘yxat" className="lg:col-span-2">
-          {list.error && <Alert>{list.error}</Alert>}
-          <Table head={['Email', 'Rol', 'Holat', '2FA', 'Oxirgi kirish', '']}>
-            {list.data?.map((a) => (
-              <tr key={a.id} className="hover:bg-stone-50">
-                <Td>{a.email}{a.id === me.id && <span className="ml-1 text-xs text-stone-400">(siz)</span>}</Td>
-                <Td>{a.role}</Td>
-                <Td><Badge value={a.status} /></Td>
-                <Td>{a.totpEnabled ? 'ulangan' : <span className="text-amber-700">ulanmagan</span>}</Td>
-                <Td className="text-stone-500">{fmtDate(a.lastLoginAt)}</Td>
-                <Td>
-                  {a.id !== me.id && (
-                    <div className="flex gap-1">
-                      {a.status === 'ACTIVE'
-                        ? <Button variant="ghost" onClick={() => act(a.id, 'disable')}>O‘chirish</Button>
-                        : <Button variant="ghost" onClick={() => act(a.id, 'enable')}>Yoqish</Button>}
-                      <Button variant="ghost" onClick={() => act(a.id, 'reset-2fa')}>2FA reset</Button>
-                    </div>
-                  )}
-                </Td>
-              </tr>
-            ))}
-          </Table>
-        </Card>
-      </div>
-    </div>
+    <Modal open={open} onClose={close} title="Yangi administrator" icon="user-plus" tone="info" width={520}
+      footer={<><Button onClick={close}>Bekor qilish</Button><Button variant="primary" loading={busy} onClick={submit}>Yaratish</Button></>}>
+      <form className="sf-form" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+        {error && <InlineAlert tone="danger">{error}</InlineAlert>}
+        <Field label="Email" error={touched && emailBad ? 'To‘g‘ri email kiriting.' : null}>
+          <Input type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ism@kompaniya.uz" />
+        </Field>
+        <div className="sf-field">
+          <span className="sf-field__label">Rol</span>
+          <SegmentedControl label="Rol" value={role} onChange={setRole} options={[{ value: 'SUPPORT', label: 'Support' }, { value: 'SUPERADMIN', label: 'Superadmin' }]} />
+          <div className="sf-field__hint">{role === 'SUPERADMIN' ? 'Barcha amallar, jumladan adminlar va audit.' : 'Statistika, sotuvchilar ro‘yxati va o‘z kirish so‘rovlari.'}</div>
+        </div>
+        <Field label="Vaqtinchalik parol" hint="12–72 belgi. Admin birinchi kirishda almashtiradi."
+          error={touched && passBad ? 'Parol 12–72 belgi bo‘lishi kerak.' : null}>
+          <Input type="password" autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} />
+        </Field>
+        <button type="submit" hidden />
+      </form>
+    </Modal>
   )
 }

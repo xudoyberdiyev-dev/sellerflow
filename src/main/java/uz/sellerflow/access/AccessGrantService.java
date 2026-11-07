@@ -132,7 +132,8 @@ public class AccessGrantService {
     }
 
     public record DataView(Grant grant, List<Product> products, List<HistoryEntry> history,
-                           long productTotal, int productPages, long historyTotal, int historyPages) {}
+                           long productTotal, int productPages, int productSize,
+                           long historyTotal, int historyPages, int historySize) {}
 
     private final GrantRepository grants;
     private final UserRepository users;
@@ -241,7 +242,7 @@ public class AccessGrantService {
         audit.record(Actor.ADMIN, admin.email(), b.getId(), "ACCESS_DATA_VIEWED", "ACCESS_GRANT", g.getId(),
                 "read-only p" + productPage + "/h" + historyPage);
         return new DataView(g, new java.util.ArrayList<>(pp.getContent()), hp.getContent(),
-                pp.getTotalElements(), pp.getTotalPages(), hp.getTotalElements(), hp.getTotalPages());
+                pp.getTotalElements(), pp.getTotalPages(), pp.getSize(), hp.getTotalElements(), hp.getTotalPages(), hp.getSize());
     }
 
     @Transactional
