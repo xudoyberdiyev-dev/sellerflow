@@ -46,6 +46,10 @@ public class AdminWebConfig implements WebMvcConfigurer {
         @Override
         protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
                 throws ServletException, IOException {
+            if (req.isSecure()) {
+                // HTTPS (reverse proxy X-Forwarded-Proto orqali ham) — brauzer keyin faqat HTTPS ishlatsin
+                res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+            }
             res.setHeader("X-Frame-Options", "DENY");
             res.setHeader("X-Content-Type-Options", "nosniff");
             res.setHeader("Referrer-Policy", "no-referrer");

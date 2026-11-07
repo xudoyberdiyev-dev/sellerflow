@@ -262,8 +262,9 @@ public class AdminAuthService {
 
     /** @return true — tiklash qo'llandi. */
     boolean recover(String email, String pass) {
-        if (pass.length() < MIN_PASSWORD) {
-            log.error("ADMIN_RECOVERY_PASSWORD must be at least {} characters — recovery skipped", MIN_PASSWORD);
+        if (pass.length() < MIN_PASSWORD || tooLong(pass)) {
+            log.error("ADMIN_RECOVERY_PASSWORD must be {}+ characters and at most {} bytes — recovery skipped",
+                    MIN_PASSWORD, MAX_PASSWORD_BYTES);
             return false;
         }
         Admin admin = admins.findByEmailIgnoreCase(email.strip()).orElse(null);
@@ -320,14 +321,14 @@ public class AdminAuthService {
         Instant now = Instant.now();
         Optional<Admin> found = email == null ? Optional.empty() : admins.findByEmailIgnoreCase(email.strip());
         if (found.isEmpty()) {
-            encoder.matches(password == null ? "" : password, dummyHash);
+            encoder.matches(password == null || tooLong(password) ? "" : password, dummyHash);
             loginFailed(null, email, "unknown_email");
             throw new Errors.Forbidden("INVALID_CREDENTIALS");
         }
         Admin a = found.get();
         // M-2: bloklangan/o'chirilgan akkaunt uchun ham BCrypt bajariladi va javob parolga bog'liq emas —
         // na javob, na vaqt parol to'g'riligini oshkor qilmaydi.
-        boolean passwordOk = password != null && encoder.matches(password, a.passwordHash);
+        boolean passwordOk = password != null && !tooLong(password) && encoder.matches(password, a.passwordHash);
         if (a.status != Status.ACTIVE) {
             loginFailed(a.id, a.email, "disabled");
             throw new Errors.Forbidden("INVALID_CREDENTIALS");
@@ -438,7 +439,7 @@ public class AdminAuthService {
     @Transactional(noRollbackFor = Errors.Validation.class)
     public void changePassword(Principal p, String currentToken, String current, String next) {
         Admin a = admins.findById(p.id()).orElseThrow(() -> new Errors.NotFound("admin"));
-        if (!encoder.matches(current == null ? "" : current, a.passwordHash)) {
+        if (current == null || tooLong(current) || !encoder.matches(current, a.passwordHash)) {
             if (admins.registerFailure(a.id, MAX_FAILED, Instant.now().plus(LOCK)) > 0) {
                 sessions.revokeAll(a.id);
                 audit.record(Actor.SYSTEM, "auth", null, "ADMIN_LOCKED", "ADMIN", a.id, "after failed current-password");
@@ -501,8 +502,16 @@ public class AdminAuthService {
         if (p == null || !p.isSuperadmin()) throw new Errors.Forbidden("SUPERADMIN_REQUIRED");
     }
 
+    /** BCrypt faqat birinchi 72 baytni hisobga oladi — undan uzun parol rad etiladi (qolgani jim e'tiborsiz qolmasin). */
+    static final int MAX_PASSWORD_BYTES = 72;
+
     static void validatePassword(String p) {
         if (p == null || p.length() < MIN_PASSWORD) throw new Errors.Validation("PASSWORD_TOO_SHORT");
+        if (tooLong(p)) throw new Errors.Validation("PASSWORD_TOO_LONG");
+    }
+
+    static boolean tooLong(String p) {
+        return p != null && p.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES;
     }
 
     @Scheduled(fixedDelayString = "PT6H", initialDelayString = "PT10M")

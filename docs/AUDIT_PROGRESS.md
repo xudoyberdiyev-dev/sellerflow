@@ -22,7 +22,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **M-6:** auditga xavfsizlik hodisalari (ADMIN_LOGIN_FAILED, ADMIN_LOCKED) va manba IP. — V4 `audit_events.source_ip` (so'rovdan avtomatik), `ADMIN_LOGIN_FAILED` (reason=…), UI audit jadvalida IP; test `failedLoginsAndLockout_areAudited_withSourceIp`.
 - [x] **M-7:** break-glass: `ADMIN_RECOVERY_EMAIL` + `ADMIN_RECOVERY_PASSWORD` env berilsa va shu email'li admin bloklangan/2FA yo'qotilgan bo'lsa — startupda qayta tiklash (audit bilan), hujjatlash. — `recoverFromEnvironment` (V5 `admin_recovery_log`: bir parol bir marta), OPERATIONS §4C; test `AdminRecoveryIT`.
 - [x] **M-8:** `docs/OPERATIONS.md` §4B: public HTTPS varianti uchun IP allowlist majburiy deb yozish, Caddy misoliga `remote_ip` cheklovi. — §4B qayta yozildi (`@allowed remote_ip`, aks holda 403; IP doimiy bo'lmasa SSH/VPN).
-- [ ] **LOW (admin):** HSTS sarlavhasi; parol uzunligi yuqori chegarasi (72 bayt, BCrypt); `/sellers` paging overflow → 400; SUPPORT uchun grant so'rovlariga limit (masalan, 1 sotuvchiga 24 soatda 3 ta).
+- [x] **LOW (admin):** HSTS sarlavhasi; parol uzunligi yuqori chegarasi (72 bayt, BCrypt); `/sellers` paging overflow → 400; SUPPORT uchun grant so'rovlariga limit (masalan, 1 sotuvchiga 24 soatda 3 ta). — HSTS (faqat HTTPS), `PASSWORD_TOO_LONG`, `PAGE_RANGE` (sellers + audit), `GRANT_LIMIT`; test `adminHardening_hstsPasswordLengthPagingAndGrantLimit`.
 
 ## 2-bosqich — Backup va ishonchlilik
 - [ ] **H-2 / M-17:** `backup-loop.sh`: rotatsiya faqat muvaffaqiyatli backupdan keyin, kamida oxirgi 7 nusxa doim saqlanadi; holat fayli (`/backups/status.json`: lastSuccessAt, lastError) yoziladi; xatoda Telegram alert (`ALERT_TELEGRAM_CHAT_ID`, bot tokeni orqali) — ixtiyoriy env.

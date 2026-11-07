@@ -118,6 +118,11 @@ public class AccessGrantService {
                 where (status = 'APPROVED' and expires_at <= now())
                    or (status = 'REQUESTED' and requested_at < now() - interval '24 hours')""")
         int expireOld();
+
+        @Query(nativeQuery = true, value = """
+                select count(*) from access_grants
+                where admin_id = ?1 and business_id = ?2 and requested_at > now() - interval '24 hours'""")
+        long countRecent(Long adminId, Long businessId);
     }
 
     public record DataView(Grant grant, List<Product> products, List<HistoryEntry> history) {}
@@ -143,6 +148,9 @@ public class AccessGrantService {
 
     // ================================================================= admin side
 
+    /** SUPPORT roli uchun: bitta sotuvchiga 24 soatda ko'pi bilan shuncha kirish so'rovi. */
+    static final int SUPPORT_GRANTS_PER_DAY = 3;
+
     @Transactional
     public Grant request(Principal admin, long telegramUserId, String purpose, int minutes) {
         if (purpose == null || purpose.strip().length() < 10) throw new Errors.Validation("PURPOSE_REQUIRED");
@@ -150,6 +158,10 @@ public class AccessGrantService {
         UserAccount u = users.findByTelegramUserId(telegramUserId).orElseThrow(() -> new Errors.NotFound("seller"));
         if (u.getStatus() != AccountStatus.ACTIVE) throw new Errors.Validation("SELLER_NOT_ACTIVE");
         Business b = businesses.findByOwnerUserId(u.getId()).orElseThrow(() -> new Errors.NotFound("seller"));
+        if (!admin.isSuperadmin() && grants.countRecent(admin.id(), b.getId()) >= SUPPORT_GRANTS_PER_DAY) {
+            // Sotuvchini so'rovlar bilan bezovta qilmaslik / ijtimoiy muhandislikni cheklash
+            throw new Errors.Validation("GRANT_LIMIT");
+        }
         String p = purpose.strip();
         Grant g = grants.saveAndFlush(new Grant(b.getId(), admin.id(), p.length() > 300 ? p.substring(0, 300) : p, minutes));
         audit.record(Actor.ADMIN, admin.email(), b.getId(), "ACCESS_REQUESTED", "ACCESS_GRANT", g.getId(),

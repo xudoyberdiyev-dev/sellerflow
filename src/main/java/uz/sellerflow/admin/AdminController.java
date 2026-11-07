@@ -46,6 +46,8 @@ import java.util.Map;
 public class AdminController {
 
     static final String PRINCIPAL = "sf.admin";
+    /** Sahifa raqami chegarasi (int overflow va ma'nosiz offsetlar o'rniga 400). */
+    static final int MAX_PAGE = 100_000;
 
     public record LoginRequest(String email, String password, String code) {}
     public record TotpConfirm(String setupToken, String code) {}
@@ -198,6 +200,7 @@ public class AdminController {
                                        @RequestParam(required = false) String status,
                                        @RequestParam(required = false) Long telegramUserId) {
         int limit = Math.min(Math.max(size, 1), 200);
+        if (page < 0 || page > MAX_PAGE) throw new Errors.Validation("PAGE_RANGE");
         StringBuilder where = new StringBuilder(" where 1=1");
         List<Object> args = new java.util.ArrayList<>();
         if (status != null && !status.isBlank()) {
@@ -212,7 +215,7 @@ public class AdminController {
         long total = jdbc.queryForObject("select count(*) from users u" + where, Long.class, args.toArray());
         List<Object> pageArgs = new java.util.ArrayList<>(args);
         pageArgs.add(limit);
-        pageArgs.add(Math.max(page, 0) * limit);
+        pageArgs.add((long) page * limit);
         List<Map<String, Object>> items = jdbc.queryForList("""
                 select u.telegram_user_id as "telegramUserId", u.status, u.created_at as "createdAt",
                        u.deletion_requested_at as "deletionRequestedAt",
@@ -302,7 +305,8 @@ public class AdminController {
                                      @RequestParam(defaultValue = "0") int page,
                                      @RequestParam(defaultValue = "50") int size) {
         AdminAuthService.requireSuper(p);
-        var pg = audit.list(page, size);
+        if (page < 0 || page > MAX_PAGE) throw new Errors.Validation("PAGE_RANGE");
+        var pg = audit.list(page, Math.max(size, 1));
         return m("total", pg.getTotalElements(), "page", page, "items", pg.map(e -> m(
                 "id", e.getId(), "at", e.getCreatedAt().toString(), "actorType", e.getActorType(),
                 "actorId", e.getActorId(), "businessId", e.getBusinessId(), "action", e.getAction(),

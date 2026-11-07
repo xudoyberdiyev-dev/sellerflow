@@ -239,6 +239,46 @@ class AdminApiIT extends IntegrationTest {
         assertThat(json(call(HttpMethod.GET, "/audit", token, null)).path("items").get(0).has("sourceIp")).isTrue();
     }
 
+    /** LOW (admin) regression: HSTS (HTTPS), parol 72 bayt chegarasi, paging overflow, SUPPORT grant limiti. */
+    @Test
+    void adminHardening_hstsPasswordLengthPagingAndGrantLimit() throws Exception {
+        String token = owner();
+        // HSTS faqat HTTPS (proxy X-Forwarded-Proto) da
+        var https = java.net.http.HttpClient.newHttpClient().send(java.net.http.HttpRequest.newBuilder(
+                        java.net.URI.create("http://localhost:" + port + "/admin/api/v1/auth/me"))
+                .header("Authorization", "Bearer " + token).header("X-Forwarded-Proto", "https").build(),
+                java.net.http.HttpResponse.BodyHandlers.discarding());
+        assertThat(https.headers().firstValue("Strict-Transport-Security")).hasValueSatisfying(v -> assertThat(v).contains("max-age="));
+
+        // 72 baytdan uzun parol
+        String longPass = "a".repeat(73);
+        ResponseEntity<String> tooLong = call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"long" + System.nanoTime() + "@sellerflow.test\",\"role\":\"SUPPORT\",\"tempPassword\":\"" + longPass + "\"}");
+        assertThat(tooLong.getStatusCode().value()).isEqualTo(400);
+        assertThat(tooLong.getBody()).contains("PASSWORD_TOO_LONG");
+
+        // paging overflow
+        assertThat(call(HttpMethod.GET, "/sellers?page=2147483647&size=200", token, null).getStatusCode().value()).isEqualTo(400);
+        assertThat(call(HttpMethod.GET, "/sellers?page=-1", token, null).getStatusCode().value()).isEqualTo(400);
+        assertThat(call(HttpMethod.GET, "/audit?page=2147483647", token, null).getStatusCode().value()).isEqualTo(400);
+
+        // SUPPORT: bitta sotuvchiga 24 soatda 3 ta so'rov
+        String email = "lim" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
+        String support = loginWithNewPassword(email, "temporary-pass-123");
+        long u = onboardedUser();
+        String req = "{\"telegramUserId\":" + u + ",\"purpose\":\"Hisob natijasini tekshirish uchun\",\"minutes\":30}";
+        for (int i = 0; i < 3; i++) {
+            assertThat(call(HttpMethod.POST, "/grants", support, req).getStatusCode().value()).isEqualTo(200);
+        }
+        ResponseEntity<String> fourth = call(HttpMethod.POST, "/grants", support, req);
+        assertThat(fourth.getStatusCode().value()).isEqualTo(400);
+        assertThat(fourth.getBody()).contains("GRANT_LIMIT");
+        // SUPERADMIN uchun limit yo'q
+        assertThat(call(HttpMethod.POST, "/grants", token, req).getStatusCode().value()).isEqualTo(200);
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();
