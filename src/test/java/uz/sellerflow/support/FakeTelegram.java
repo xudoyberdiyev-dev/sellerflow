@@ -24,8 +24,18 @@ public class FakeTelegram implements TelegramGateway {
 
     private final List<Sent> sent = Collections.synchronizedList(new ArrayList<>());
 
+    private volatile RuntimeException failNext;
+
+    /** Keyingi sendMessage shu xato bilan tugaydi (bir marta). */
+    public void failNextSend(RuntimeException e) { failNext = e; }
+
     @Override
     public void sendMessage(long chatId, String html, Tg.Markup markup) {
+        RuntimeException f = failNext;
+        if (f != null) {
+            failNext = null;
+            throw f;
+        }
         sent.add(new Sent(chatId, html, markup));
     }
 
@@ -61,5 +71,5 @@ public class FakeTelegram implements TelegramGateway {
         return Optional.empty();
     }
 
-    public void clear() { sent.clear(); }
+    public void clear() { sent.clear(); failNext = null; }
 }

@@ -246,6 +246,36 @@ class BotFlowsIT extends IntegrationTest {
         assertThat(tg.forChat(u)).hasSize(1);
     }
 
+    /** M-10 regression: vaqtinchalik baza xatosida update "qayta ishlangan" deb belgilanmaydi va qayta keladi. */
+    @Test
+    void transientFailure_updateNotMarkedProcessed_andRetrySucceeds() {
+        long u = onboardedUser();
+        tg.clear();
+        Tg.User from = new Tg.User(u, false, "T", null, null);
+        Tg.Update up = new Tg.Update(4242, new Tg.Message(5, from, new Tg.Chat(u, "private"), "/menu"), null);
+        tg.failNextSend(new org.springframework.dao.TransientDataAccessResourceException("db down"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> dispatcher.handle(up))
+                .isInstanceOf(org.springframework.dao.TransientDataAccessResourceException.class);
+        assertThat(count("select count(*) from processed_updates where update_id = 4242")).isZero();
+        dispatcher.handle(up); // Telegram qayta yuboradi
+        assertThat(tg.forChat(u)).hasSize(1);
+        assertThat(count("select count(*) from processed_updates where update_id = 4242")).isEqualTo(1);
+        dispatcher.handle(up); // endi dublikat
+        assertThat(tg.forChat(u)).hasSize(1);
+    }
+
+    /** Oddiy (biznes/dastur) xato — update belgilanadi, foydalanuvchiga xato xabari, qayta ishlanmaydi. */
+    @Test
+    void nonTransientFailure_isMarkedProcessed() {
+        long u = onboardedUser();
+        tg.clear();
+        Tg.User from = new Tg.User(u, false, "T", null, null);
+        Tg.Update up = new Tg.Update(4343, new Tg.Message(5, from, new Tg.Chat(u, "private"), "/menu"), null);
+        tg.failNextSend(new IllegalStateException("bug"));
+        dispatcher.handle(up);
+        assertThat(count("select count(*) from processed_updates where update_id = 4343")).isEqualTo(1);
+    }
+
     @Test
     void groupChat_noBusinessFlow() {
         long u = newUserId();

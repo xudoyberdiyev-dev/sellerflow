@@ -48,6 +48,7 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 - **SKU:** biznes ichida katta-kichik harfdan qat'i nazar noyob. Arxivlangan mahsulot SKU'si ham band hisoblanadi.
 - **"Bitta faol jarayon":** faqat ko'rish bo'limlariga (ro'yxatlar, tariflar, yordam) o'tish qoralamani o'chirmaydi, u to'xtatib qo'yiladi. Yangi kiritish jarayonini boshlashda saqlanmagan ma'lumot bo'lsa, tasdiq so'raladi (UX-DEC-17).
 - **Admin API auth (H-1, 2026-11-07):** Spring Security qo'shilmadi (bog'liqlik va konfiguratsiya hajmi). O'rniga: `RequestFirewall` (eng birinchi filtr; `;`, `%2f`/`%5c`/`%2e`/`%25`/`%3b`, `\\`, `//`, `.`/`..` segmentlari → 400) va `AdminAuthInterceptor` (`/admin/api/**` path pattern — Spring MVC handler tanlaydigan yo'l bo'yicha). Deny-by-default: faqat `@PublicAdminEndpoint` (login, TOTP tasdiqlash) sessiyasiz ochiq.
+- **Update qayta ishlash semantikasi (M-10, 2026-11-07):** at-least-once. `processed_updates` belgisi update MUVAFFAQIYATLI qayta ishlangandan keyin qo'yiladi. Vaqtinchalik infratuzilma xatosida (`common/Infra.isTransient`: baza uzilishi, SQLState 08xxx/57Pxx) poller offset'ni surmaydi, backoff bilan qayta so'raydi — update yo'qolmaydi; foydalanuvchi ayrim xabarlarni ikki marta olishi mumkin. Dastur xatolari (bug) — eskicha: log, foydalanuvchiga umumiy xato, update belgilanadi. Poller `@PreDestroy` da to'xtaydi (joriy update tugashi ≤ 10 s kutiladi).
 
 ## Ochiq qolganlar (ishga tushirishdan oldin)
 

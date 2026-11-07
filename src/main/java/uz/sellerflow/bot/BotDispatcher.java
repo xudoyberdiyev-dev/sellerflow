@@ -19,7 +19,7 @@ import java.time.Instant;
  * qoralama muddati, marshrutlash va «bitta faol jarayon» siyosati (SF-PRD-02.01, 02.03).
  */
 @Component
-public class BotDispatcher {
+public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
 
     private static final Logger log = LoggerFactory.getLogger(BotDispatcher.class);
 
@@ -61,16 +61,23 @@ public class BotDispatcher {
 
     // =================================================================== entry
 
+    /**
+     * M-10 (at-least-once): update_id oldin qayta ishlangan bo'lsa — o'tkazib yuboriladi; belgi faqat MUVAFFAQIYATLI
+     * qayta ishlashdan keyin qo'yiladi. Baza uzilgan kabi vaqtinchalik xatolar ({@link uz.sellerflow.common.Infra})
+     * yuqoriga uzatiladi — poller offset'ni surmaydi va update qayta keladi.
+     */
+    @Override
     public void handle(Tg.Update u) {
-        // Telegram update_id takror kelsa — qayta ishlanmaydi
-        int inserted = jdbc.update("insert into processed_updates(update_id) values (?) on conflict do nothing", u.updateId());
-        if (inserted == 0) return;
+        Boolean seen = jdbc.queryForObject("select exists(select 1 from processed_updates where update_id = ?)",
+                Boolean.class, u.updateId());
+        if (Boolean.TRUE.equals(seen)) return;
 
         if (u.callbackQuery() != null) {
             handleCallback(u.callbackQuery());
         } else if (u.message() != null && u.message().from() != null && !u.message().from().isBot()) {
             handleMessage(u.message());
         }
+        jdbc.update("insert into processed_updates(update_id) values (?) on conflict do nothing", u.updateId());
     }
 
     private void handleMessage(Tg.Message m) {
@@ -134,6 +141,7 @@ public class BotDispatcher {
         } catch (Errors.Forbidden e) {
             ctx.send(Texts.FEATURE_LIMITED);
         } catch (RuntimeException e) {
+            if (uz.sellerflow.common.Infra.isTransient(e)) throw e; // M-10: update qayta ishlanadi
             log.error("Bot handling error for user {}", ctx.account.user().getId(), e);
             ctx.send(Texts.GENERIC_ERROR);
         }
