@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "sellerflow.rate-limit.max-updates=1000"
 })
 @Import(IntegrationTest.Config.class)
+// M-13: metrikalar eksporti (Prometheus) testlarda ham yoqilgan — production bilan bir xil kontekst
+@org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability(tracing = false)
 public abstract class IntegrationTest {
 
     private static final AtomicLong UPDATE_IDS = new AtomicLong(1_000_000);

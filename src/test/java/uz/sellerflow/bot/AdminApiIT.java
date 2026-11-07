@@ -279,6 +279,23 @@ class AdminApiIT extends IntegrationTest {
         assertThat(call(HttpMethod.POST, "/grants", token, req).getStatusCode().value()).isEqualTo(200);
     }
 
+    /** M-13: Prometheus metrikalari lokal tarmoqdan ochiq; tashqi IP (X-Forwarded-For) uchun 404. */
+    @Test
+    void prometheusMetrics_exposedLocally_hiddenFromInternet() throws Exception {
+        long u = onboardedUser();
+        assertThat(u).isPositive();
+        var client = java.net.http.HttpClient.newHttpClient();
+        var local = client.send(java.net.http.HttpRequest.newBuilder(
+                java.net.URI.create("http://localhost:" + port + "/actuator/prometheus")).build(),
+                java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertThat(local.statusCode()).isEqualTo(200);
+        assertThat(local.body()).contains("sellerflow_updates_total").contains("jvm_memory_used_bytes");
+        var external = client.send(java.net.http.HttpRequest.newBuilder(
+                java.net.URI.create("http://localhost:" + port + "/actuator/prometheus"))
+                .header("X-Forwarded-For", "203.0.113.10").build(), java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertThat(external.statusCode()).isEqualTo(404);
+    }
+
     /** M-12: Docker healthcheck uchun /actuator/health/container (db + bot). */
     @Test
     void containerHealthGroup_isExposed() throws Exception {

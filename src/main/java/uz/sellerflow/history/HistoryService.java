@@ -67,6 +67,7 @@ public class HistoryService {
             if (existing.get().getBusinessId() != c.businessId()) throw new Errors.NotFound("history");
             return new SaveResult(existing.get(), false);
         }
+        io.micrometer.core.instrument.Metrics.counter("sellerflow.history.saved").increment();
         HistoryEntry e = repo.saveAndFlush(new HistoryEntry(c.businessId(), c.userId(), c.resultId(), c.type(),
                 c.productId(), c.productNameSnapshot(), c.channelSnapshot(), c.inputSnapshot(), c.expenseSnapshot(),
                 c.outputSnapshot(), c.accuracyStatus(), c.calculationVersion(), c.calculatedAt(), c.sourceHistoryId()));

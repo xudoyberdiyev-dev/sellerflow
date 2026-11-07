@@ -106,6 +106,7 @@ public final class CalcModel {
     // ------------------------------------------------------------- engine calls
 
     public static ProfitResult computeProfit(Session s) {
+        io.micrometer.core.instrument.Metrics.counter("sellerflow.calculations", "type", "profit").increment();
         return CalculationEngine.profit(s.dec("price"), s.dec("cost"), expenses(s));
     }
 
@@ -117,6 +118,7 @@ public final class CalcModel {
     public static PriceResult computePrice(Session s) {
         PriceGoal goal = PriceGoal.valueOf(s.str("goal"));
         BigDecimal target = s.dec("target");
+        io.micrometer.core.instrument.Metrics.counter("sellerflow.calculations", "type", "price").increment();
         return CalculationEngine.price(goal, s.dec("cost"), expenses(s),
                 goal == PriceGoal.TARGET_PROFIT ? target : null,
                 goal == PriceGoal.TARGET_MARGIN ? target : null,

@@ -82,6 +82,7 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 - Admin panel → «Boshqaruv paneli» → «Tizim holati»: baza, bot holati, oxirgi muvaffaqiyatli so'rov va oxirgi xato.
 - `curl -s localhost:8080/actuator/health` → `{"status":"UP"}`. Tashqi uptime monitoring (masalan, UptimeRobot) uchun 4-banddagi HTTPS orqali `/actuator/health` ni ochiq qoldirish mumkin.
 - Loglar: `docker compose logs --since 1h app`.
+- Metrikalar (Prometheus formatida): `curl -s localhost:8080/actuator/prometheus` — faqat server/ichki tarmoqdan (tashqi IP uchun 404). Asosiylari: `sellerflow_updates_total{kind}`, `sellerflow_update_errors_total{type}`, `sellerflow_calculations_total{type}`, `telegram_api_calls_total{method,outcome}`, `telegram_api_latency_seconds`, JVM/Hikari/HTTP metrikalari.
 - Backup holati: admin panel «Tizim holati» → Backup; `docker compose ps` (backup servisi `unhealthy` bo'lsa — oxirgi muvaffaqiyatli backup 26 soatdan eski); `/actuator/health` backup xato/eskirgan bo'lsa `DOWN`; `docker compose logs backup | tail`.
 - Alert: `.env` da `ALERT_TELEGRAM_CHAT_ID` berilsa, backup xato bersa yoki eskirsa bot shu chat'ga yozadi (bir muammo uchun 24 soatda bir marta).
 

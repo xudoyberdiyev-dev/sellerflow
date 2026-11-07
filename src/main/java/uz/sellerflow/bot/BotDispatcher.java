@@ -70,7 +70,12 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
     public void handle(Tg.Update u) {
         Boolean seen = jdbc.queryForObject("select exists(select 1 from processed_updates where update_id = ?)",
                 Boolean.class, u.updateId());
-        if (Boolean.TRUE.equals(seen)) return;
+        if (Boolean.TRUE.equals(seen)) {
+            io.micrometer.core.instrument.Metrics.counter("sellerflow.updates", "kind", "duplicate").increment();
+            return;
+        }
+        io.micrometer.core.instrument.Metrics.counter("sellerflow.updates",
+                "kind", u.callbackQuery() != null ? "callback" : u.message() != null ? "message" : "other").increment();
 
         if (u.callbackQuery() != null) {
             handleCallback(u.callbackQuery());
@@ -143,9 +148,14 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
             // Soxta/eskirgan callback data yoki buzilgan kiritish — dastur xatosi emas, stacktrace'siz WARN
             log.warn("Malformed input for user {}: {}", ctx.account.user().getId(), e.toString());
+            io.micrometer.core.instrument.Metrics.counter("sellerflow.update.errors", "type", "malformed").increment();
             ctx.send(Texts.GENERIC_ERROR);
         } catch (RuntimeException e) {
-            if (uz.sellerflow.common.Infra.isTransient(e)) throw e; // M-10: update qayta ishlanadi
+            if (uz.sellerflow.common.Infra.isTransient(e)) {
+                io.micrometer.core.instrument.Metrics.counter("sellerflow.update.errors", "type", "transient").increment();
+                throw e; // M-10: update qayta ishlanadi
+            }
+            io.micrometer.core.instrument.Metrics.counter("sellerflow.update.errors", "type", "unexpected").increment();
             log.error("Bot handling error for user {}", ctx.account.user().getId(), e);
             ctx.send(Texts.GENERIC_ERROR);
         }
