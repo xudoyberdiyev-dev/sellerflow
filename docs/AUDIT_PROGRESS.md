@@ -26,7 +26,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 
 ## 2-bosqich — Backup va ishonchlilik
 - [x] **H-2 / M-17:** `backup-loop.sh`: rotatsiya faqat muvaffaqiyatli backupdan keyin, kamida oxirgi 7 nusxa doim saqlanadi; holat fayli (`/backups/status.json`: lastSuccessAt, lastError) yoziladi; xatoda Telegram alert (`ALERT_TELEGRAM_CHAT_ID`, bot tokeni orqali) — ixtiyoriy env. — rotatsiya faqat muvaffaqiyatdan keyin, MIN_KEEP=7, `status.json`, fayl 600; test `scripts/tests/backup-loop.test.sh` (CI). Telegram alert postgres image'da curl yo'qligi sababli ilovada (keyingi band) qilinadi.
-- [ ] **H-2 (davomi):** ilova `status.json` ni o'qiydi → admin `/health` va `/actuator/health` da backup holati; compose'da backup healthcheck (oxirgi muvaffaqiyat < 26 soat).
+- [x] **H-2 (davomi):** ilova `status.json` ni o'qiydi → admin `/health` va `/actuator/health` da backup holati; compose'da backup healthcheck (oxirgi muvaffaqiyat < 26 soat). — `ops/BackupMonitor` (HealthIndicator "backup", admin `/health.backup`, `ALERT_TELEGRAM_CHAT_ID` alert), compose backup healthcheck + app `/backups:ro`; test `BackupMonitorTest`.
 - [ ] **M-15 / M-16:** backupni shifrlash (`BACKUP_ENCRYPTION_PASSPHRASE` berilsa `gpg --symmetric` yoki `age`), fayl huquqlari 600; off-site nusxa uchun `rclone` misoli (`docs/OPERATIONS.md`).
 - [ ] **M-18:** `restore.sh`: tiklashdan oldin joriy bazaning xavfsizlik snapshoti; `--single-transaction`; xatoda to'xtash.
 - [ ] **M-12:** bot holatini aks ettiruvchi `HealthIndicator` (poller oxirgi muvaffaqiyati < 120 s); `app` uchun Docker healthcheck.

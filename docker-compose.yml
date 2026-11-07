@@ -32,6 +32,10 @@ services:
       SUPPORT_LABEL: ${SUPPORT_LABEL:-}
       SUPPORT_URL: ${SUPPORT_URL:-}
       DELETION_PURGE_DATA: ${DELETION_PURGE_DATA:-false}
+      ALERT_TELEGRAM_CHAT_ID: ${ALERT_TELEGRAM_CHAT_ID:-}
+    volumes:
+      # Backup holati (status.json) — faqat o'qish uchun
+      - ./backups:/backups:ro
     ports:
       # Admin panel va API faqat serverning o'zidan ochiq. Tashqaridan kirish: SSH tunnel yoki HTTPS reverse proxy (docs/OPERATIONS.md)
       - "127.0.0.1:8080:8080"
@@ -55,6 +59,13 @@ services:
       - ./backups:/backups
       - ./scripts/backup-loop.sh:/backup-loop.sh:ro
     entrypoint: ["bash", "/backup-loop.sh"]
+    healthcheck:
+      # Oxirgi muvaffaqiyatli backup 26 soatdan yangi bo'lishi shart (H-2)
+      test: ["CMD-SHELL", "s=$$(sed -n 's/.*\"lastSuccessAt\": *\"\\([^\"]*\\)\".*/\\1/p' /backups/status.json); [ -n \"$$s\" ] && [ $$(( $$(date +%s) - $$(date -d \"$$s\" +%s) )) -lt 93600 ]"]
+      interval: 10m
+      timeout: 10s
+      retries: 1
+      start_period: 15m
 
 volumes:
   pgdata:

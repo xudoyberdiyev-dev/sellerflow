@@ -54,6 +54,12 @@ sellerflow:
     grace-days: 30
     # Yuridik retention siyosati tasdiqlanguncha tijoriy ma'lumot o'chirilmaydi (faqat CLOSED + shaxsiy maydonlar tozalanadi)
     purge-data: ${DELETION_PURGE_DATA:false}
+  backup:
+    # H-2: backup servisi yozadigan holat fayli (compose: ./backups -> /backups:ro)
+    status-file: ${BACKUP_STATUS_FILE:/backups/status.json}
+    max-age-hours: 26
+    # Ixtiyoriy: backup xatosi/eskirishi haqida shu Telegram chat'ga (bot orqali) ogohlantirish
+    alert-chat-id: ${ALERT_TELEGRAM_CHAT_ID:}
   rate-limit:
     max-updates: 20
     window-seconds: 10

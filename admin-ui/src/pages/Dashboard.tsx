@@ -16,6 +16,7 @@ interface Stats {
 interface Health {
   database: string; bot: string; lastPollOkAt: string | null; lastErrorAt: string | null; lastError: string | null
   processedUpdates: number; activeDrafts: number; engineVersion: string; uptimeSeconds: number; serverTime: string
+  backup?: { state: string; lastSuccessAt: string | null; lastError: string | null; consecutiveFailures: number }
 }
 
 const CHANNEL: Record<string, string> = {
@@ -74,6 +75,12 @@ export function Dashboard() {
               <dt className="text-stone-500">Telegram bot</dt><dd>{h.bot === 'DISABLED' ? <span className="text-stone-500">o‘chiq (token yo‘q)</span> : <Badge value={h.bot} />}</dd>
               <dt className="text-stone-500">Oxirgi muvaffaqiyatli so‘rov</dt><dd>{fmtDate(h.lastPollOkAt)}</dd>
               <dt className="text-stone-500">Oxirgi xato</dt><dd>{h.lastErrorAt ? `${fmtDate(h.lastErrorAt)} — ${h.lastError}` : '—'}</dd>
+              <dt className="text-stone-500">Backup</dt>
+              <dd>
+                {!h.backup || h.backup.state === 'UNKNOWN' ? <span className="text-stone-500">ma’lumot yo‘q</span> : <Badge value={h.backup.state === 'OK' ? 'UP' : 'DOWN'} />}
+                {h.backup?.lastSuccessAt && <span className="ml-2 text-xs text-stone-500">oxirgi: {fmtDate(h.backup.lastSuccessAt)}</span>}
+                {h.backup?.lastError && h.backup.consecutiveFailures > 0 && <div className="mt-0.5 text-xs text-red-700">{h.backup.lastError}</div>}
+              </dd>
               <dt className="text-stone-500">Qayta ishlangan update’lar</dt><dd className="tabular-nums">{h.processedUpdates}</dd>
               <dt className="text-stone-500">Faol qoralamalar</dt><dd className="tabular-nums">{h.activeDrafts}</dd>
               <dt className="text-stone-500">Engine versiyasi</dt><dd className="font-mono">{h.engineVersion}</dd>

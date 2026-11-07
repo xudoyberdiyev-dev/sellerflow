@@ -66,10 +66,12 @@ public class AdminController {
     private final BotStatus bot;
     private final ObjectMapper mapper;
     private final LoginRateLimiter loginLimiter;
+    private final uz.sellerflow.ops.BackupMonitor backup;
 
     public AdminController(JdbcTemplate jdbc, AccountService accounts, SupportService support, AuditService audit,
                            AdminAuthService auth, AccessGrantService grants, BotStatus bot, ObjectMapper mapper,
-                           LoginRateLimiter loginLimiter) {
+                           LoginRateLimiter loginLimiter, uz.sellerflow.ops.BackupMonitor backup) {
+        this.backup = backup;
         this.jdbc = jdbc;
         this.accounts = accounts;
         this.support = support;
@@ -188,7 +190,13 @@ public class AdminController {
                 "activeDrafts", count("select count(*) from telegram_flows where flow_type is not null"),
                 "engineVersion", CalculationEngine.VERSION,
                 "uptimeSeconds", ManagementFactory.getRuntimeMXBean().getUptime() / 1000,
-                "serverTime", Instant.now().toString());
+                "serverTime", Instant.now().toString(),
+                "backup", backupView(backup.read()));
+    }
+
+    private static Map<String, Object> backupView(uz.sellerflow.ops.BackupMonitor.Status b) {
+        return m("state", b.state().name(), "lastSuccessAt", str(b.lastSuccessAt()), "lastSuccessFile", b.lastSuccessFile(),
+                "lastFailureAt", str(b.lastFailureAt()), "lastError", b.lastError(), "consecutiveFailures", b.consecutiveFailures());
     }
 
     // ================================================================= sellers
