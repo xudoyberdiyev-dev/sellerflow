@@ -56,6 +56,11 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
   - CLOSED akkaunt egasi «Yangi akkaunt ochish» tugmasi bilan yangidan boshlaydi: eski yozuv Telegram ID'dan ajratiladi (psevdonim), eski ma'lumot yangi akkauntga o'tmaydi; audit `CLOSED_ACCOUNT_DETACHED`.
 - **Shartlar versiyasi ↔ matn (LOW maxfiylik, 2026-11-07):** `TermsGuard` startupda `terms_uz.txt` SHA-256 ni `terms_versions` jadvaliga bog'laydi. Matn o'zgarib `TERMS_VERSION` o'zgarmasa ilova **ishga tushmaydi** (xato xabari versiyani oshirishni aytadi). Versiyani oshirish — barcha foydalanuvchidan qayta rozilik.
 - **Bloklash va audit (LOW maxfiylik):** SUSPENDED qilinganda REQUESTED/APPROVED grantlar DB'da `REVOKED (SYSTEM)`. USER audit hodisalarida `actor_id` — biznes egasining ichki user ID'si (Telegram ID emas). `DELETION_PURGE_DATA` keyin yoqilsa, DeletionJob oldin yopilgan akkauntlarni ham tozalaydi (`ACCOUNT_PURGED`).
+- **Hisob-kitob tuzatishlari (LOW hisob, 2026-11-07; engine 1.0.0 → 1.0.1):**
+  - Tavsiya narxi: yaxlitlangan nomzoddan keyin ko'pi bilan 2 qadam **pastga** ham tekshiriladi — `profit()` dagi foizli xarajat yaxlitlashi tufayli pastroq narx ham maqsadga yetishi mumkin edi (fuzz: masalan, tannarx 525 098, komissiya 32,93%, maqsad 39 897 → endi 842 396, avval 842 397). Tavsiya — maqsadga yetadigan eng kichik qadam. Yangi hisoblashlar `calculation_version = 1.0.1` bilan saqlanadi; eskilari o'zgarmaydi.
+  - `RoundingMode.UNNECESSARY` → `HALF_UP` (scale 10): 2 xonadan ortiq kasrli qiymat `ArithmeticException` bermaydi; mavjud kiritishlar uchun natija o'zgarmaydi.
+  - Raqam o'qish: minglik guruh `0` bilan boshlanmaydi (`"0,075"` endi 75 emas). Foiz maydonlari (`Money.parsePercent`) minglik ajratgichni umuman qabul qilmaydi; vergul/nuqta — o'nli kasr.
+  - `PlanService.isAllowed`: `LIMIT_APPLIED` faqat `used < limit_value` bo'lsa ruxsat; foydalanish soni berilmagan joyda (hisoblashlar) — xavfsiz rad. Mahsulot katalogi faol mahsulotlar soni bilan tekshiriladi.
 
 ## Ochiq qolganlar (ishga tushirishdan oldin)
 

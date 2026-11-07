@@ -278,4 +278,72 @@ class CalculationEngineTest {
         assertThat(Money.formatPercent(bd("14.8555"))).isEqualTo("14,86");
         assertThat(Money.formatPercent(bd("20.00"))).isEqualTo("20");
     }
+
+    // ------------------------------------------------------------ LOW (hisob) regression, 2026-11-07
+
+    /** Fuzz topgan holat: foiz xarajat yaxlitlashi tufayli 842 396 ham maqsadga yetadi — tavsiya 1 qadam past bo'lishi kerak. */
+    @Test
+    void recommendedPrice_isMinimalValidStep_notOneStepHigher() {
+        var ex = allZeroExcept(Expense.percent(COMMISSION, "32.93"));
+        PriceResult r = CalculationEngine.price(PriceGoal.TARGET_PROFIT, bd("525098"), ex, bd("39897"), null, bd("1"));
+        assertThat(r.status()).isEqualTo(PriceStatus.OK);
+        assertThat(r.recommendedPrice()).isEqualByComparingTo("842396");
+        assertThat(CalculationEngine.profit(r.recommendedPrice(), bd("525098"), ex).profit()).isGreaterThanOrEqualTo(bd("39897"));
+        assertThat(CalculationEngine.profit(r.recommendedPrice().subtract(BigDecimal.ONE), bd("525098"), ex).profit())
+                .isLessThan(bd("39897"));
+
+        var be = allZeroExcept(Expense.percent(COMMISSION, "9.95"));
+        PriceResult b = CalculationEngine.price(PriceGoal.BREAK_EVEN, bd("788476"), be, null, null, bd("1"));
+        assertThat(b.recommendedPrice()).isEqualByComparingTo("875598");
+    }
+
+    /** Fuzz: tavsiya narxi doim maqsadga yetadi va bir qadam pasti yetmaydi. */
+    @Test
+    void recommendedPrice_minimality_fuzz() {
+        java.util.Random rnd = new java.util.Random(7);
+        BigDecimal[] steps = {bd("1"), bd("100"), bd("1000")};
+        int checked = 0;
+        for (int i = 0; i < 20000; i++) {
+            var ex = allZeroExcept(Expense.percent(COMMISSION, new BigDecimal(rnd.nextInt(5000)).movePointLeft(2).toPlainString()),
+                    Expense.fixed(LOGISTICS, String.valueOf(rnd.nextInt(50000))));
+            BigDecimal cost = new BigDecimal(rnd.nextInt(2_000_000));
+            BigDecimal step = steps[rnd.nextInt(3)];
+            BigDecimal tp = new BigDecimal(rnd.nextInt(100_000));
+            PriceResult r = CalculationEngine.price(PriceGoal.TARGET_PROFIT, cost, ex, tp, null, step);
+            if (r.status() != PriceStatus.OK) continue;
+            checked++;
+            assertThat(CalculationEngine.profit(r.recommendedPrice(), cost, ex).profit()).isGreaterThanOrEqualTo(tp);
+            BigDecimal lower = r.recommendedPrice().subtract(step);
+            if (lower.signum() > 0) {
+                assertThat(CalculationEngine.profit(lower, cost, ex).profit()).as("i=" + i).isLessThan(tp);
+            }
+        }
+        assertThat(checked).isGreaterThan(10000);
+    }
+
+    @Test
+    void marginWithManyDecimals_doesNotThrow() {
+        PriceResult r = CalculationEngine.price(PriceGoal.TARGET_MARGIN, bd("100000"), allZeroExcept(),
+                null, bd("12.3456789"), bd("100"));
+        assertThat(r.status()).isEqualTo(PriceStatus.OK);
+    }
+
+    @Test
+    void decimalWithLeadingZero_isNotThousands() {
+        // "0,075" endi 75 deb o'qilmaydi; summa 2 xonagacha bo'lgani uchun rad etiladi (foydalanuvchi qayta kiritadi)
+        assertThat(Money.parse("0,075")).isEmpty();
+        assertThat(Money.parse("0,75")).hasValueSatisfying(v -> assertThat(v).isEqualByComparingTo("0.75"));
+        assertThat(Money.parse("1,075")).hasValueSatisfying(v -> assertThat(v).isEqualByComparingTo("1075"));
+    }
+
+    @Test
+    void percentParsing_rejectsThousandsSeparators() {
+        assertThat(Money.parsePercent("12,5")).hasValueSatisfying(v -> assertThat(v).isEqualByComparingTo("12.5"));
+        assertThat(Money.parsePercent("7.25%")).hasValueSatisfying(v -> assertThat(v).isEqualByComparingTo("7.25"));
+        assertThat(Money.parsePercent("0,075")).isEmpty();   // 75% emas
+        assertThat(Money.parsePercent("1,000")).isEmpty();
+        assertThat(Money.parsePercent("1.000")).isEmpty();
+        assertThat(Money.parsePercent("-5")).isEmpty();
+        assertThat(Money.parsePercent("abc")).isEmpty();
+    }
 }

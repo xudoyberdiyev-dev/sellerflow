@@ -127,7 +127,7 @@ public class ProductHandler {
             case "l" -> showList(ctx, "R".equals(p[2]), Integer.parseInt(p[3]));
             case "v" -> showDetail(ctx, Long.parseLong(p[2]));
             case "new" -> {
-                if (!plans.isAllowed(ctx.business().getPlanCode(), "PRODUCT_CATALOG")) {
+                if (!plans.isAllowed(ctx.business().getPlanCode(), "PRODUCT_CATALOG", products.countActive(ctx.businessId()))) {
                     ctx.send(Texts.FEATURE_LIMITED, Kb.create()
                             .row(Kb.cb(Texts.BTN_TARIFFS_INLINE, "t:show"), Kb.cb(Texts.BTN_MAIN, "m")));
                     return;

@@ -118,14 +118,30 @@ public class PlanService {
         return plans.findByPublishedTrueOrderByPriceUzsAsc();
     }
 
-    /** Backend entitlement tekshiruvi. Beta: UNLIMITED; noma'lum konfiguratsiya — rad (xavfsiz default). */
+    /**
+     * Backend entitlement tekshiruvi (foydalanish hisobi yo'q funksiyalar uchun). Beta: UNLIMITED.
+     * LIMIT_APPLIED uchun foydalanish soni kerak — bu yerda u yo'q, shuning uchun rad (xavfsiz default; LOW hisob).
+     */
     @Transactional(readOnly = true)
     public boolean isAllowed(String planCode, String feature) {
+        return check(planCode, feature, null);
+    }
+
+    /** LIMIT_APPLIED: {@code used < limit_value} bo'lsagina ruxsat. UNLIMITED — har doim; boshqasi — rad. */
+    @Transactional(readOnly = true)
+    public boolean isAllowed(String planCode, String feature, long used) {
+        return check(planCode, feature, used);
+    }
+
+    private boolean check(String planCode, String feature, Long used) {
         return features.findByIdPlanCode(planCode).stream()
                 .filter(f -> f.getFeature().equals(feature))
                 .findFirst()
-                .map(f -> f.getLimitType() == LimitType.UNLIMITED
-                        || (f.getLimitType() == LimitType.LIMIT_APPLIED && f.getLimitValue() != null && f.getLimitValue() > 0))
+                .map(f -> switch (f.getLimitType()) {
+                    case UNLIMITED -> true;
+                    case LIMIT_APPLIED -> used != null && f.getLimitValue() != null && used < f.getLimitValue();
+                    default -> false;
+                })
                 .orElse(false);
     }
 }

@@ -49,7 +49,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **LOW (maxfiylik):** shartlar versiyasi matn hash'iga bog'lansin; bloklashda faol grantlar DB'da bekor qilinsin; `DELETION_PURGE_DATA` keyin yoqilsa eski CLOSED akkauntlar ham tozalansin; USER audit yozuvlarida user ID. — `TermsGuard` + V6 `terms_versions` (matn o'zgarib versiya o'zgarmasa startup to'xtaydi), suspend → `GrantRevoker`, `purgePreviouslyClosed`, `AuditService` USER actor_id; testlar `termsVersion_isBoundToTextHash`, `suspend_revokesGrantsInDb_andUserAuditHasActorId`, `enablingPurgeLater_cleansPreviouslyClosedAccounts`.
 
 ## 5-bosqich — Hisob-kitob va DB
-- [ ] **LOW (hisob):** `"0,075"` → 0.075 (minglik ajratgich qoidasini aniqlashtirish: faqat vergul+3 raqam va butun qism 1–3 raqam bo'lsa ham kontekstga qarab — foiz maydonlarida minglik ajratgich qabul qilinmasin); `RoundingMode.UNNECESSARY` xavfi yo'qotilsin; `PlanService.isAllowed` `LIMIT_APPLIED` ni to'g'ri talqin qilsin; tavsiya narxi ortiqcha qadam masalasi tekshirilsin.
+- [x] **LOW (hisob):** `"0,075"` → 0.075 (minglik ajratgich qoidasini aniqlashtirish: faqat vergul+3 raqam va butun qism 1–3 raqam bo'lsa ham kontekstga qarab — foiz maydonlarida minglik ajratgich qabul qilinmasin); `RoundingMode.UNNECESSARY` xavfi yo'qotilsin; `PlanService.isAllowed` `LIMIT_APPLIED` ni to'g'ri talqin qilsin; tavsiya narxi ortiqcha qadam masalasi tekshirilsin. — engine 1.0.1 (pastga tekshiruv), HALF_UP, `THOUSANDS` regex + `Money.parsePercent`, `PlanService.isAllowed(…, used)`; testlar `CalculationEngineTest` (+5, jumladan fuzz), `PlanServiceIT`.
 - [ ] **LOW (DB):** `users`, `access_grants`, `admins` uchun `@Version`; DeletionJob har akkaunt alohida tranzaksiyada; purge yo'lidagi FK'larga indekslar; `audit_events` saqlash muddati (konfiguratsiya, standart 365 kun); Hikari pool/timeout sozlamalari; grant ro'yxatidagi N+1.
 
 ## 6-bosqich — Testlar, CI va UI
@@ -80,6 +80,7 @@ Audit bandlari (1–6-bosqich) tugagach boshlanadi.
 - [ ] H-3: yurist tasdiqlagan xizmat shartlari va maxfiylik siyosati.
 
 ## Egasiga savollar
+- **Hisoblash limitlari:** `PROFIT_CALCULATION`/`PRICE_CALCULATION` uchun `LIMIT_APPLIED` nimani sanaydi (oyiga saqlangan hisoblashlar? kunlik?) — hozir foydalanish hisobi yo'q, shuning uchun bunday limit qo'yilsa hisoblash rad etiladi (xavfsiz default). Billing (V1.1) bilan aniqlashtirish kerak.
 - **Spring Boot 4.x:** 3.5.x liniyasining bepul (OSS) qo'llab-quvvatlash muddati 2026 yil o'rtalarida tugagan bo'lishi mumkin. 4.x ga o'tish (Jackson 3, Spring Framework 7) alohida katta ish — 7-bosqichdan keyin rejalashtiraymi? Hozircha 3.5.16 (oxirgi patch) o'rnatildi.
 
 ## Sessiya jurnali

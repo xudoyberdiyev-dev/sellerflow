@@ -377,7 +377,7 @@ public class CalcHandler {
                 boolean margin = PriceGoal.TARGET_MARGIN.name().equals(s.str("goal"));
                 Optional<BigDecimal> v;
                 if (margin) {
-                    v = Money.parse(text);
+                    v = Money.parsePercent(text);
                     if (v.isEmpty()) { ctx.send(Texts.ERR_NUMBER); return; }
                     if (v.get().compareTo(Money.HUNDRED) >= 0) { ctx.send(Texts.ERR_MARGIN_RANGE); return; }
                 } else {
@@ -416,7 +416,7 @@ public class CalcHandler {
     }
 
     private Optional<BigDecimal> percent(Ctx ctx, String text) {
-        Optional<BigDecimal> v = Money.parse(text);
+        Optional<BigDecimal> v = Money.parsePercent(text);
         if (v.isEmpty()) {
             ctx.send(Texts.ERR_NUMBER);
             return Optional.empty();

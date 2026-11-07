@@ -85,7 +85,7 @@ class BotFlowsIT extends IntegrationTest {
         callback(u, saveData); // takroriy callback
         assertThat(count("select count(*) from calculation_history")).isEqualTo(1);
         assertThat(jdbc.queryForObject("select accuracy_status from calculation_history", String.class)).isEqualTo("COMPLETE_INPUT");
-        assertThat(jdbc.queryForObject("select calculation_version from calculation_history", String.class)).isEqualTo("1.0.0");
+        assertThat(jdbc.queryForObject("select calculation_version from calculation_history", String.class)).isEqualTo(uz.sellerflow.calculation.CalculationEngine.VERSION);
     }
 
     @Test

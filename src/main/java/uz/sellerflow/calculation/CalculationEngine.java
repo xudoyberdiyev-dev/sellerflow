@@ -24,13 +24,15 @@ import java.util.Set;
 public final class CalculationEngine {
 
     /** Har bir saqlangan natijaga yoziladi (UX-HIST-022). */
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.0.1"; // 1.0.1: tavsiya narxi pastga tekshiruvi (DECISIONS, 2026-11-07)
 
     public static final Set<BigDecimal> ALLOWED_ROUNDING_STEPS =
             Set.of(BigDecimal.ONE, new BigDecimal("100"), new BigDecimal("1000"));
 
     private static final int RAW_SCALE = 10;
     private static final int MAX_VERIFY_STEPS = 50;
+    /** Yaxlitlangan nomzoddan pastga ko'pi bilan shuncha qadam tekshiriladi (foiz xarajat yaxlitlashi ta'siri < 1 qadam). */
+    private static final int MAX_DOWN_STEPS = 2;
 
     private CalculationEngine() {}
 
@@ -120,7 +122,7 @@ public final class CalculationEngine {
             if (targetMarginPct.signum() < 0 || targetMarginPct.compareTo(Money.HUNDRED) >= 0) {
                 throw new IllegalArgumentException("Target margin must be in [0, 100)");
             }
-            m = targetMarginPct.divide(Money.HUNDRED, RAW_SCALE, RoundingMode.UNNECESSARY);
+            m = targetMarginPct.divide(Money.HUNDRED, RAW_SCALE, RoundingMode.HALF_UP);
         }
 
         Map<ExpenseCategory, Expense> all = normalize(expenses);
@@ -133,7 +135,7 @@ public final class CalculationEngine {
             else if (e.isKnownPercent()) pctSum = pctSum.add(e.value());
             else if (e.isMissing()) missing.add(c);
         }
-        BigDecimal r = pctSum.divide(Money.HUNDRED, RAW_SCALE, RoundingMode.UNNECESSARY);
+        BigDecimal r = pctSum.divide(Money.HUNDRED, RAW_SCALE, RoundingMode.HALF_UP);
         Accuracy accuracy = missing.isEmpty() ? Accuracy.COMPLETE_INPUT : Accuracy.PARTIAL_ESTIMATE;
         BigDecimal one = BigDecimal.ONE;
 
@@ -181,6 +183,13 @@ public final class CalculationEngine {
         BigDecimal raw = numerator.divide(denominator, RAW_SCALE, RoundingMode.HALF_UP);
         BigDecimal candidate = ceilToStep(raw, roundingStep);
         if (candidate.signum() <= 0) candidate = roundingStep;
+        // profit() da foizli xarajat 2 xonagacha yaxlitlanadi — shu sababli bir qadam pastdagi narx ham maqsadga
+        // yetishi mumkin. Eng kichik mos narx tavsiya qilinishi uchun pastga tekshiramiz (LOW hisob, 2026-11-07).
+        for (int i = 0; i < MAX_DOWN_STEPS; i++) {
+            BigDecimal lower = candidate.subtract(roundingStep);
+            if (lower.signum() <= 0 || !meetsTarget(goal, profit(lower, unitCost, all), g, targetMarginPct)) break;
+            candidate = lower;
+        }
 
         // Yaxlitlangandan keyin PRD-02.04 engine orqali qayta tekshirish (UX-PRICE-025/026, UX-PRICE-041)
         for (int i = 0; i <= MAX_VERIFY_STEPS; i++) {

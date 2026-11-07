@@ -26,7 +26,8 @@ public final class Money {
     public static final BigDecimal MAX = new BigDecimal("999999999999");
     public static final BigDecimal HUNDRED = new BigDecimal("100");
 
-    private static final Pattern THOUSANDS = Pattern.compile("^\\d{1,3}([.,]\\d{3})+$");
+    /** Minglik ajratgich: birinchi guruh 0 bilan boshlanmaydi ("0,075" — o'nli kasr, 75 emas). */
+    private static final Pattern THOUSANDS = Pattern.compile("^[1-9]\\d{0,2}([.,]\\d{3})+$");
     private static final Pattern NUMBER = Pattern.compile("^\\d+(\\.\\d{1,2})?$");
 
     public static BigDecimal scale(BigDecimal v) {
@@ -47,6 +48,21 @@ public final class Money {
             s = s.replace(',', '.');
         }
         if (!NUMBER.matcher(s).matches()) return Optional.empty();
+        try {
+            return Optional.of(new BigDecimal(s));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Foiz maydonlari uchun: minglik ajratgich QABUL QILINMAYDI, vergul va nuqta — o'nli kasr belgisi.
+     * "12,5" → 12.5; "0,075" → 3 xonali kasr — rad (foiz 2 xonagacha). "1.000" → rad (foizda minglik yo'q).
+     */
+    public static Optional<BigDecimal> parsePercent(String raw) {
+        if (raw == null) return Optional.empty();
+        String s = raw.trim().replace("%", "").replace(" ", "").replace(" ", "").replace(',', '.');
+        if (s.isEmpty() || !NUMBER.matcher(s).matches()) return Optional.empty();
         try {
             return Optional.of(new BigDecimal(s));
         } catch (NumberFormatException e) {
