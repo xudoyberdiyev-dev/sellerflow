@@ -33,6 +33,14 @@ export function setToken(t: string | null) {
 let memoryToken: string | null = readToken()
 export const getToken = () => memoryToken
 
+/** D-4: 401 tufayli chiqarilgan bo'lsa login ekranida «sessiya tugadi» xabari bir marta ko'rsatiladi. */
+let sessionExpiredFlag = false
+export function takeSessionExpired(): boolean {
+  const v = sessionExpiredFlag
+  sessionExpiredFlag = false
+  return v
+}
+
 export async function api<T>(path: string, init: { method?: string; body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (memoryToken) headers.Authorization = `Bearer ${memoryToken}`
@@ -48,6 +56,7 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
     const code = (data && data.error) || `HTTP_${res.status}`
     if (res.status === 401 && path !== '/auth/login' && path !== '/auth/totp/confirm') {
       setToken(null)
+      sessionExpiredFlag = true
       window.dispatchEvent(new Event('sf:logout'))
     }
     throw new ApiError(res.status, code)

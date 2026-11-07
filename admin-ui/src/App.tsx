@@ -153,7 +153,7 @@ function Shell({ me, mustChange, onPasswordChanged, onLogout }:
                   <InlineAlert tone="warning" title="Vaqtinchalik parol">Davom etish uchun quyida parolni almashtiring.</InlineAlert>
                 </div>
                 <Routes>
-                  <Route path="*" element={<Profile onChanged={onPasswordChanged} />} />
+                  <Route path="*" element={<Profile forced onChanged={onPasswordChanged} />} />
                 </Routes>
               </>
             ) : (

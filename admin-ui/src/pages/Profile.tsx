@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { api, errorText } from '../api'
-import { Alert, Button, Card, Field, Input, PageTitle } from '../ui'
+import { Button, Card, Field, InlineAlert, Input } from '../components'
 import { useBusy } from './useBusy'
 
-export function Profile({ onChanged }: { onChanged: () => void }) {
+/** Profil va majburiy parol almashtirish (M-5: vaqtinchalik parol bilan faqat shu sahifa ochiq). D-4. */
+export function Profile({ onChanged, forced = false }: { onChanged: () => void; forced?: boolean }) {
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [repeat, setRepeat] = useState('')
@@ -24,15 +25,18 @@ export function Profile({ onChanged }: { onChanged: () => void }) {
   }
 
   return (
-    <div className="max-w-md">
-      <PageTitle title="Profil" desc="Parolni almashtirish" />
-      {msg && <div className="mb-3"><Alert kind={msg.kind}>{msg.text}</Alert></div>}
+    <div style={{ maxWidth: 440 }}>
+      <h1 style={{ font: 'var(--type-h2, 600 20px/28px var(--font-sans))', margin: '0 0 4px' }}>{forced ? 'Parolni almashtiring' : 'Profil'}</h1>
+      <p style={{ margin: '0 0 16px', color: 'var(--text-secondary)' }}>
+        {forced ? 'Vaqtinchalik parol bilan kirdingiz. Davom etish uchun yangi parol o‘rnating.' : 'Parolni almashtirish'}
+      </p>
+      {msg && <div style={{ marginBottom: 12 }}><InlineAlert tone={msg.kind === 'error' ? 'danger' : 'success'}>{msg.text}</InlineAlert></div>}
       <Card>
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} style={{ display: 'grid', gap: 12 }}>
           <Field label="Joriy parol"><Input type="password" autoComplete="current-password" required value={current} onChange={(e) => setCurrent(e.target.value)} /></Field>
-          <Field label="Yangi parol" hint="Kamida 12 belgi"><Input type="password" autoComplete="new-password" required minLength={12} value={next} onChange={(e) => setNext(e.target.value)} /></Field>
+          <Field label="Yangi parol" hint="12–72 belgi"><Input type="password" autoComplete="new-password" required minLength={12} value={next} onChange={(e) => setNext(e.target.value)} /></Field>
           <Field label="Yangi parol (takror)"><Input type="password" autoComplete="new-password" required minLength={12} value={repeat} onChange={(e) => setRepeat(e.target.value)} /></Field>
-          <Button type="submit" disabled={busy}>{busy ? 'Saqlanmoqda…' : 'Saqlash'}</Button>
+          <div><Button type="submit" variant="primary" loading={busy} disabled={busy}>Saqlash</Button></div>
         </form>
       </Card>
     </div>
