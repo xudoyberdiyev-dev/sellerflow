@@ -2,14 +2,10 @@ package uz.sellerflow.admin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.filter.OncePerRequestFilter;
 import uz.sellerflow.access.AccessGrantService;
 import uz.sellerflow.access.AccessGrantService.Grant;
 import uz.sellerflow.account.AccountEntities.AccountStatus;
@@ -35,7 +30,6 @@ import uz.sellerflow.common.Errors;
 import uz.sellerflow.support.SupportService;
 import uz.sellerflow.telegram.BotStatus;
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -84,11 +78,13 @@ public class AdminController {
 
     // ================================================================= auth (ochiq endpointlar)
 
+    @PublicAdminEndpoint
     @PostMapping("/auth/login")
     public Map<String, Object> login(@RequestBody LoginRequest r) {
         return loginView(auth.login(r.email(), r.password(), r.code()));
     }
 
+    @PublicAdminEndpoint
     @PostMapping("/auth/totp/confirm")
     public Map<String, Object> confirm(@RequestBody TotpConfirm r) {
         return loginView(auth.confirmTotp(r.setupToken(), r.code()));
@@ -368,38 +364,5 @@ public class AdminController {
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < kv.length; i += 2) map.put((String) kv[i], kv[i + 1]);
         return map;
-    }
-
-    /** /admin/api/** — Bearer sessiya talab qilinadi (login va TOTP tasdiqlashdan tashqari). */
-    @Component
-    public static class AdminAuthFilter extends OncePerRequestFilter {
-        private final AdminAuthService auth;
-
-        public AdminAuthFilter(AdminAuthService auth) {
-            this.auth = auth;
-        }
-
-        @Override
-        protected boolean shouldNotFilter(HttpServletRequest request) {
-            String uri = request.getRequestURI();
-            return !uri.startsWith("/admin/api/")
-                    || uri.equals("/admin/api/v1/auth/login")
-                    || uri.equals("/admin/api/v1/auth/totp/confirm");
-        }
-
-        @Override
-        protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
-                throws ServletException, IOException {
-            var principal = auth.authenticate(bearer(req));
-            if (principal.isEmpty()) {
-                res.setStatus(HttpStatus.UNAUTHORIZED.value());
-                res.setContentType("application/json");
-                res.getWriter().write("{\"error\":\"UNAUTHORIZED\"}");
-                return;
-            }
-            req.setAttribute(PRINCIPAL, principal.get());
-            res.setHeader("Cache-Control", "no-store");
-            chain.doFilter(req, res);
-        }
     }
 }

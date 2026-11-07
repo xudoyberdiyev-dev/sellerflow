@@ -86,6 +86,32 @@ class AdminApiIT extends IntegrationTest {
                 .getStatusCode().value()).isEqualTo(401);
     }
 
+    /** H-1 regression: xom URI va Spring MVC yo'li farqi orqali auth'ni chetlab o'tish mumkin emas. */
+    @Test
+    void authBypassViaPathTricks_isRejected() throws Exception {
+        String[] paths = {
+                "/admin/api;x=1/v1/sellers", "/admin;/api/v1/sellers", "/admin/%61pi/v1/sellers",
+                "/admin/api/v1;/sellers", "/admin/api/v1/sellers;jsessionid=1", "/%61dmin/api/v1/sellers",
+                "/admin/api/v1/./sellers", "/admin/x/../api/v1/sellers", "/admin/api/v1//sellers",
+                "/admin/api/v1/%2e/sellers", "/admin/api/v1/stats", "/admin/api/v1/health", "/admin/api/v1/support",
+                "/admin/api/v1/sellers", "/admin/api/v1/does-not-exist", "/admin/api/", "/admin/api"
+        };
+        for (String path : paths) {
+            int status = raw("GET", path, null);
+            assertThat(status).as(path).isIn(400, 401);
+        }
+        // Token bilan oddiy yo'l ishlaydi
+        assertThat(raw("GET", "/admin/api/v1/sellers", owner())).isEqualTo(200);
+    }
+
+    private int raw(String method, String path, String token) throws Exception {
+        var b = java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://localhost:" + port + path))
+                .method(method, java.net.http.HttpRequest.BodyPublishers.noBody());
+        if (token != null) b.header("Authorization", "Bearer " + token);
+        return java.net.http.HttpClient.newHttpClient()
+                .send(b.build(), java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode();
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();
