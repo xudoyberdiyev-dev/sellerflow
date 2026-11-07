@@ -34,7 +34,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **LOW (DevOps):** Docker log rotatsiyasi (`logging.options.max-size`); README'dagi eskirgan `ADMIN_API_KEY` eslatmasi olib tashlansin; `TERMS_VERSION` compose orqali uzatilsin. — `x-logging` (json-file 3×10m) barcha servislarga, README `ADMIN_API_KEY` → bootstrap o'zgaruvchilari, `TERMS_VERSION` compose + .env.example.
 
 ## 3-bosqich — Platforma yangilanishi va Telegram
-- [ ] **M-19:** Spring Boot → qo'llab-quvvatlanadigan 3.5.x (yoki 3.4.x); `spring-security-crypto` CVE-2025-22228 yopilsin; barcha testlar yashil.
+- [x] **M-19:** Spring Boot → qo'llab-quvvatlanadigan 3.5.x (yoki 3.4.x); `spring-security-crypto` CVE-2025-22228 yopilsin; barcha testlar yashil. — 3.3.5 → **3.5.16** (spring-security-crypto 6.5.11, Tomcat 10.1.55, Hibernate 6.6.53, Flyway 11.7.2); kod o'zgarishsiz, 99 test yashil. Boot 4.x ga o'tish — «Egasiga savollar» ga qarang.
 - [ ] **M-11:** chiquvchi Telegram chaqiruvlari: 429 `retry_after` ni hurmat qilish, 5xx da cheklangan retry (eksponensial), muvaffaqiyatsizlik metrikasi.
 - [ ] **M-10 + LOW:** at-least-once: update DB xatosida qayta ishlanishi uchun `processed_updates` belgisi muvaffaqiyatdan keyin (yoki tranzaksiya ichida); DB uzilganda offset oldinga surilmasin; graceful shutdown (`@PreDestroy` → `stop()`).
 - [ ] **M-9:** parallel qayta ishlash — foydalanuvchi bo'yicha ketma-ketlik saqlangan holda (masalan, `userId % N` bo'yicha N ta worker navbat); Telegram HTTP chaqiruvlari DB tranzaksiyasidan tashqarida.
@@ -78,6 +78,9 @@ Audit bandlari (1–6-bosqich) tugagach boshlanadi.
 - [x] Telegram bot tokenini @BotFather orqali bekor qilish va yangisini olish (2026-11-07).
 - [ ] DB va admin parollarini almashtirish (ular ham ochiq repoda ko'ringan edi).
 - [ ] H-3: yurist tasdiqlagan xizmat shartlari va maxfiylik siyosati.
+
+## Egasiga savollar
+- **Spring Boot 4.x:** 3.5.x liniyasining bepul (OSS) qo'llab-quvvatlash muddati 2026 yil o'rtalarida tugagan bo'lishi mumkin. 4.x ga o'tish (Jackson 3, Spring Framework 7) alohida katta ish — 7-bosqichdan keyin rejalashtiraymi? Hozircha 3.5.16 (oxirgi patch) o'rnatildi.
 
 ## Sessiya jurnali
 | Sana | Bajarilgan bandlar | Commitlar | Izoh |
