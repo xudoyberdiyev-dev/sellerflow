@@ -50,6 +50,13 @@ public class AdminWebConfig implements WebMvcConfigurer {
                 // HTTPS (reverse proxy X-Forwarded-Proto orqali ham) — brauzer keyin faqat HTTPS ishlatsin
                 res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
             }
+            String path = req.getServletPath();
+            if (path.equals("/admin") || path.equals("/admin/") || path.equals("/admin/index.html")) {
+                // LOW (UI): yangi deploydan keyin eski index.html (eski asset hash'lari bilan) keshdan olinmasin
+                res.setHeader("Cache-Control", "no-cache");
+            } else if (path.startsWith("/admin/assets/")) {
+                res.setHeader("Cache-Control", "public, max-age=31536000, immutable"); // fayl nomida hash bor
+            }
             res.setHeader("X-Frame-Options", "DENY");
             res.setHeader("X-Content-Type-Options", "nosniff");
             res.setHeader("Referrer-Policy", "no-referrer");

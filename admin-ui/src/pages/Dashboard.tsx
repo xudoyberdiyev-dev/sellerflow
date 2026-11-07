@@ -25,8 +25,8 @@ const CHANNEL: Record<string, string> = {
 }
 
 export function Dashboard() {
-  const stats = useLoad(() => api<Stats>('/stats'))
-  const health = useLoad(() => api<Health>('/health'))
+  const stats = useLoad((signal) => api<Stats>('/stats', { signal }))
+  const health = useLoad((signal) => api<Health>('/health', { signal }))
   const s = stats.data
   const h = health.data
   const maxCh = Math.max(1, ...(s?.channels.map((c) => c.count) ?? [1]))

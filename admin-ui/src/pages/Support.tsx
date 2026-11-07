@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, errorText } from '../api'
 import { Alert, Button, Card, Field, Input, PageTitle } from '../ui'
+import { useBusy } from './useBusy'
 
 interface Support { enabled: boolean; label: string | null; url: string | null }
 
 export function SupportPage() {
   const [s, setS] = useState<Support>({ enabled: false, label: '', url: '' })
   const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
+  const { busy, run } = useBusy()
 
   useEffect(() => {
     api<Support>('/support').then((d) => setS({ enabled: d.enabled, label: d.label ?? '', url: d.url ?? '' })).catch((e) => setMsg({ kind: 'error', text: errorText(e) }))
@@ -14,13 +16,13 @@ export function SupportPage() {
 
   async function save(e: FormEvent) {
     e.preventDefault()
-    try {
+    await run(async () => { try {
       const d = await api<Support>('/support', { method: 'PUT', body: s })
       setS({ enabled: d.enabled, label: d.label ?? '', url: d.url ?? '' })
       setMsg({ kind: 'success', text: 'Saqlandi. Botdagi /help da darhol ko‘rinadi.' })
     } catch (err) {
       setMsg({ kind: 'error', text: errorText(err) })
-    }
+    } })
   }
 
   return (
@@ -37,7 +39,7 @@ export function SupportPage() {
           <Field label="Havola" hint="@username yoki https:// bilan boshlanadigan havola">
             <Input value={s.url ?? ''} onChange={(e) => setS({ ...s, url: e.target.value })} placeholder="@sellerflow_support" />
           </Field>
-          <Button type="submit">Saqlash</Button>
+          <Button type="submit" disabled={busy}>Saqlash</Button>
         </form>
       </Card>
     </div>

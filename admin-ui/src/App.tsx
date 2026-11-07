@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { HashRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import clsx from 'clsx'
-import { Activity, FileClock, KeyRound, LayoutDashboard, LifeBuoy, LogOut, ShieldCheck, Users, UserCog } from 'lucide-react'
+import { Activity, CircleUser, FileClock, KeyRound, LayoutDashboard, LifeBuoy, LogOut, ShieldCheck, Users, UserCog } from 'lucide-react'
 import { api, getToken, setToken, type Me } from './api'
 import { Login } from './Login'
 import { Dashboard } from './pages/Dashboard'
@@ -97,6 +97,10 @@ export default function App() {
                   <n.icon size={16} aria-label={n.label} />
                 </NavLink>
               ))}
+              {/* LOW (UI): mobil menyuda Profil (parol almashtirish) */}
+              <NavLink to="/profile" aria-label="Profil" className={({ isActive }) => (isActive ? 'font-medium' : 'text-stone-500')}>
+                <CircleUser size={16} />
+              </NavLink>
               <button onClick={logout} aria-label="Chiqish"><LogOut size={16} /></button>
             </div>
           </header>

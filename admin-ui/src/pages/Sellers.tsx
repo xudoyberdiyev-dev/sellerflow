@@ -4,6 +4,7 @@ import { Ban, KeyRound, RotateCcw, Search } from 'lucide-react'
 import { api, errorText, fmtDate, type Me } from '../api'
 import { Alert, Badge, Button, Card, Input, PageTitle, Select, Table, Td } from '../ui'
 import { useLoad } from './useLoad'
+import { useBusy } from './useBusy'
 
 interface Seller {
   telegramUserId: number; status: string; createdAt: string; deletionRequestedAt: string | null
@@ -20,24 +21,25 @@ export function Sellers({ me }: { me: Me }) {
   const [tgId, setTgId] = useState('')
   const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
   const nav = useNavigate()
-  const list = useLoad(() => {
+  const { run } = useBusy()
+  const list = useLoad((signal) => {
     const q = new URLSearchParams({ page: String(page), size: String(SIZE) })
     if (status) q.set('status', status)
     if (tgId) q.set('telegramUserId', tgId)
-    return api<Page>(`/sellers?${q}`)
+    return api<Page>(`/sellers?${q}`, { signal })
   }, [page, status, tgId])
   const superadmin = me.role === 'SUPERADMIN'
 
   async function act(id: number, action: 'suspend' | 'reactivate') {
     const reason = window.prompt(action === 'suspend' ? 'Bloklash sababi (auditga yoziladi):' : 'Qayta faollashtirish sababi:')
     if (reason === null) return
-    try {
+    await run(async () => { try {
       await api(`/sellers/${id}/${action}`, { method: 'POST', body: { reason } })
       setMsg({ kind: 'success', text: action === 'suspend' ? 'Sotuvchi bloklandi.' : 'Sotuvchi qayta faollashtirildi.' })
       list.reload()
     } catch (e) {
       setMsg({ kind: 'error', text: errorText(e) })
-    }
+    } })
   }
 
   const d = list.data

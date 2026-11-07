@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Eye, XCircle } from 'lucide-react'
 import { api, errorText, fmtDate, fmtMoney, type Me } from '../api'
 import { Alert, Badge, Button, Card, Field, Input, PageTitle, Select, Table, Td, Textarea } from '../ui'
 import { useLoad } from './useLoad'
+import { useBusy } from './useBusy'
 
 interface Grant {
   id: number; telegramUserId: number; adminEmail: string; purpose: string; minutes: number; status: string
@@ -22,19 +23,35 @@ export function Grants({ me }: { me: Me }) {
   const [minutes, setMinutes] = useState('30')
   const [msg, setMsg] = useState<{ kind: 'error' | 'success' | 'info'; text: string } | null>(null)
   const [view, setView] = useState<GrantData | null>(null)
-  const list = useLoad(() => api<Grant[]>('/grants'))
+  const list = useLoad((signal) => api<Grant[]>('/grants', { signal }))
+  const { busy, run } = useBusy()
+
+  // LOW (UI): ruxsat muddati tugaganda tijoriy ma'lumot ekrandan avtomatik tozalanadi
+  useEffect(() => {
+    if (!view?.grant.expiresAt) return
+    const ms = new Date(view.grant.expiresAt).getTime() - Date.now()
+    const clear = () => {
+      setView(null)
+      setMsg({ kind: 'info', text: 'Ruxsat muddati tugadi — ma’lumot ekrandan olib tashlandi.' })
+      list.reload()
+    }
+    if (ms <= 0) { clear(); return }
+    const t = window.setTimeout(clear, Math.min(ms, 2_147_000_000))
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view])
 
   async function request(e: FormEvent) {
     e.preventDefault()
     setMsg(null)
-    try {
+    await run(async () => { try {
       await api('/grants', { method: 'POST', body: { telegramUserId: Number(tg), purpose, minutes: Number(minutes) } })
       setMsg({ kind: 'success', text: 'So‘rov yuborildi. Sotuvchi botda tasdiqlashi kerak.' })
       setPurpose('')
       list.reload()
     } catch (err) {
       setMsg({ kind: 'error', text: errorText(err) })
-    }
+    } })
   }
 
   async function open(id: number) {
@@ -81,7 +98,7 @@ export function Grants({ me }: { me: Me }) {
                 <option value="60">60 daqiqa</option>
               </Select>
             </Field>
-            <Button type="submit" className="w-full">So‘rov yuborish</Button>
+            <Button type="submit" className="w-full" disabled={busy}>{busy ? 'Yuborilmoqda…' : 'So‘rov yuborish'}</Button>
           </form>
         </Card>
         <Card title={me.role === 'SUPERADMIN' ? 'Barcha so‘rovlar' : 'Mening so‘rovlarim'} className="lg:col-span-2">

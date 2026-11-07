@@ -302,6 +302,20 @@ class AdminApiIT extends IntegrationTest {
         assertThat(external.statusCode()).isEqualTo(404);
     }
 
+    /** LOW (UI): index.html keshlanmaydi, hash'li assetlar uzoq keshlanadi. */
+    @Test
+    void adminSpa_cacheHeaders() throws Exception {
+        var client = java.net.http.HttpClient.newHttpClient();
+        var index = client.send(java.net.http.HttpRequest.newBuilder(
+                java.net.URI.create("http://localhost:" + port + "/admin/")).build(), java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertThat(index.statusCode()).isEqualTo(200);
+        assertThat(index.headers().firstValue("Cache-Control")).hasValue("no-cache");
+        var asset = client.send(java.net.http.HttpRequest.newBuilder(
+                java.net.URI.create("http://localhost:" + port + "/admin/assets/app-abc123.js")).build(), java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertThat(asset.statusCode()).isEqualTo(200);
+        assertThat(asset.headers().firstValue("Cache-Control")).hasValueSatisfying(v -> assertThat(v).contains("immutable"));
+    }
+
     /** M-12: Docker healthcheck uchun /actuator/health/container (db + bot). */
     @Test
     void containerHealthGroup_isExposed() throws Exception {

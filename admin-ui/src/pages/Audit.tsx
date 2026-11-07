@@ -8,7 +8,7 @@ interface Page { total: number; page: number; items: Event[] }
 
 export function AuditPage() {
   const [page, setPage] = useState(0)
-  const list = useLoad(() => api<Page>(`/audit?page=${page}&size=50`), [page])
+  const list = useLoad((signal) => api<Page>(`/audit?page=${page}&size=50`, { signal }), [page])
   const pages = list.data ? Math.max(1, Math.ceil(list.data.total / 50)) : 1
   return (
     <div>

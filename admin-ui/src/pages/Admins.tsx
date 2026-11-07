@@ -2,37 +2,39 @@ import { useState, type FormEvent } from 'react'
 import { api, errorText, fmtDate, type Me } from '../api'
 import { Alert, Badge, Button, Card, Field, Input, PageTitle, Select, Table, Td } from '../ui'
 import { useLoad } from './useLoad'
+import { useBusy } from './useBusy'
 
 interface Admin { id: number; email: string; role: string; status: string; totpEnabled: boolean; mustChangePassword: boolean; createdAt: string; lastLoginAt: string | null }
 
 export function Admins({ me }: { me: Me }) {
-  const list = useLoad(() => api<Admin[]>('/admins'))
+  const list = useLoad((signal) => api<Admin[]>('/admins', { signal }))
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('SUPPORT')
   const [pass, setPass] = useState('')
   const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
+  const { busy, run } = useBusy()
 
   async function create(e: FormEvent) {
     e.preventDefault()
-    try {
+    await run(async () => { try {
       await api('/admins', { method: 'POST', body: { email, role, tempPassword: pass } })
       setMsg({ kind: 'success', text: `Admin yaratildi. Vaqtinchalik parolni ${email} ga xavfsiz kanal orqali bering — birinchi kirishda 2FA ulanadi.` })
       setEmail(''); setPass('')
       list.reload()
     } catch (err) {
       setMsg({ kind: 'error', text: errorText(err) })
-    }
+    } })
   }
 
   async function act(id: number, action: 'disable' | 'enable' | 'reset-2fa') {
     const q = action === 'disable' ? 'Adminni o‘chirasizmi? Barcha sessiyalari yopiladi.' : action === 'reset-2fa' ? '2FA qayta ulansinmi? Keyingi kirishda yangi QR kod beriladi.' : 'Adminni yoqasizmi?'
     if (!window.confirm(q)) return
-    try {
+    await run(async () => { try {
       await api(`/admins/${id}/${action}`, { method: 'POST' })
       list.reload()
     } catch (err) {
       setMsg({ kind: 'error', text: errorText(err) })
-    }
+    } })
   }
 
   return (
@@ -52,7 +54,7 @@ export function Admins({ me }: { me: Me }) {
             <Field label="Vaqtinchalik parol" hint="Kamida 12 belgi. Admin birinchi kirishda almashtiradi.">
               <Input type="password" required minLength={12} autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} />
             </Field>
-            <Button type="submit" className="w-full">Yaratish</Button>
+            <Button type="submit" className="w-full" disabled={busy}>Yaratish</Button>
           </form>
         </Card>
         <Card title="Ro‘yxat" className="lg:col-span-2">

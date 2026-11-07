@@ -33,13 +33,14 @@ export function setToken(t: string | null) {
 let memoryToken: string | null = readToken()
 export const getToken = () => memoryToken
 
-export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+export async function api<T>(path: string, init: { method?: string; body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (memoryToken) headers.Authorization = `Bearer ${memoryToken}`
   const res = await fetch(BASE + path, {
     method: init.method ?? 'GET',
     headers,
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    signal: init.signal,
   })
   const text = await res.text()
   const data = text ? JSON.parse(text) : null
