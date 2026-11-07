@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:16
     restart: unless-stopped
+    # M-20: xotira chegaralari 2 GB RAM'li server uchun (db 512M + app 768M + backup 256M ≈ 1.5 GB, qolgani OS)
+    mem_limit: 512m
     environment:
       POSTGRES_DB: sellerflow
       POSTGRES_USER: ${DB_USER:-sellerflow}
@@ -17,6 +19,8 @@ services:
   app:
     build: .
     restart: unless-stopped
+    # JVM: -XX:MaxRAMPercentage=75 (Dockerfile) → heap ≈ 576M, qolgani metaspace/thread/direct buffer
+    mem_limit: 768m
     depends_on:
       db:
         condition: service_healthy
@@ -52,6 +56,7 @@ services:
   backup:
     image: postgres:16
     restart: unless-stopped
+    mem_limit: 256m
     depends_on:
       db:
         condition: service_healthy

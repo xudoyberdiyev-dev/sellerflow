@@ -1,7 +1,10 @@
 # SellerFlow — ekspluatatsiya qo'llanmasi
 
 ## 1. Server talablari
-- Linux VPS: kamida 1 vCPU va 2 GB RAM (yig'ish paytida Maven va Node xotira talab qiladi). Disk: 20 GB.
+- Linux VPS: kamida 1 vCPU va 2 GB RAM. Disk: 20 GB.
+  - Konteyner chegaralari (`docker-compose.yml`, `mem_limit`): db 512 MB, app 768 MB (JVM heap ≈ 75% — `JAVA_OPTS`), backup 256 MB.
+  - Image yig'ish (Maven + Node) vaqtincha ko'proq xotira oladi; 2 GB'da swap (1–2 GB) yoqib qo'yish tavsiya etiladi.
+  - Foydalanuvchi ko'paysa: avval app'ni `mem_limit: 1g` ga oshiring (JVM foizi o'zi moslashadi).
 - Docker Engine va Docker Compose plugin.
 - Ochiq portlar: faqat SSH (22). Bot long polling ishlatadi, shuning uchun kiruvchi port kerak emas.
 

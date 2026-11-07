@@ -25,7 +25,7 @@ Sotuvchilar uchun Telegram bot. U bir dona mahsulotdan **haqiqatda qancha foyda 
 
 ## Ishga tushirish (server, Docker)
 
-Talablar: Docker va Docker Compose o‘rnatilgan Linux server (VPS). Kamida 1 GB RAM.
+Talablar: Docker va Docker Compose o‘rnatilgan Linux server (VPS). Kamida 1 vCPU va **2 GB RAM** (konteyner xotira chegaralari: db 512 MB, app 768 MB, backup 256 MB — `docs/OPERATIONS.md` §1).
 
 ```bash
 git clone https://github.com/xudoyberdiyev-dev/sellerflow.git

@@ -30,7 +30,7 @@ Bajarilgan band `- [x]` bilan belgilanadi; qisman bajarilgani `- [~]` va izohda 
 - [x] **M-15 / M-16:** backupni shifrlash (`BACKUP_ENCRYPTION_PASSPHRASE` berilsa `gpg --symmetric` yoki `age`), fayl huquqlari 600; off-site nusxa uchun `rclone` misoli (`docs/OPERATIONS.md`). — gpg AES256 (`BACKUP_ENCRYPTION_PASSPHRASE`, fd orqali), gpg yo'q bo'lsa xato; fayllar 600; OPERATIONS §5 rclone misoli; test backup-loop.test.sh (4-holat).
 - [x] **M-18:** `restore.sh`: tiklashdan oldin joriy bazaning xavfsizlik snapshoti; `--single-transaction`; xatoda to'xtash. — oldindan `pg_restore --list` tekshiruvi, `backups/pre-restore/` snapshot, `--single-transaction --exit-on-error`, `.gpg` qo'llab-quvvatlash (restore-drill ham); test `scripts/tests/restore.test.sh` (docker shim, CI).
 - [x] **M-12:** bot holatini aks ettiruvchi `HealthIndicator` (poller oxirgi muvaffaqiyati < 120 s); `app` uchun Docker healthcheck. — `BotHealthIndicator` ("bot"), health group `container` (db+bot), compose app healthcheck (bash /dev/tcp, curl kerak emas); testlar `BotHealthIndicatorTest`, `containerHealthGroup_isExposed`.
-- [ ] **M-20:** compose'da xotira limitlari (`mem_limit`), JVM sozlamasi bilan mos; README/OPERATIONS RAM talablari bir xil.
+- [x] **M-20:** compose'da xotira limitlari (`mem_limit`), JVM sozlamasi bilan mos; README/OPERATIONS RAM talablari bir xil. — db 512m / app 768m (MaxRAMPercentage=75) / backup 256m; README va OPERATIONS §1: 2 GB RAM.
 - [ ] **LOW (DevOps):** Docker log rotatsiyasi (`logging.options.max-size`); README'dagi eskirgan `ADMIN_API_KEY` eslatmasi olib tashlansin; `TERMS_VERSION` compose orqali uzatilsin.
 
 ## 3-bosqich — Platforma yangilanishi va Telegram
