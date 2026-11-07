@@ -14,7 +14,7 @@ import { AuditPage } from './pages/Audit'
 import { Admins } from './pages/Admins'
 import { Profile } from './pages/Profile'
 import {
-  Badge, CommandPalette, Icon, IconButton, InlineAlert, Logo, Sidebar, SkeletonText, Topbar,
+  Badge, Button, CommandPalette, EmptyState, Icon, IconButton, InlineAlert, Logo, Sidebar, SkeletonText, Topbar,
   type CommandItem, type Crumb, type NavGroup,
 } from './components'
 import { ShellProvider } from './shell'
@@ -89,6 +89,14 @@ function Shell({ me, mustChange, onPasswordChanged, onLogout }:
   const [collapsed, setCollapsed] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
+  const mainRef = useRef<HTMLElement>(null)
+  // D-7: sahifa almashganda fokus kontentga o'tadi (ekran o'quvchi yangi sahifani e'lon qiladi), scroll tepaga
+  const firstRender = useRef(true)
+  useEffect(() => {
+    if (firstRender.current) { firstRender.current = false; return }
+    mainRef.current?.scrollTo?.(0, 0)
+    mainRef.current?.focus({ preventScroll: true })
+  }, [loc.pathname])
   const [theme, setThemeState] = useState<Theme>(() => storedTheme() ?? systemTheme())
 
   // M-5: vaqtinchalik parol bilan faqat Profil
@@ -146,6 +154,7 @@ function Shell({ me, mustChange, onPasswordChanged, onLogout }:
 
   return (
     <div className="sf-shell" data-menu-open={menuOpen || undefined}>
+      <a className="sf-skip" href="#sf-main" onClick={(e) => { e.preventDefault(); mainRef.current?.focus() }}>Asosiy kontentga o‘tish</a>
       <div className="sf-shell__side">
         <Sidebar groups={groups} active={current.id} onNavigate={go} collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)} footer={footer} role={me.role} />
@@ -164,11 +173,11 @@ function Shell({ me, mustChange, onPasswordChanged, onLogout }:
             <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label={theme === 'dark' ? 'Yorug‘ mavzu' : 'Qorong‘i mavzu'} onClick={toggleTheme} />
           </>}
         />
-        <main className="sf-shell__main">
+        <main className="sf-shell__main" id="sf-main" tabIndex={-1} ref={mainRef}>
           <div className="sf-shell__content">
             {mustChange ? (
               <>
-                <div className="mb-4">
+                <div style={{ marginBottom: 16 }}>
                   <InlineAlert tone="warning" title="Vaqtinchalik parol">Davom etish uchun quyida parolni almashtiring.</InlineAlert>
                 </div>
                 <Routes>
@@ -184,9 +193,9 @@ function Shell({ me, mustChange, onPasswordChanged, onLogout }:
                   <Route path="/sellers/:tg" element={<SellerDetail me={me} />} />
                   <Route path="/grants" element={<Grants me={me} />} />
                   <Route path="/grants/:id" element={<AccessViewer />} />
-                  {superadmin && <Route path="/support" element={<SupportPage />} />}
-                  {superadmin && <Route path="/audit" element={<AuditPage />} />}
-                  {superadmin && <Route path="/admins" element={<Admins me={me} />} />}
+                  <Route path="/support" element={superadmin ? <SupportPage /> : <Forbidden />} />
+                  <Route path="/audit" element={superadmin ? <AuditPage /> : <Forbidden />} />
+                  <Route path="/admins" element={superadmin ? <Admins me={me} /> : <Forbidden />} />
                   <Route path="/profile" element={<Profile me={me} onChanged={onPasswordChanged} />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -230,5 +239,17 @@ function HealthIndicator({ onOpen }: { onOpen: () => void }) {
     <button type="button" className="sf-health" title="Tizim holati (har 60 soniyada)" onClick={onOpen}>
       <Badge tone={state === 'ok' ? 'success' : 'warning'}>{state === 'ok' ? 'Tizim ishlayapti' : 'Tizimda muammo'}</Badge>
     </button>
+  )
+}
+
+/** D-7: SUPPORT roli yopiq bo'limga kirsa — 403 holati (jim yo'naltirish o'rniga). */
+function Forbidden() {
+  const nav = useNavigate()
+  return (
+    <div className="sf-page">
+      <EmptyState kind="forbidden" code="403" title="Bu bo‘lim faqat Superadmin uchun"
+        description="Sizning rolingiz (Support) bu sahifani ko‘ra olmaydi. Kerak bo‘lsa, Superadmin’ga murojaat qiling."
+        actions={<Button onClick={() => nav('/')}>Boshqaruv paneliga qaytish</Button>} />
+    </div>
   )
 }
