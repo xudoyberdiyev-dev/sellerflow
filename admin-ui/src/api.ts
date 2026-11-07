@@ -4,7 +4,7 @@ const BASE = '/admin/api/v1'
 const KEY = 'sf.admin.token'
 
 export type Role = 'SUPERADMIN' | 'SUPPORT'
-export interface Me { id: number; email: string; role: Role }
+export interface Me { id: number; email: string; role: Role; mustChangePassword?: boolean }
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string) {
@@ -59,6 +59,7 @@ const MESSAGES: Record<string, string> = {
   INVALID_CODE: 'Tasdiqlash kodi noto‘g‘ri yoki eskirgan.',
   INVALID_SESSION: 'Sessiya muddati tugagan. Qaytadan kiring.',
   LOCKED: 'Ko‘p marta xato kiritildi. 15 daqiqadan keyin urinib ko‘ring.',
+  PASSWORD_CHANGE_REQUIRED: 'Avval vaqtinchalik parolni almashtiring.',
   TOO_MANY_ATTEMPTS: 'Bu qurilmadan juda ko‘p xato urinish. 15 daqiqadan keyin urinib ko‘ring.',
   UNAUTHORIZED: 'Avval tizimga kiring.',
   SUPERADMIN_REQUIRED: 'Bu amal faqat SUPERADMIN uchun.',

@@ -38,6 +38,14 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
             res.getWriter().write("{\"error\":\"UNAUTHORIZED\"}");
             return false;
         }
+        if (principal.get().mustChangePassword()
+                && !(handler instanceof HandlerMethod hm && hm.hasMethodAnnotation(AllowedWithTempPassword.class))) {
+            // M-5: vaqtinchalik parol almashtirilmaguncha boshqa API yopiq (server tomonda majburiy)
+            res.setStatus(HttpStatus.FORBIDDEN.value());
+            res.setContentType("application/json");
+            res.getWriter().write("{\"error\":\"PASSWORD_CHANGE_REQUIRED\"}");
+            return false;
+        }
         req.setAttribute(AdminController.PRINCIPAL, principal.get());
         return true;
     }

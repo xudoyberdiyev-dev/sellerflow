@@ -80,6 +80,15 @@ class AdminApiIT extends IntegrationTest {
         return ok.path("token").asText();
     }
 
+    /** Vaqtinchalik parol bilan kirib, parolni almashtiradi (M-5: aks holda boshqa API yopiq). */
+    private String loginWithNewPassword(String email, String temp) throws Exception {
+        String t = login(email, temp);
+        assertThat(call(HttpMethod.POST, "/auth/password", t,
+                "{\"currentPassword\":\"" + temp + "\",\"newPassword\":\"changed-" + temp + "\"}").getStatusCode().value())
+                .isEqualTo(200);
+        return t;
+    }
+
     private String owner() throws Exception {
         jdbc.update("update admins set failed_attempts = 0, locked_until = null where lower(email) = lower(?)", OWNER);
         return login(OWNER, OWNER_PASS);
@@ -180,6 +189,30 @@ class AdminApiIT extends IntegrationTest {
         assertThat(call(HttpMethod.GET, "/auth/me", a, null).getStatusCode().value()).isEqualTo(401);
     }
 
+    /** M-5 regression: vaqtinchalik parol bilan faqat /auth/me, /auth/password, /auth/logout ochiq. */
+    @Test
+    void tempPasswordSession_isRestrictedUntilChanged() throws Exception {
+        String token = owner();
+        String email = "temp" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPERADMIN\",\"tempPassword\":\"temporary-pass-123\"}");
+        String t = login(email, "temporary-pass-123");
+
+        JsonNode me = json(call(HttpMethod.GET, "/auth/me", t, null));
+        assertThat(me.path("mustChangePassword").asBoolean()).isTrue();
+        for (String path : new String[]{"/stats", "/sellers", "/admins", "/audit", "/grants", "/health"}) {
+            ResponseEntity<String> r = call(HttpMethod.GET, path, t, null);
+            assertThat(r.getStatusCode().value()).as(path).isEqualTo(403);
+            assertThat(r.getBody()).as(path).contains("PASSWORD_CHANGE_REQUIRED");
+        }
+        assertThat(call(HttpMethod.POST, "/auth/password", t,
+                "{\"currentPassword\":\"temporary-pass-123\",\"newPassword\":\"brand-new-pass-456\"}").getStatusCode().value())
+                .isEqualTo(200);
+        assertThat(json(call(HttpMethod.GET, "/auth/me", t, null)).path("mustChangePassword").asBoolean()).isFalse();
+        assertThat(call(HttpMethod.GET, "/stats", t, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.POST, "/auth/logout", t, null).getStatusCode().value()).isEqualTo(200);
+    }
+
     @Test
     void loginWith2fa_meAndLogout() throws Exception {
         String token = owner();
@@ -262,7 +295,7 @@ class AdminApiIT extends IntegrationTest {
         ResponseEntity<String> created = call(HttpMethod.POST, "/admins", token,
                 "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
         assertThat(created.getStatusCode().value()).isEqualTo(200);
-        String support = login(email, "temporary-pass-123");
+        String support = loginWithNewPassword(email, "temporary-pass-123");
         long u = onboardedUser();
         assertThat(call(HttpMethod.GET, "/sellers", support, null).getBody()).contains(String.valueOf(u));
         assertThat(call(HttpMethod.POST, "/sellers/" + u + "/suspend", support, "{}").getStatusCode().value()).isEqualTo(403);
@@ -347,7 +380,7 @@ class AdminApiIT extends IntegrationTest {
         // boshqa admin ko'ra olmaydi (ruxsat o'tkazilmaydi)
         String email = "s" + System.nanoTime() + "@sellerflow.test";
         call(HttpMethod.POST, "/admins", token, "{\"email\":\"" + email + "\",\"role\":\"SUPERADMIN\",\"tempPassword\":\"temporary-pass-123\"}");
-        String other = login(email, "temporary-pass-123");
+        String other = loginWithNewPassword(email, "temporary-pass-123");
         assertThat(call(HttpMethod.GET, "/grants/" + gid + "/data", other, null).getStatusCode().value()).isEqualTo(403);
 
         // sotuvchi bekor qiladi

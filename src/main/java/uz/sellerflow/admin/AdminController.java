@@ -122,17 +122,20 @@ public class AdminController {
                 "mustChangePassword", r.mustChangePassword());
     }
 
+    @AllowedWithTempPassword
     @PostMapping("/auth/logout")
     public Map<String, Object> logout(HttpServletRequest req) {
         auth.logout(bearer(req));
         return m("ok", true);
     }
 
+    @AllowedWithTempPassword
     @GetMapping("/auth/me")
     public Map<String, Object> current(@RequestAttribute(PRINCIPAL) Principal p) {
         return me(p);
     }
 
+    @AllowedWithTempPassword
     @PostMapping("/auth/password")
     public Map<String, Object> password(@RequestAttribute(PRINCIPAL) Principal p, @RequestBody PasswordChange r,
                                         HttpServletRequest req) {
@@ -141,7 +144,7 @@ public class AdminController {
     }
 
     private static Map<String, Object> me(Principal p) {
-        return m("id", p.id(), "email", p.email(), "role", p.role().name());
+        return m("id", p.id(), "email", p.email(), "role", p.role().name(), "mustChangePassword", p.mustChangePassword());
     }
 
     // ================================================================= dashboard

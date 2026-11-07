@@ -182,7 +182,8 @@ public class AdminAuthService {
     }
 
     /** Autentifikatsiyadan o'tgan admin (har so'rovda serverda qayta tekshiriladi). */
-    public record Principal(long id, String email, Role role) {
+    public record Principal(long id, String email, Role role, boolean mustChangePassword) {
+        public Principal(long id, String email, Role role) { this(id, email, role, false); }
         public boolean isSuperadmin() { return role == Role.SUPERADMIN; }
     }
 
@@ -428,6 +429,6 @@ public class AdminAuthService {
     }
 
     private static Principal principal(Admin a) {
-        return new Principal(a.id, a.email, a.role);
+        return new Principal(a.id, a.email, a.role, a.mustChangePassword);
     }
 }

@@ -20,7 +20,7 @@ export default function App() {
   useEffect(() => {
     if (!getToken()) return
     api<Me>('/auth/me')
-      .then(setMe)
+      .then((m) => { setMe(m); setMustChange(!!m.mustChangePassword) })
       .catch(() => setMe(null))
       .finally(() => setLoading(false))
   }, [])
@@ -45,7 +45,8 @@ export default function App() {
   if (!me) return <Login onLogin={(m, mc) => { setMe(m); setMustChange(mc) }} />
 
   const superadmin = me.role === 'SUPERADMIN'
-  const nav = [
+  // M-5: vaqtinchalik parol almashtirilmaguncha server boshqa API'ni yopadi — UI ham faqat Profil sahifasini ko'rsatadi.
+  const nav = mustChange ? [] : [
     { to: '/', label: 'Boshqaruv paneli', icon: LayoutDashboard, show: true },
     { to: '/sellers', label: 'Sotuvchilar', icon: Users, show: true },
     { to: '/grants', label: 'Kirish so‘rovlari', icon: KeyRound, show: true },
@@ -102,9 +103,14 @@ export default function App() {
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-8">
             {mustChange && (
               <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                Vaqtinchalik parol bilan kirdingiz. Iltimos, <NavLink to="/profile" className="underline">parolni almashtiring</NavLink>.
+                Vaqtinchalik parol bilan kirdingiz. Davom etish uchun quyida parolni almashtiring.
               </div>
             )}
+            {mustChange ? (
+              <Routes>
+                <Route path="*" element={<Profile onChanged={() => setMustChange(false)} />} />
+              </Routes>
+            ) : (
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/sellers" element={<Sellers me={me} />} />
@@ -115,6 +121,7 @@ export default function App() {
               <Route path="/profile" element={<Profile onChanged={() => setMustChange(false)} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            )}
           </main>
           <footer className="px-8 pb-4 text-xs text-stone-400"><Activity size={11} className="mr-1 inline" />Tijoriy ma’lumotlar faqat sotuvchi roziligi bilan ko‘rsatiladi.</footer>
         </div>
