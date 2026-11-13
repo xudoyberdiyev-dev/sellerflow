@@ -74,6 +74,20 @@ Audit bandlari (1–6-bosqich) tugagach boshlanadi.
 - [x] Barcha bandlar qayta ko'rib chiqiladi; qolgan LOW topilmalar ro'yxati shu faylga «Qoldirilganlar» sifatida sababi bilan yoziladi. — «Qoldirilganlar» bo'limi: `docs/AUDIT_FIX_REPORT.md` (TOTP secret DB shifrlash, ikkinchi instansiya lock, versiyalangan image/rollback, lokal PG versiyasi, Boot 4.x).
 - [x] Yakuniy hisobot: `docs/AUDIT_FIX_REPORT.md` (nima tuzatildi, qaysi commit, qaysi test, nima qoldi va nega). — yozildi 2026-11-07. **Audit zanjiri tugadi; rejalashtirilgan «SellerFlow audit» vazifalari o'chirildi.**
 
+## 8-bosqich — Qayta auditlar (2026-11-07 va 2026-11-13)
+Manba: `PRODUCTION_REAUDIT_2026-11-07.md` (N-1…N-12, LOW) va `PRODUCTION_REAUDIT_2026-11-13.md` (yangi kod LOW). Qoidalar o'sha.
+- [x] **P0:** hisobotlardagi sir prefikslari va sir yashiringan commit ID olib tashlandi; **N-1** TermsGuard CRLF/BOM normalizatsiyasi + `.gitattributes` (`*.txt` va boshqalar `eol=lf`); test `TermsGuardTest`.
+- [ ] **N-2/N-3:** `status.json` yo'q bo'lsa N soatdan keyin STALE (health DOWN); alert sozlanmagan bo'lsa startupda WARN; OPERATIONS'da majburiy.
+- [ ] **N-4/N-5:** `restore-drill.sh` nullglob; `restore.sh` tiklashdan oldin sxemani tozalaydi, rollback tartibi hujjatlanadi.
+- [ ] **M-15/16:** backup shifrlash standartda majburiy (`BACKUP_ALLOW_PLAINTEXT=true` bo'lmasa passphrase'siz ishlamaydi); pre-restore snapshot ham shifrlanadi va rotatsiya qilinadi.
+- [ ] **N-6 + M-5 qoldig'i + auth LOW:** rate-limit increment-then-check; xuddi shu parol rad etiladi; `/auth/totp/confirm` null → 400; confirmTotp lockout; bootstrap parol >72 bayt aniq xabar; so'rov tanasi hajmi chegarasi; OptimisticLock → 409.
+- [ ] **N-7/N-12 + Telegram LOW:** poller o'zini tiklaydi / OOM'da exit; retry limiti va dead-letter; partiya to'sig'i olib tashlanadi; sendMessage timeout qisqaroq; BotStatus atomik; HTML-xavfsiz split; shutdown kutish.
+- [ ] **N-9/N-10/N-11 + maxfiylik LOW:** qayta ochilgan akkauntlarning eski ma'lumoti purge; admin panelda per-account purge; onboarding yozuvlari retention; o'chirish so'rovi grantlarni bekor qiladi; SUSPENDED o'chirish so'ray oladi; `/delete` e'lon; admin bekor qilsa foydalanuvchiga xabar; V8 faollik ma'lumoti tozalanadi.
+- [ ] **SUPPORT cheklovlari + CSV:** eksport faqat SUPERADMIN; sotuvchi kartasida ism/biznes nomi faqat SUPERADMIN; karta ko'rishlari auditlanadi; CSV injection (`;`, tab, `\r`); `/support.updatedBy` faqat SUPERADMIN; suspend sababi serverda majburiy.
+- [ ] **N-8 + DevOps LOW:** CI'da Java CVE skaner (osv-scanner) + Dependabot; action'lar SHA bilan pinlanadi, `permissions:`; tuning env'lari compose'da; heap; `-XX:+ExitOnOutOfMemoryError`.
+- [ ] **13-noyabr yangi kod LOW:** dashboard indekslari va statement timeout; grants ro'yxati 100 qatorga kesilmaydi (server sahifalash/filtr); notifications indeksi; viewer grant bekor bo'lganda tez yopiladi; SellerDetail bekor qilish xatosi; ErrorBoundary Login/Topbar ustida; bundle lazy-loading.
+- [ ] **Yakun:** hisobot `docs/AUDIT_FIX_REPORT.md` ga 8-bosqich bo'limi; qolganlar sababi bilan.
+
 ## Foydalanuvchi (loyiha egasi) ishlari — avtomatik sessiya qila olmaydi
 - [x] Telegram bot tokenini @BotFather orqali bekor qilish va yangisini olish (2026-11-07).
 - [ ] DB va admin parollarini almashtirish (ular ham ochiq repoda ko'ringan edi).

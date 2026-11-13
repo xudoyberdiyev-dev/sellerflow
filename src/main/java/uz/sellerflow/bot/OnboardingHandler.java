@@ -31,8 +31,8 @@ public class OnboardingHandler {
 
     public OnboardingHandler(AccountService accounts) throws IOException {
         this.accounts = accounts;
-        this.termsText = new String(new ClassPathResource("bot/terms_uz.txt").getInputStream().readAllBytes(),
-                StandardCharsets.UTF_8).strip();
+        this.termsText = uz.sellerflow.account.TermsGuard.normalize(new String(
+                new ClassPathResource("bot/terms_uz.txt").getInputStream().readAllBytes(), StandardCharsets.UTF_8));
     }
 
     public String termsText() { return termsText; }

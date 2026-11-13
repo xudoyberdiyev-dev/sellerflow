@@ -44,7 +44,7 @@ Loyiha beta bosqichi uchun **yuqori sifatda** yozilgan. Pul hisob-kitoblari `Big
 
 ### C-1. Haqiqiy production sirlari git kuzatadigan `.env.example` fayliga yozilgan
 - **Fayl:** `.env.example:5, 9, 13-14` (hozircha **commit qilinmagan**, `git status` → `M .env.example`)
-- **Dalil:** Bo'sh placeholderlar haqiqiy qiymatlarga almashtirilgan: `TELEGRAM_BOT_TOKEN=9168…` (to'liq BotFather tokeni), `DB_PASSWORD=root…`, `ADMIN_BOOTSTRAP_EMAIL=aziz…`, `ADMIN_BOOTSTRAP_PASSWORD=Aziz…`. Fayl 23:06 da o'zgargan. Audit agentlari bu faylga yozmagan, faqat o'qigan.
+- **Dalil:** Bo'sh placeholderlar haqiqiy qiymatlarga almashtirilgan: `TELEGRAM_BOT_TOKEN`, `DB_PASSWORD`, `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` (qiymatlar va ularning prefikslari 2026-11-13 da hisobotdan olib tashlandi). Fayl 23:06 da o'zgargan. Audit agentlari bu faylga yozmagan, faqat o'qigan.
 - **Ta'sir:** `.env.example` `.gitignore`da emas. Keyingi `git add .` / `git commit -a` bilan token va superadmin paroli GitHubga ketadi. Bot tokeni bilan har kim botni boshqarib, foydalanuvchilarga xabar yubora oladi. Superadmin paroli bilan admin panelga kirish xavfi ham bor (2FA hali himoya qiladi). Bundan tashqari, `DB_PASSWORD` qiymati zaif.
 - **Tavsiya:**
   1. Bu qiymatlarni `.env` fayliga ko'chiring. `.env.example`ni `git checkout -- .env.example` bilan asl holatiga qaytaring.

@@ -39,7 +39,7 @@ public class TermsGuard implements ApplicationRunner {
     }
 
     public void verify(String version, String text) {
-        String hash = sha256(text);
+        String hash = sha256(normalize(text));
         jdbc.update("insert into terms_versions(version, text_sha256) values (?, ?) on conflict do nothing", version, hash);
         String stored = jdbc.queryForObject("select text_sha256 from terms_versions where version = ?", String.class, version);
         if (!hash.equals(stored)) {
@@ -47,6 +47,15 @@ public class TermsGuard implements ApplicationRunner {
                     + "' did not — bump TERMS_VERSION so users re-consent to the new text");
         }
         log.info("Terms version {} (sha256 {}…)", version, hash.substring(0, 12));
+    }
+
+    /**
+     * N-1: xesh qator oxirlariga bog'liq bo'lmasin — Windows'da {@code core.autocrlf=true} bilan clone qilingan
+     * repoda fayl CRLF bo'lib qoladi va image ishga tushmay qolardi. CRLF/CR → LF, chetdagi bo'shliqlar olib tashlanadi.
+     */
+    public static String normalize(String text) {
+        String t = text.startsWith("\uFEFF") ? text.substring(1) : text; // Windows muharrirlari qo'shadigan BOM
+        return t.replace("\r\n", "\n").replace('\r', '\n').strip();
     }
 
     static String sha256(String s) {

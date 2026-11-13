@@ -57,7 +57,7 @@ Loyiha oldingi auditdan beri **sezilarli darajada yaxshilangan**. Kritik va asos
 
 ### 1.1 C-1 qoldig'i: sirlar ommaviy GitHub tarixida, parollar hali almashtirilmagan
 - **Holat:** PARTIAL. Ishchi daraxt toza. `scripts/check-env-example.sh`, pre-commit hook va CI'dagi gitleaks qo'shilgan, bular yaxshi.
-- **Muammo:** `9ad8251` commitida (`.env.example`) haqiqiy bot tokeni, DB paroli, superadmin email va paroli turibdi. Bu commit `origin/main` tarixida. GitHub repozitoriysi **ommaviy**: API autentifikatsiyasiz 200 qaytaradi. gitleaks ataylab faqat `292cd7b..HEAD` oralig'ini tekshiradi. `docs/AUDIT_PROGRESS.md:78` da bot tokeni revoke qilingani yozilgan, lekin buni kod orqali tasdiqlab bo'lmaydi. `:79` da **DB va superadmin parollarini almashtirish hali ochiq** (`- [ ]`).
+- **Muammo:** 2026-11-06 dagi bir commitda (`.env.example`; commit ID 2026-11-13 da hisobotdan olib tashlandi) haqiqiy bot tokeni, DB paroli, superadmin email va paroli turibdi. Bu commit `origin/main` tarixida. GitHub repozitoriysi **ommaviy**: API autentifikatsiyasiz 200 qaytaradi. gitleaks ataylab faqat `292cd7b..HEAD` oralig'ini tekshiradi. `docs/AUDIT_PROGRESS.md:78` da bot tokeni revoke qilingani yozilgan, lekin buni kod orqali tasdiqlab bo'lmaydi. `:79` da **DB va superadmin parollarini almashtirish hali ochiq** (`- [ ]`).
 - **Ta'sir:** Superadmin paroli ommaviy. Uni hozir faqat 2FA va IP rate-limit himoya qilmoqda. Agar bot tokeni haqiqatan revoke qilinmagan bo'lsa, botni boshqa odam boshqarishi mumkin.
 - **Tavsiya:**
   1. Superadmin parolini panel orqali va DB parolini darhol almashtiring.
@@ -114,7 +114,7 @@ H-3 (shartlar va privacy policy); lockout orqali email enumeration; TOTP secret 
 
 | # | Muammo | Joy | Tavsiya |
 |---|---|---|---|
-| N-1 | **TermsGuard xeshi qator oxirlarini normallashtirmaydi.** `.gitattributes` faqat `*.sh` uchun LF'ni majburlaydi. Windows'da `autocrlf=true` bo'lsa, `terms_uz.txt` CRLF bo'lib qoladi va xesh boshqacha chiqadi (auditor: `4476e8af…` va `456b0d85…`). Natijada Windows'da build qilingan image **ishga tushmaydi** | `account/TermsGuard.java:36-47` | Xeshdan oldin `\r\n` → `\n` qiling. `.gitattributes`ga `*.txt text eol=lf` qo'shing |
+| N-1 | **TermsGuard xeshi qator oxirlarini normallashtirmaydi.** `.gitattributes` faqat `*.sh` uchun LF'ni majburlaydi. Windows'da `autocrlf=true` bo'lsa, `terms_uz.txt` CRLF bo'lib qoladi va xesh boshqacha chiqadi (LF va CRLF xeshlari farq qiladi). Natijada Windows'da build qilingan image **ishga tushmaydi** | `account/TermsGuard.java:36-47` | Xeshdan oldin `\r\n` → `\n` qiling. `.gitattributes`ga `*.txt text eol=lf` qo'shing |
 | N-2 | **`status.json` yo'q bo'lsa, backup holati UNKNOWN → health UP, alert yo'q.** Backup konteyneri umuman ishga tushmasa ham (masalan, CRLF xatosi) tizim jim turadi | `ops/BackupMonitor.java:60, 81, 92` | Ilova ishga tushgandan N soat o'tib ham `status.json` bo'lmasa, holatni STALE yoki DOWN deb hisoblang |
 | N-3 | Backup alerti standartda o'chiq: `ALERT_TELEGRAM_CHAT_ID` bo'sh, startupda ogohlantirish ham chiqmaydi | `BackupMonitor.java:90`, `.env.example:41` | Startupda WARN chiqaring, OPERATIONS'da majburiy deb yozing |
 | N-4 | **`restore-drill.sh` `.dump` va `.dump.gpg` ikkalasi ham bo'lmasa, jimgina exit 2 qiladi.** Oylik tiklash sinovi aslida ishlamaydi (soxta docker bilan takrorlandi) | `scripts/restore-drill.sh:5` | `ls` glob xatosini to'g'ri ishlang (`nullglob`) |
