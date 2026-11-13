@@ -17,7 +17,7 @@ COPY --from=ui /ui/dist ./src/main/resources/static/admin
 RUN mvn -q -B -DskipTests package
 
 # --- 3. Run ---
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:24-jre
 WORKDIR /app
 RUN useradd --system --uid 10001 sellerflow
 COPY --from=build /app/target/sellerflow-*.jar /app/app.jar
