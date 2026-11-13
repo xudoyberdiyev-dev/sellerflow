@@ -45,7 +45,11 @@ public class HttpTelegramGateway implements TelegramGateway {
     static final long MAX_RETRY_AFTER_SECONDS = 10;
     static final long BASE_BACKOFF_MS = 500;
 
+    /** getUpdates (long-poll) uchun — o'qish timeout'i polling'dan uzun. */
     private final RestClient client;
+    /** LOW (N-12): chiquvchi chaqiruvlar uchun qisqa timeout — sekin Telegram worker'ni 45 s × 3 ushlab turmaydi. */
+    private final RestClient sendClient;
+    static final int SEND_READ_TIMEOUT_MS = 15_000;
     private final ObjectMapper mapper;
     private final MeterRegistry meters;
     private LongConsumer sleeper = HttpTelegramGateway::sleep;
@@ -64,6 +68,13 @@ public class HttpTelegramGateway implements TelegramGateway {
         this.client = RestClient.builder()
                 .baseUrl(props.telegram().apiBaseUrl() + "/bot" + props.telegram().botToken())
                 .requestFactory(new BufferingClientHttpRequestFactory(rf)) // Content-Length bilan, chunked emas
+                .build();
+        SimpleClientHttpRequestFactory sf = new SimpleClientHttpRequestFactory();
+        sf.setConnectTimeout(10_000);
+        sf.setReadTimeout(SEND_READ_TIMEOUT_MS);
+        this.sendClient = RestClient.builder()
+                .baseUrl(props.telegram().apiBaseUrl() + "/bot" + props.telegram().botToken())
+                .requestFactory(new BufferingClientHttpRequestFactory(sf))
                 .build();
     }
 
@@ -137,7 +148,7 @@ public class HttpTelegramGateway implements TelegramGateway {
         for (int attempt = 1; ; attempt++) {
             long started = System.nanoTime();
             try {
-                client.post().uri("/" + method).contentType(MediaType.APPLICATION_JSON).body(body)
+                sendClient.post().uri("/" + method).contentType(MediaType.APPLICATION_JSON).body(body)
                         .retrieve().toBodilessEntity();
                 record(method, "ok", started);
                 return;
@@ -159,7 +170,10 @@ public class HttpTelegramGateway implements TelegramGateway {
                 }
                 sleeper.accept(waitMs);
             } catch (RestClientException e) {
-                boolean retry = attempt < MAX_ATTEMPTS;
+                // LOW: so'rov yetib borib, javobni kutishda timeout bo'lgan bo'lsa — sendMessage qayta yuborilmaydi
+                // (aks holda foydalanuvchi bir xil xabarni ikki marta oladi). Ulanish xatolari — qayta urinadi.
+                boolean delivered = isReadTimeout(e) && "sendMessage".equals(method);
+                boolean retry = attempt < MAX_ATTEMPTS && !delivered;
                 record(method, retry ? "retry" : "error", started);
                 if (!retry) {
                     log.warn("Telegram {} failed: {}", method, e.getClass().getSimpleName());
@@ -168,6 +182,14 @@ public class HttpTelegramGateway implements TelegramGateway {
                 sleeper.accept(BASE_BACKOFF_MS << (attempt - 1));
             }
         }
+    }
+
+    static boolean isReadTimeout(Throwable e) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof java.net.SocketTimeoutException && c.getMessage() != null
+                    && c.getMessage().toLowerCase(java.util.Locale.ROOT).contains("read")) return true;
+        }
+        return false;
     }
 
     private long retryAfterSeconds(String body) {
