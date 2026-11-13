@@ -129,6 +129,17 @@ public class AccessGrantService {
                 select count(*) from access_grants
                 where admin_id = ?1 and business_id = ?2 and requested_at > now() - interval '24 hours'""")
         long countRecent(Long adminId, Long businessId);
+
+        /** LOW: count-then-insert poygasi — bitta biznes uchun so'rovlar tranzaksiya oxirigacha ketma-ket. */
+        @org.springframework.data.jpa.repository.Query(nativeQuery = true,
+                value = "select 1 from (select pg_advisory_xact_lock(7300000000 + ?1)) x")
+        Integer lockBusiness(Long businessId);
+
+        @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
+                select * from access_grants where business_id = ?1
+                  and ((status = 'APPROVED' and expires_at > now()) or (status = 'REQUESTED' and requested_at > now() - interval '24 hours'))
+                order by id desc limit 10""")
+        List<Grant> findActiveForBusiness(Long businessId);
     }
 
     public record DataView(Grant grant, List<Product> products, List<HistoryEntry> history,
@@ -166,6 +177,7 @@ public class AccessGrantService {
         UserAccount u = users.findByTelegramUserId(telegramUserId).orElseThrow(() -> new Errors.NotFound("seller"));
         if (u.getStatus() != AccountStatus.ACTIVE) throw new Errors.Validation("SELLER_NOT_ACTIVE");
         Business b = businesses.findByOwnerUserId(u.getId()).orElseThrow(() -> new Errors.NotFound("seller"));
+        grants.lockBusiness(b.getId());
         if (!admin.isSuperadmin() && grants.countRecent(admin.id(), b.getId()) >= SUPPORT_GRANTS_PER_DAY) {
             // Sotuvchini so'rovlar bilan bezovta qilmaslik / ijtimoiy muhandislikni cheklash
             throw new Errors.Validation("GRANT_LIMIT");
@@ -245,6 +257,14 @@ public class AccessGrantService {
                 pp.getTotalElements(), pp.getTotalPages(), pp.getSize(), hp.getTotalElements(), hp.getTotalPages(), hp.getSize());
     }
 
+    /** 13-noyabr LOW: viewer uchun yengil holat tekshiruvi (auditlanmaydi, tijoriy ma'lumotsiz). */
+    @Transactional(readOnly = true)
+    public Grant ownGrant(Principal admin, long grantId) {
+        Grant g = grants.findById(grantId).orElseThrow(() -> new Errors.NotFound("grant"));
+        if (!g.adminId.equals(admin.id()) && !admin.isSuperadmin()) throw new Errors.Forbidden("NOT_YOUR_GRANT");
+        return g;
+    }
+
     @Transactional
     public Grant revokeByAdmin(Principal admin, long grantId) {
         Grant g = grants.findById(grantId).orElseThrow(() -> new Errors.NotFound("grant"));
@@ -304,6 +324,18 @@ public class AccessGrantService {
     }
 
     public Status statusOf(Grant g) { return g.effectiveStatus(Instant.now()); }
+
+    /** LOW: sotuvchi botda o'zining faol va kutilayotgan ruxsatlarini ko'radi. */
+    @Transactional(readOnly = true)
+    public List<Grant> activeForBusiness(long businessId) {
+        return grants.findActiveForBusiness(businessId);
+    }
+
+    /** Admin ro'yxati uchun: ID'lar bo'yicha (filtr va huquq tekshiruvi chaqiruvchida). */
+    @Transactional(readOnly = true)
+    public List<Grant> findAllById(List<Long> ids) {
+        return grants.findAllById(ids);
+    }
 
     @Scheduled(fixedDelayString = "PT5M", initialDelayString = "PT1M")
     @Transactional

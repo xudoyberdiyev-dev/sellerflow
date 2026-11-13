@@ -48,8 +48,10 @@ export function AuditPage() {
   const exportCsv = async () => {
     setExporting(true)
     try {
-      await download(`/audit/export.csv?${filters()}`, `sellerflow-audit-${today()}.csv`)
-      toast({ tone: 'success', title: 'Eksport tayyor', description: 'Ko‘pi bilan 10 000 qator.', audit: true })
+      const r = await download(`/audit/export.csv?${filters()}`, `sellerflow-audit-${today()}.csv`)
+      toast(r.truncated
+        ? { tone: 'warning', title: 'Eksport qisqartirildi', description: 'Faqat eng yangi 10 000 qator yuklandi — davrni toraytiring.', audit: true }
+        : { tone: 'success', title: 'Eksport tayyor', audit: true })
     } catch (e) {
       toast({ tone: 'danger', title: errorText(e) })
     } finally {

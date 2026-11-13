@@ -59,7 +59,8 @@ public final class Texts {
 
     // ------------------------------------------------ holatlar
     public static final String ACCOUNT_SUSPENDED =
-            "⛔ Akkauntingiz vaqtincha cheklangan. Biznes amallari hozircha mavjud emas.\nSavollar bo‘lsa, /help orqali yordam bo‘limiga o‘ting.";
+            "⛔ Akkauntingiz vaqtincha cheklangan. Biznes amallari hozircha mavjud emas.\nSavollar bo‘lsa, /help orqali yordam bo‘limiga o‘ting. "
+                    + "Ma’lumotlaringizni o‘chirishni so‘rash: /delete";
     public static final String ACCOUNT_DELETION_REQUESTED =
             "🗑 Akkauntni o‘chirish so‘rovingiz qabul qilingan. 30 kunlik kutish davri amal qilmoqda — bu davrda biznes amallari to‘xtatilgan.";
     public static final String DELETION_CANCEL_PROMPT =
@@ -247,6 +248,9 @@ public final class Texts {
     public static final String BTN_S_CHANNEL = "🛒 Asosiy kanal";
     public static final String BTN_S_TERMS = "📄 Shartlar";
     public static final String BTN_S_DELETE = "🗑 Akkauntni o‘chirish";
+    public static final String BTN_S_ACCESS = "🔐 Admin kirish ruxsatlari";
+    public static final String ACCESS_NONE = "🔐 Hozir hech bir administratorda ma’lumotlaringizga kirish ruxsati yo‘q.";
+    public static final String ACCESS_LIST_TITLE = "🔐 <b>Admin kirish ruxsatlari</b>\nIstalgan payt bekor qilishingiz mumkin.";
     public static final String BTN_CLEAR = "🧹 Tozalash";
     public static final String ASK_S_BNAME = "🏪 Yangi biznes nomini yozing (1–80 belgi) yoki tozalang.";
     public static final String ASK_S_DNAME = "🙂 Yangi ismni yozing (1–60 belgi) yoki tozalang.";
@@ -271,6 +275,10 @@ public final class Texts {
     public static final String DELETE_STEP2 = "❗ <b>Yakuniy tasdiq.</b> Akkauntni o‘chirish so‘rovini yuboraymi?";
     public static final String BTN_DELETE_CONTINUE = "Davom etish";
     public static final String BTN_DELETE_FINAL = "Ha, so‘rov yuborilsin";
+    public static final String ERR_NAME_IS_COMMAND = "Nom «/» bilan boshlanmasin — buyruqlar nom sifatida saqlanmaydi. Boshqa nom yozing.";
+    public static final String DELETION_CANCELLED_BY_ADMIN =
+            "ℹ️ Akkauntingizni o‘chirish so‘rovi administrator tomonidan bekor qilindi.\nSabab: %s\n\n"
+                    + "Agar akkauntni baribir o‘chirmoqchi bo‘lsangiz, /delete buyrug‘i bilan qayta so‘rov yuboring.";
     public static final String DELETE_DONE = "So‘rov qabul qilindi. 30 kunlik kutish davri boshlandi.";
 
     // ------------------------------------------------ tariflar
@@ -282,7 +290,7 @@ public final class Texts {
 
     // ------------------------------------------------ yordam
     public static final String HELP =
-            "❓ <b>Yordam</b>\n\nSavolni tanlang. Asosiy bo‘limlar pastdagi menyuda.\nBuyruqlar: /menu — bosh menyu, /cancel — jarayonni bekor qilish, /settings — sozlamalar.";
+            "❓ <b>Yordam</b>\n\nSavolni tanlang. Asosiy bo‘limlar pastdagi menyuda.\nBuyruqlar: /menu — bosh menyu, /cancel — jarayonni bekor qilish, /settings — sozlamalar, /delete — akkaunt va ma’lumotlarni o‘chirish.";
     public static final String HELP_CONTEXT = "\n\n💡 Hozirgi qadamga oid savol: pastda birinchi bo‘lib ko‘rsatilgan.";
     public static final String HELP_NO_SUPPORT = "";
     public static final String BTN_FAQ_LIST = "⬅️ Savollar";

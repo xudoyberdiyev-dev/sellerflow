@@ -52,7 +52,9 @@ public class AdminController {
     public record LoginRequest(String email, String password, String code) {}
     public record TotpConfirm(String setupToken, String code) {}
     public record PasswordChange(String currentPassword, String newPassword) {}
-    public record NewAdmin(String email, String role, String tempPassword) {}
+    public record NewAdmin(String email, String role, String tempPassword, String confirmPassword) {}
+
+    public record StepUp(String confirmPassword) {}
     public record StatusChange(String reason) {}
     public record SupportUpdate(boolean enabled, String label, String url) {}
     public record GrantRequest(Long telegramUserId, String purpose, Integer minutes) {}
@@ -103,11 +105,17 @@ public class AdminController {
     /** M-2: IP bo'yicha limit — limitdan oshgan IP uchun parol umuman tekshirilmaydi (429). */
     private Map<String, Object> limited(HttpServletRequest req, java.util.function.Supplier<LoginResult> attempt) {
         String ip = req.getRemoteAddr();
-        if (loginLimiter.isBlocked(ip)) throw new TooManyAttempts();
+        // N-6: urinish OLDINDAN band qilinadi (increment-then-check) — parallel so'rovlar limitdan oshib keta olmaydi
+        LoginRateLimiter.Ticket ticket = loginLimiter.tryAcquire(ip);
+        if (ticket == null) throw new TooManyAttempts();
         try {
-            return loginView(attempt.get());
+            Map<String, Object> r = loginView(attempt.get());
+            loginLimiter.release(ticket); // muvaffaqiyatli urinish hisobga olinmaydi
+            return r;
         } catch (Errors.Forbidden e) {
-            loginLimiter.recordFailure(ip);
+            throw e; // xato urinish band qilingan holida qoladi
+        } catch (RuntimeException e) {
+            loginLimiter.release(ticket); // validatsiya/server xatosi — parol tekshirilmagan
             throw e;
         }
     }
@@ -260,7 +268,7 @@ public class AdminController {
      * SUPPORT ham o'qiy oladi (ro'yxat kabi).
      */
     @GetMapping("/sellers/{telegramUserId}")
-    public Map<String, Object> seller(@PathVariable long telegramUserId) {
+    public Map<String, Object> seller(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long telegramUserId) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 select u.id as "userId", u.telegram_user_id as "telegramUserId", u.status, u.created_at as "createdAt",
                        u.deletion_requested_at as "deletionRequestedAt",
@@ -292,6 +300,15 @@ public class AdminController {
                 select summary from audit_events where action = 'ADMIN_STATUS_CHANGE' and entity_type = 'USER'
                   and entity_id = ? order by id desc limit 1""", String.class, String.valueOf(userId));
         r.put("lastStatusChange", reason.isEmpty() ? null : reason.get(0));
+        if (!p.isSuperadmin()) {
+            // LOW: SUPPORT roziliksiz biznes nomi, ism va SUPERADMIN uchun mo'ljallangan sababni ko'rmaydi
+            r.put("businessName", null);
+            r.put("displayName", null);
+            r.put("lastStatusChange", null);
+        }
+        // LOW: sotuvchi kartasini ko'rish auditlanadi (tijoriy qiymatlarsiz)
+        audit.recordStandalone(AuditService.Actor.ADMIN, p.email(), bid == null ? null : ((Number) bid).longValue(),
+                "SELLER_CARD_VIEWED", "USER", userId, null);
         return r;
     }
 
@@ -312,7 +329,7 @@ public class AdminController {
             default -> throw new Errors.Validation("SORT_INVALID");
         };
         // D-5: status dan tashqari filtrlar (holatlar bo'yicha sonlar shu filtrlar bilan hisoblanadi)
-        StringBuilder base = new StringBuilder(" where 1=1");
+        StringBuilder base = new StringBuilder(" where u.telegram_user_id > 0");
         List<Object> baseArgs = new java.util.ArrayList<>();
         if (telegramUserId != null) {
             base.append(" and u.telegram_user_id = ?");
@@ -359,7 +376,10 @@ public class AdminController {
 
     private static java.time.LocalDate day(String v) {
         try {
-            return java.time.LocalDate.parse(v.strip());
+            java.time.LocalDate d = java.time.LocalDate.parse(v.strip());
+            // LOW: ekstremal sanalar (+999999999-…) keyingi arifmetikada 500 bermasin
+            if (d.getYear() < 2000 || d.getYear() > 2100) throw new Errors.Validation("DATE_INVALID");
+            return d;
         } catch (java.time.format.DateTimeParseException e) {
             throw new Errors.Validation("DATE_INVALID");
         }
@@ -378,9 +398,41 @@ public class AdminController {
     public Map<String, Object> reactivate(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long telegramUserId,
                                           @RequestBody(required = false) StatusChange body) {
         AdminAuthService.requireSuper(p);
-        var u = accounts.adminSetStatus(telegramUserId, AccountStatus.ACTIVE, p.email(), body == null ? null : body.reason());
+        var before = accounts.find(telegramUserId).map(a -> a.user().getStatus()).orElse(null);
+        String reason = body == null ? null : body.reason();
+        var u = accounts.adminSetStatus(telegramUserId, AccountStatus.ACTIVE, p.email(), reason);
+        if (before == AccountStatus.DELETION_REQUESTED && telegram != null) {
+            // LOW: o'chirish so'rovini admin bekor qilsa — foydalanuvchi bundan bexabar qolmaydi
+            try {
+                telegram.sendMessage(telegramUserId, String.format(uz.sellerflow.bot.Texts.DELETION_CANCELLED_BY_ADMIN,
+                        uz.sellerflow.bot.Ctx.esc(reason.strip())), null);
+            } catch (RuntimeException e) {
+                org.slf4j.LoggerFactory.getLogger(AdminController.class).warn("Deletion-cancel notice not sent: {}", e.getClass().getSimpleName());
+            }
+        }
         return m("telegramUserId", telegramUserId, "status", u.getStatus().name());
     }
+
+    /**
+     * N-10: «to'liq o'chirishni qo'llab-quvvatlash orqali so'rang» va'dasining mexanizmi. Faqat SUPERADMIN, joriy parol
+     * (step-up) va sabab bilan; yopilgan yoki o'chirish so'ralgan akkauntning tijoriy ma'lumoti darhol o'chiriladi.
+     */
+    @PostMapping("/sellers/{telegramUserId}/purge")
+    public Map<String, Object> purge(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long telegramUserId,
+                                     @RequestBody PurgeRequest body) {
+        AdminAuthService.requireSuper(p);
+        if (body == null || body.reason() == null || body.reason().strip().length() < 5) throw new Errors.Validation("REASON_REQUIRED");
+        auth.requireStepUp(p, body.confirmPassword());
+        accounts.adminPurge(telegramUserId, p.email(), body.reason().strip());
+        return m("telegramUserId", telegramUserId, "status", "CLOSED", "purged", true);
+    }
+
+    public record PurgeRequest(String reason, String confirmPassword) {}
+
+    private uz.sellerflow.telegram.TelegramGateway telegram;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setTelegram(uz.sellerflow.telegram.TelegramGateway telegram) { this.telegram = telegram; }
 
     // ================================================================= access grants
 
@@ -391,35 +443,88 @@ public class AdminController {
         return grantView(g);
     }
 
+    /** Grantning samarali holati SQL'da ({@code Grant.effectiveStatus} bilan bir xil qoida). */
+    private static final String EFFECTIVE_STATUS = """
+            case when g.status = 'APPROVED' and g.expires_at is not null and g.expires_at <= now() then 'EXPIRED'
+                 when g.status = 'REQUESTED' and g.requested_at < now() - interval '24 hours' then 'EXPIRED'
+                 else g.status end""";
+
+    /**
+     * D-5 + 13-noyabr LOW: ro'yxat serverda 100 qatorga kesilib, tablar shu kesilgan to'plam ustida hisoblanmaydi —
+     * holat (samarali) va sotuvchi filtri DB'da, sahifalash {@code page/size} (≤ 200), jami soni {@code X-Total-Count}.
+     */
     @GetMapping("/grants")
-    public List<Map<String, Object>> listGrants(@RequestAttribute(PRINCIPAL) Principal p,
-                                                @RequestParam(required = false) String status,
-                                                @RequestParam(required = false) Long telegramUserId) {
-        // D-5: sotuvchi filtri (DB darajasida) va holat tablari (samarali holat bo'yicha)
-        Long businessId = null;
-        if (telegramUserId != null) {
-            List<Long> b = jdbc.queryForList("select b.id from businesses b join users u on u.id = b.owner_user_id"
-                    + " where u.telegram_user_id = ?", Long.class, telegramUserId);
-            if (b.isEmpty()) return List.of();
-            businessId = b.get(0);
-        }
-        java.util.Set<String> statuses = new java.util.HashSet<>();
+    public ResponseEntity<List<Map<String, Object>>> listGrants(@RequestAttribute(PRINCIPAL) Principal p,
+                                                                @RequestParam(required = false) String status,
+                                                                @RequestParam(required = false) Long telegramUserId,
+                                                                @RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "100") int size) {
+        if (page < 0 || page > MAX_PAGE || size < 1 || size > 200) throw new Errors.Validation("PAGE_RANGE");
+        List<Object> args = new java.util.ArrayList<>();
+        String where = grantWhere(p, telegramUserId, args);
         if (status != null && !status.isBlank()) {
-            for (String x : status.split(",")) statuses.add(AccessGrantService.Status.valueOf(x.strip()).name());
+            List<String> st = new java.util.ArrayList<>();
+            for (String x : status.split(",")) st.add(AccessGrantService.Status.valueOf(x.strip()).name());
+            where += " and (" + EFFECTIVE_STATUS + ") = any(?)";
+            args.add(st.toArray(String[]::new));
         }
-        // LOW (DB): N+1 o'rniga ikki so'rov — sotuvchi Telegram ID'lari va admin email'lari bir yo'la
-        List<Grant> list = grants.listFor(p, businessId).stream()
-                .filter(g -> statuses.isEmpty() || statuses.contains(grants.statusOf(g).name())).toList();
-        if (list.isEmpty()) return List.of();
-        Long[] bids = list.stream().map(Grant::getBusinessId).distinct().toArray(Long[]::new);
-        Long[] aids = list.stream().map(Grant::getAdminId).distinct().toArray(Long[]::new);
-        Map<Long, Long> tg = new java.util.HashMap<>();
-        jdbc.query("select b.id, u.telegram_user_id from businesses b join users u on u.id = b.owner_user_id where b.id = any(?)",
-                rs -> { tg.put(rs.getLong(1), rs.getLong(2)); }, (Object) bids);
-        Map<Long, String> emails = new java.util.HashMap<>();
-        jdbc.query("select id, email from admins where id = any(?)", rs -> { emails.put(rs.getLong(1), rs.getString(2)); },
-                (Object) aids);
-        return list.stream().map(g -> grantView(g, tg.get(g.getBusinessId()), emails.get(g.getAdminId()))).toList();
+        Long total = jdbc.queryForObject("select count(*) from access_grants g" + where, Long.class, args.toArray());
+        List<Object> pageArgs = new java.util.ArrayList<>(args);
+        pageArgs.add(size);
+        pageArgs.add((long) page * size);
+        List<Long> ids = jdbc.queryForList("select g.id from access_grants g" + where + " order by g.id desc limit ? offset ?",
+                Long.class, pageArgs.toArray());
+        List<Map<String, Object>> body = List.of();
+        if (!ids.isEmpty()) {
+            Map<Long, Grant> byId = new java.util.HashMap<>();
+            for (Grant g : grants.findAllById(ids)) byId.put(g.getId(), g);
+            List<Grant> list = ids.stream().map(byId::get).filter(java.util.Objects::nonNull).toList();
+            // LOW (DB): N+1 o'rniga ikki so'rov — sotuvchi Telegram ID'lari va admin email'lari bir yo'la
+            Long[] bids = list.stream().map(Grant::getBusinessId).distinct().toArray(Long[]::new);
+            Long[] aids = list.stream().map(Grant::getAdminId).distinct().toArray(Long[]::new);
+            Map<Long, Long> tg = new java.util.HashMap<>();
+            jdbc.query("select b.id, u.telegram_user_id from businesses b join users u on u.id = b.owner_user_id where b.id = any(?)",
+                    rs -> { tg.put(rs.getLong(1), rs.getLong(2)); }, (Object) bids);
+            Map<Long, String> emails = new java.util.HashMap<>();
+            jdbc.query("select id, email from admins where id = any(?)", rs -> { emails.put(rs.getLong(1), rs.getString(2)); },
+                    (Object) aids);
+            body = list.stream().map(g -> grantView(g, tg.get(g.getBusinessId()), emails.get(g.getAdminId()))).toList();
+        }
+        return ResponseEntity.ok().header("X-Total-Count", String.valueOf(total))
+                .header("Access-Control-Expose-Headers", "X-Total-Count").body(body);
+    }
+
+    /** Tablar uchun: samarali holat bo'yicha sonlar (rol va sotuvchi filtri bilan, sahifalashsiz). */
+    @GetMapping("/grants/counts")
+    public Map<String, Object> grantCounts(@RequestAttribute(PRINCIPAL) Principal p,
+                                           @RequestParam(required = false) Long telegramUserId) {
+        List<Object> args = new java.util.ArrayList<>();
+        String where = grantWhere(p, telegramUserId, args);
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (AccessGrantService.Status st : AccessGrantService.Status.values()) out.put(st.name(), 0L);
+        jdbc.query("select (" + EFFECTIVE_STATUS + ") s, count(*) from access_grants g" + where + " group by 1",
+                rs -> { out.put(rs.getString(1), rs.getLong(2)); }, args.toArray());
+        return out;
+    }
+
+    private String grantWhere(Principal p, Long telegramUserId, List<Object> args) {
+        StringBuilder w = new StringBuilder(" where 1=1");
+        if (!p.isSuperadmin()) {
+            w.append(" and g.admin_id = ?");
+            args.add(p.id());
+        }
+        if (telegramUserId != null) {
+            w.append(" and g.business_id in (select b.id from businesses b join users u on u.id = b.owner_user_id where u.telegram_user_id = ?)");
+            args.add(telegramUserId);
+        }
+        return w.toString();
+    }
+
+    /** Viewer har 10 s da so'raydi: sotuvchi botda bekor qilsa ma'lumot ekrandan darhol olinadi. */
+    @GetMapping("/grants/{id}/status")
+    public Map<String, Object> grantStatus(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id) {
+        Grant g = grants.ownGrant(p, id);
+        return m("id", id, "status", grants.statusOf(g).name(), "expiresAt", str(g.getExpiresAt()));
     }
 
     @PostMapping("/grants/{id}/revoke")
@@ -464,8 +569,10 @@ public class AdminController {
     // ================================================================= support & audit (SUPERADMIN)
 
     @GetMapping("/support")
-    public Map<String, Object> getSupport() {
-        return supportView(support.settings());
+    public Map<String, Object> getSupport(@RequestAttribute(PRINCIPAL) Principal p) {
+        Map<String, Object> v = new LinkedHashMap<>(supportView(support.settings()));
+        if (!p.isSuperadmin()) v.put("updatedBy", null); // LOW: SUPPORT SUPERADMIN email'ini ko'rmaydi
+        return v;
     }
 
     /** D-5: «oxirgi o'zgartirgan admin/vaqt» — audit'dagi oxirgi SUPPORT_UPDATED dan. */
@@ -559,6 +666,7 @@ public class AdminController {
     /** D-5: sotuvchilar CSV eksporti — faqat metadata (tijoriy qiymatlar yo'q), auditga yoziladi. */
     @GetMapping(value = "/sellers/export.csv", produces = "text/csv")
     public ResponseEntity<String> sellersCsv(@RequestAttribute(PRINCIPAL) Principal p) {
+        AdminAuthService.requireSuper(p); // LOW: SUPPORT butun sotuvchilar bazasini eksport qila olmaydi
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 select u.telegram_user_id as "telegramUserId", u.status, u.created_at as "createdAt",
                        b.primary_channel as "primaryChannel", b.plan_code as "planCode", b.created_at as "activatedAt"
@@ -570,27 +678,44 @@ public class AdminController {
 
     private static ResponseEntity<String> csv(String name, List<Map<String, Object>> rows) {
         StringBuilder sb = new StringBuilder("\uFEFF"); // Excel uchun UTF-8 BOM
+        boolean truncated = rows.size() >= EXPORT_MAX_ROWS;
         if (!rows.isEmpty()) {
             sb.append(String.join(",", rows.get(0).keySet().stream().map(AdminController::csvCell).toList())).append("\r\n");
             for (Map<String, Object> r : rows) {
-                sb.append(String.join(",", r.values().stream().map(v -> csvCell(v == null ? "" : v.toString())).toList()))
+                sb.append(String.join(",", r.values().stream().map(v -> csvCell(csvValue(v))).toList()))
                         .append("\r\n");
             }
         }
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=\"" + name + "\"")
                 .header("Content-Type", "text/csv; charset=UTF-8")
+                // LOW: 10 000 qatordan ko'p bo'lsa jim kesilmaydi — UI ogohlantiradi
+                .header("X-Export-Truncated", String.valueOf(truncated))
+                .header("Access-Control-Expose-Headers", "X-Export-Truncated")
                 .body(sb.toString());
     }
 
-    /** CSV injection himoyasi: = + - @ (va tab/CR) bilan boshlangan qiymat oldiga ' qo'shiladi. */
-    static String csvCell(String v) {
-        String s = v;
-        if (!s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) s = "'" + s;
-        if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
-            s = "\"" + s.replace("\"", "\"\"") + "\"";
+    /** LOW: CSV'dagi vaqtlar Asia/Tashkent offseti bilan (ISO-8601), UTC'da offsetsiz emas. */
+    static String csvValue(Object v) {
+        if (v == null) return "";
+        if (v instanceof java.sql.Timestamp t) {
+            return t.toInstant().atZone(DashboardService.TZ).toOffsetDateTime().toString();
         }
-        return s;
+        return v.toString();
+    }
+
+    /**
+     * CSV injection himoyasi (LOW: `;`/tab orqali chetlab o'tish yopildi): har bir katak qo'shtirnoqqa olinadi — `;` yoki
+     * tab ajratgichli lokallarda ham katak bo'linmaydi; birinchi bo'sh bo'lmagan belgi = + - @ yoki tab/CR bo'lsa,
+     * oldiga ' qo'shiladi.
+     */
+    static String csvCell(String v) {
+        String s = v == null ? "" : v;
+        String t = s.stripLeading();
+        if (!s.isEmpty() && ("=+-@\t\r".indexOf(s.charAt(0)) >= 0 || (!t.isEmpty() && "=+-@".indexOf(t.charAt(0)) >= 0))) {
+            s = "'" + s;
+        }
+        return "\"" + s.replace("\"", "\"\"") + "\"";
     }
 
     // ================================================================= admins (SUPERADMIN)
@@ -604,7 +729,7 @@ public class AdminController {
     @PostMapping("/admins")
     public Map<String, Object> createAdmin(@RequestAttribute(PRINCIPAL) Principal p, @RequestBody NewAdmin r) {
         Role role = r.role() == null ? Role.SUPPORT : Role.valueOf(r.role());
-        return adminView(auth.create(p, r.email(), role, r.tempPassword()));
+        return adminView(auth.create(p, r.email(), role, r.tempPassword(), r.confirmPassword()));
     }
 
     @PostMapping("/admins/{id}/disable")
@@ -618,8 +743,9 @@ public class AdminController {
     }
 
     @PostMapping("/admins/{id}/reset-2fa")
-    public Map<String, Object> reset2fa(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id) {
-        return adminView(auth.reset2fa(p, id));
+    public Map<String, Object> reset2fa(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id,
+                                        @RequestBody(required = false) StepUp r) {
+        return adminView(auth.reset2fa(p, id, r == null ? null : r.confirmPassword()));
     }
 
     private static Map<String, Object> adminView(Admin a) {
@@ -629,6 +755,13 @@ public class AdminController {
     }
 
     // ================================================================= errors & helpers
+
+    /** LOW: @Version bilan parallel o'zgartirish — 500 emas, 409. */
+    @ExceptionHandler({org.springframework.orm.ObjectOptimisticLockingFailureException.class,
+            org.springframework.dao.OptimisticLockingFailureException.class})
+    public ResponseEntity<Map<String, Object>> conflict(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(m("error", "CONCURRENT_MODIFICATION"));
+    }
 
     @ExceptionHandler(Errors.NotFound.class)
     public ResponseEntity<Map<String, Object>> notFound(Errors.NotFound e) {

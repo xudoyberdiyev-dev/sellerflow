@@ -32,6 +32,11 @@ public class SettingsHandler {
     private final OnboardingHandler onboarding;
     private BotDispatcher dispatcher;
 
+    private uz.sellerflow.access.AccessGrantService grants;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setGrants(uz.sellerflow.access.AccessGrantService grants) { this.grants = grants; }
+
     public SettingsHandler(AccountService accounts, PlanService plans, OnboardingHandler onboarding) {
         this.accounts = accounts;
         this.plans = plans;
@@ -53,6 +58,7 @@ public class SettingsHandler {
                 .row(Kb.cb(Texts.BTN_S_BNAME, "s:bn"), Kb.cb(Texts.BTN_S_DNAME, "s:dn"))
                 .row(Kb.cb(Texts.BTN_S_CHANNEL, "s:ch"), Kb.cb(Texts.BTN_S_TERMS, "s:terms"))
                 .row(Kb.cb(Texts.BTN_TARIFFS_INLINE, "t:show"), Kb.cb("❓ Yordam", "f:list"))
+                .row(Kb.cb(Texts.BTN_S_ACCESS, "s:acc"))
                 .row(Kb.cb(Texts.BTN_S_DELETE, "s:del1")));
     }
 
@@ -95,15 +101,26 @@ public class SettingsHandler {
                         c.map(x -> FULL.format(x.getAcceptedAt())).orElse("—"),
                         Ctx.esc(onboarding.termsText())), Kb.create().row(Kb.cb(Texts.BTN_BACK, "s:c")));
             }
+            case "acc" -> showAccess(ctx);
             case "del1" -> ctx.send(String.format(Texts.DELETE_STEP1,
                     accounts.purgeEnabled() ? Texts.DELETE_DATA_PURGED : Texts.DELETE_DATA_RETAINED), Kb.create()
                     .row(Kb.cb(Texts.BTN_DELETE_CONTINUE, "s:del2"), Kb.cb(Texts.BTN_CANCEL, "s:c")));
             case "del2" -> {
                 ctx.clearSourceButtons();
+                // LOW: xavfli yakuniy tugmada bir martalik nonce — eski xabardagi tugma keyinroq bosilsa ishlamaydi
+                String nonce = Long.toHexString(java.util.concurrent.ThreadLocalRandom.current().nextLong() & 0xffffffffffL);
+                ctx.session.put("delNonce", nonce);
                 ctx.send(Texts.DELETE_STEP2, Kb.create()
-                        .row(Kb.cb(Texts.BTN_DELETE_FINAL, "s:del3"), Kb.cb(Texts.BTN_CANCEL, "s:c")));
+                        .row(Kb.cb(Texts.BTN_DELETE_FINAL, "s:del3:" + nonce), Kb.cb(Texts.BTN_CANCEL, "s:c")));
             }
             case "del3" -> {
+                String expected = ctx.session.str("delNonce");
+                if (p.length < 3 || expected == null || !expected.equals(p[2])) {
+                    ctx.clearSourceButtons();
+                    ctx.send(Texts.STALE);
+                    return;
+                }
+                ctx.session.data().remove("delNonce");
                 ctx.clearSourceButtons();
                 accounts.requestDeletion(ctx.userId());
                 ctx.session.clear();
@@ -112,6 +129,27 @@ public class SettingsHandler {
             }
             default -> ctx.send(Texts.STALE);
         }
+    }
+
+    /** Sotuvchining faol va kutilayotgan admin kirish ruxsatlari (bekor qilish tugmasi bilan). */
+    private void showAccess(Ctx ctx) {
+        List<uz.sellerflow.access.AccessGrantService.Grant> list = grants == null ? List.of() : grants.activeForBusiness(ctx.businessId());
+        if (list.isEmpty()) {
+            ctx.send(Texts.ACCESS_NONE, Kb.create().row(Kb.cb(Texts.BTN_BACK, "s:c")));
+            return;
+        }
+        StringBuilder sb = new StringBuilder(Texts.ACCESS_LIST_TITLE);
+        Kb kb = Kb.create();
+        DateTimeFormatter hm = DateTimeFormatter.ofPattern("dd.MM HH:mm").withZone(ZoneId.of("Asia/Tashkent"));
+        for (var g : list) {
+            boolean approved = grants.statusOf(g) == uz.sellerflow.access.AccessGrantService.Status.APPROVED;
+            sb.append("\n\n• #").append(g.getId()).append(" — ")
+                    .append(approved ? "ruxsat berilgan, " + hm.format(g.getExpiresAt()) + " gacha" : "javob kutilmoqda")
+                    .append("\nSabab: ").append(Ctx.esc(g.getPurpose()));
+            kb.row(Kb.cb((approved ? "🚫 Bekor qilish #" : "❌ Rad etish #") + g.getId(), "g:" + g.getId() + (approved ? ":r" : ":d")));
+        }
+        kb.row(Kb.cb(Texts.BTN_BACK, "s:c"));
+        ctx.send(sb.toString(), kb);
     }
 
     private void refresh(Ctx ctx) {

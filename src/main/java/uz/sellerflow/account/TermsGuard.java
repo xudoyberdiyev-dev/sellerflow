@@ -39,6 +39,10 @@ public class TermsGuard implements ApplicationRunner {
     }
 
     public void verify(String version, String text) {
+        // LOW: versiya callback data ichida (rc:a:<versiya>) uzatiladi — ':' va uzun qiymat tugmalarni buzadi
+        if (version == null || !version.matches("[A-Za-z0-9._-]{1,40}")) {
+            throw new IllegalStateException("TERMS_VERSION must be 1-40 chars of [A-Za-z0-9._-], got: '" + version + "'");
+        }
         String hash = sha256(normalize(text));
         jdbc.update("insert into terms_versions(version, text_sha256) values (?, ?) on conflict do nothing", version, hash);
         String stored = jdbc.queryForObject("select text_sha256 from terms_versions where version = ?", String.class, version);

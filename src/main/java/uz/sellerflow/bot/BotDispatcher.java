@@ -94,8 +94,10 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
     private void handleMessage(Tg.Message m) {
         long chatId = m.chat().id();
         if (!m.chat().isPrivate()) {
-            // CR-CHAT-01: guruhda biznes oqimi yo'q, faqat umumiy yo'riqnoma
-            if (m.text() != null && m.text().startsWith("/")) tg.sendMessage(chatId, Texts.GROUP_CHAT, null);
+            // CR-CHAT-01: guruhda biznes oqimi yo'q, faqat umumiy yo'riqnoma. LOW: guruhda ham rate-limit (spam yo'q)
+            if (m.text() != null && m.text().startsWith("/") && rateLimiter.check(m.from().id()) == RateLimiter.Verdict.OK) {
+                tg.sendMessage(chatId, Texts.GROUP_CHAT, null);
+            }
             return;
         }
         if (!allowed(chatId, m.from().id())) return;
@@ -152,7 +154,8 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             flows.save(ctx.session);
         } catch (Errors.Forbidden e) {
             ctx.send(Texts.FEATURE_LIMITED);
-        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            // LOW: NumberFormatException va enum valueOf (IllegalArgumentException) — soxta callback, stacktrace'siz
             // Soxta/eskirgan callback data yoki buzilgan kiritish — dastur xatosi emas, stacktrace'siz WARN
             log.warn("Malformed input for user {}: {}", ctx.account.user().getId(), e.toString());
             io.micrometer.core.instrument.Metrics.counter("sellerflow.update.errors", "type", "malformed").increment();
@@ -175,6 +178,7 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             case "PRODUCT_NAME_LENGTH" -> String.format(Texts.ERR_TEXT_LENGTH, 120);
             case "BUSINESS_NAME_LENGTH" -> String.format(Texts.ERR_TEXT_LENGTH, 80);
             case "DISPLAY_NAME_LENGTH" -> String.format(Texts.ERR_TEXT_LENGTH, 60);
+            case "NAME_IS_COMMAND" -> Texts.ERR_NAME_IS_COMMAND;
             case "PRODUCT_NAME_REQUIRED" -> Texts.ERR_TEXT_EMPTY;
             case "VALUE_TOO_LARGE" -> Texts.ERR_TOO_LARGE;
             case "PLANNED_PRICE_NOT_POSITIVE" -> Texts.ERR_PRICE_POSITIVE;
@@ -198,6 +202,10 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
                 return;
             }
             onboarding.onText(ctx, text, cmd);
+            return;
+        }
+        if (status == AccountStatus.SUSPENDED && "/delete".equals(cmd)) {
+            settings.onCallback(ctx, new String[]{"s", "del1"}); // LOW: bloklangan foydalanuvchi ham o'chirishni so'raydi
             return;
         }
         if (status != AccountStatus.ACTIVE) {
@@ -227,6 +235,11 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
                     }
                 }
                 case "/help" -> info.showHelp(ctx, true);
+                case "/delete" -> {
+                    ctx.session.pause();
+                    ctx.session.uiMode(null);
+                    settings.onCallback(ctx, new String[]{"s", "del1"});
+                }
                 case "/settings" -> {
                     ctx.session.pause();
                     ctx.session.uiMode(null);
@@ -334,6 +347,12 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             Ctx fresh = context(ctx.chatId, ctx.telegramUserId, null);
             onboarding.onText(fresh, "/start", "/start");
             flows.save(fresh.session);
+            return;
+        }
+        boolean deletionCallback = "s".equals(prefix) && p.length > 1 && (p[1].startsWith("del") || "c".equals(p[1]));
+        if (status == AccountStatus.SUSPENDED && deletionCallback) {
+            if ("c".equals(p[1])) restricted(ctx, status, false); // «Bekor qilish»
+            else settings.onCallback(ctx, p);
             return;
         }
         if (status != AccountStatus.ACTIVE) {

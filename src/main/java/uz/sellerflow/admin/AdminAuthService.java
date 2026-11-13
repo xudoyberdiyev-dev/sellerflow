@@ -314,6 +314,10 @@ public class AdminAuthService {
             log.error("ADMIN_BOOTSTRAP_PASSWORD must be at least {} characters — admin not created", MIN_PASSWORD);
             return;
         }
+        if (tooLong(a.bootstrapPassword())) {
+            log.error("ADMIN_BOOTSTRAP_PASSWORD is longer than {} bytes (BCrypt limit) — admin not created", MAX_PASSWORD_BYTES);
+            return;
+        }
         Admin admin = admins.save(new Admin(a.bootstrapEmail().strip(), encoder.encode(a.bootstrapPassword()),
                 Role.SUPERADMIN, false));
         audit.record(Actor.SYSTEM, "bootstrap", null, "ADMIN_BOOTSTRAPPED", "ADMIN", admin.getId(), null);
@@ -340,8 +344,9 @@ public class AdminAuthService {
             throw new Errors.Forbidden("INVALID_CREDENTIALS");
         }
         if (a.lockedUntil != null && now.isBefore(a.lockedUntil)) {
+            // LOW: alohida «LOCKED» javobi email mavjudligini oshkor qilardi (yo'q email hech qachon bloklanmaydi)
             loginFailed(a.id, a.email, "locked");
-            throw new Errors.Forbidden("LOCKED");
+            throw new Errors.Forbidden("INVALID_CREDENTIALS");
         }
         if (!passwordOk) {
             loginFailed(a.id, a.email, "password");
@@ -368,10 +373,17 @@ public class AdminAuthService {
 
     @Transactional(noRollbackFor = Errors.Forbidden.class)
     public LoginResult confirmTotp(String setupToken, String code) {
+        // LOW: null maydonlar 500 emas, 400
+        if (setupToken == null || setupToken.isBlank() || code == null) throw new Errors.Validation("INVALID_REQUEST");
         Instant now = Instant.now();
         AdminSession s = sessions.findById(hash(setupToken)).orElseThrow(() -> new Errors.Forbidden("INVALID_SESSION"));
         if (s.revoked || !"TOTP_SETUP".equals(s.kind) || now.isAfter(s.expiresAt)) throw new Errors.Forbidden("INVALID_SESSION");
         Admin a = admins.findById(s.adminId).orElseThrow(() -> new Errors.Forbidden("INVALID_SESSION"));
+        // LOW: lockout 2FA sozlash bosqichida ham amal qiladi
+        if (a.status != Status.ACTIVE || (a.lockedUntil != null && now.isBefore(a.lockedUntil))) {
+            loginFailed(a.id, a.email, "totp-setup-locked");
+            throw new Errors.Forbidden("INVALID_SESSION");
+        }
         if (!consumeTotp(a, code, now)) {
             loginFailed(a.id, a.email, "totp-setup");
             registerFailure(a, now, "totp-setup");
@@ -477,6 +489,8 @@ public class AdminAuthService {
             throw new Errors.Validation("WRONG_PASSWORD");
         }
         validatePassword(next);
+        // M-5 qoldig'i: vaqtinchalik parolni xuddi o'zi bilan «almashtirib» cheklovni chetlab o'tib bo'lmaydi
+        if (encoder.matches(next, a.passwordHash)) throw new Errors.Validation("PASSWORD_REUSED");
         a.passwordHash = encoder.encode(next);
         a.mustChangePassword = false;
         a.failedAttempts = 0;
@@ -493,9 +507,10 @@ public class AdminAuthService {
         return admins.findAll().stream().sorted((x, y) -> Long.compare(x.id, y.id)).toList();
     }
 
-    @Transactional
-    public Admin create(Principal by, String email, Role role, String tempPassword) {
+    @Transactional(noRollbackFor = Errors.Forbidden.class)
+    public Admin create(Principal by, String email, Role role, String tempPassword, String confirmPassword) {
         requireSuper(by);
+        requireStepUp(by, confirmPassword);
         if (email == null || !email.strip().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) throw new Errors.Validation("EMAIL_INVALID");
         if (admins.findByEmailIgnoreCase(email.strip()).isPresent()) throw new Errors.Validation("EMAIL_TAKEN");
         validatePassword(tempPassword);
@@ -516,9 +531,10 @@ public class AdminAuthService {
         return a;
     }
 
-    @Transactional
-    public Admin reset2fa(Principal by, long adminId) {
+    @Transactional(noRollbackFor = Errors.Forbidden.class)
+    public Admin reset2fa(Principal by, long adminId, String confirmPassword) {
         requireSuper(by);
+        requireStepUp(by, confirmPassword);
         Admin a = admins.findById(adminId).orElseThrow(() -> new Errors.NotFound("admin"));
         a.totpEnabled = false;
         a.totpSecret = null;
@@ -527,6 +543,23 @@ public class AdminAuthService {
         sessions.revokeAll(adminId);
         audit.record(Actor.ADMIN, by.email(), null, "ADMIN_2FA_RESET", "ADMIN", adminId, null);
         return a;
+    }
+
+    /**
+     * LOW (step-up): o'g'irlangan sessiya bilan yangi admin yaratib yoki boshqa adminning 2FA'sini o'chirib bo'lmasin —
+     * joriy parol qayta so'raladi. Xato urinish akkaunt lockout hisoblagichiga qo'shiladi.
+     */
+    @Transactional(noRollbackFor = Errors.Forbidden.class)
+    public void requireStepUp(Principal by, String password) {
+        Admin me = admins.findById(by.id()).orElseThrow(() -> new Errors.Forbidden("STEP_UP_REQUIRED"));
+        if (password == null || tooLong(password) || !encoder.matches(password, me.passwordHash)) {
+            if (admins.registerFailure(me.id, MAX_FAILED, Instant.now().plus(LOCK)) > 0) {
+                sessions.revokeAll(me.id);
+                audit.record(Actor.SYSTEM, "auth", null, "ADMIN_LOCKED", "ADMIN", me.id, "after failed step-up");
+            }
+            audit.record(Actor.ADMIN, by.email(), null, "ADMIN_STEP_UP_FAILED", "ADMIN", me.id, null);
+            throw new Errors.Forbidden("STEP_UP_REQUIRED");
+        }
     }
 
     public static void requireSuper(Principal p) {

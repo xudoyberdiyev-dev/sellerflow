@@ -27,6 +27,7 @@ class AdminApiIT extends IntegrationTest {
     @Autowired uz.sellerflow.audit.AuditService auditService;
     @Autowired org.springframework.transaction.support.TransactionTemplate txTemplate;
     @Autowired uz.sellerflow.account.TermsGuard termsGuard;
+    @Autowired uz.sellerflow.account.AccountPurger purger;
     @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
     @Autowired uz.sellerflow.audit.AuditRetentionJob auditRetention;
     @Autowired uz.sellerflow.admin.LoginRateLimiter loginLimiter;
@@ -40,6 +41,11 @@ class AdminApiIT extends IntegrationTest {
     // ------------------------------------------------------------ helpers
 
     private ResponseEntity<String> call(HttpMethod method, String path, String token, String body) {
+        // Step-up: testlarda bu endpointlarni faqat OWNER chaqiradi — parol avtomatik qo'shiladi (aniq test alohida)
+        if (method == HttpMethod.POST && (path.equals("/admins") || path.endsWith("/reset-2fa")) && (body == null || !body.contains("confirmPassword"))) {
+            String cp = "\"confirmPassword\":\"" + OWNER_PASS + "\"";
+            body = body == null || body.isBlank() ? "{" + cp + "}" : body.replaceFirst("\\{", "{" + cp + ",");
+        }
         // JDK HttpClient: 401 javoblarida HttpURLConnection'dagi "streaming mode" muammosi yo'q
         try {
             var b = java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://localhost:" + port + "/admin/api/v1" + path))
@@ -469,16 +475,31 @@ class AdminApiIT extends IntegrationTest {
         assertThat(sellers.getBody()).contains(String.valueOf(u)).doesNotContain("unitCost");
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action in ('EXPORT_AUDIT','EXPORT_SELLERS')", Long.class)).isEqualTo(2);
 
-        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("=1+2")).isEqualTo("'=1+2");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("=1+2")).isEqualTo("\"'=1+2\"");
         assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("a,b")).isEqualTo("\"a,b\"");
-        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("@x")).startsWith("'");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("@x")).startsWith("\"'");
+        // LOW: ; va tab ajratgichli lokallar — katak bo'linmaydi (qo'shtirnoq), bo'shliqdan keyingi formula ham neytral
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("a;=cmd()")).isEqualTo("\"a;=cmd()\"");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("x\t=1")).isEqualTo("\"x\t=1\"");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("  =1+1")).isEqualTo("\"'  =1+1\"");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("\t=1")).startsWith("\"'");
+        assertThat(csv.getHeaders().getFirst("X-Export-Truncated")).isEqualTo("false");
+        assertThat(csv.getBody()).contains("+05:00"); // vaqtlar Toshkent offseti bilan
+        assertThat(call(HttpMethod.GET, "/audit?from=%2B999999999-12-31", token, null).getStatusCode().value()).isEqualTo(400);
 
         String email = "csv" + System.nanoTime() + "@sellerflow.test";
         call(HttpMethod.POST, "/admins", token,
                 "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
         String support = loginWithNewPassword(email, "temporary-pass-123");
         assertThat(call(HttpMethod.GET, "/audit/export.csv", support, null).getStatusCode().value()).isEqualTo(403);
-        assertThat(call(HttpMethod.GET, "/sellers/export.csv", support, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.GET, "/sellers/export.csv", support, null).getStatusCode().value()).isEqualTo(403);
+        // LOW: SUPPORT kartada ism/biznes nomini va SUPERADMIN email'ini ko'rmaydi; ko'rish auditlanadi
+        JsonNode card = json(call(HttpMethod.GET, "/sellers/" + u, support, null));
+        assertThat(card.path("businessName").isNull()).isTrue();
+        assertThat(card.path("lastStatusChange").isNull()).isTrue();
+        assertThat(json(call(HttpMethod.GET, "/sellers/" + u, token, null)).path("lastStatusChange").asText()).contains("HYPERLINK");
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'SELLER_CARD_VIEWED'", Long.class)).isEqualTo(2);
+        assertThat(json(call(HttpMethod.GET, "/support", support, null)).path("updatedBy").isNull()).isTrue();
     }
 
     @Test
@@ -503,11 +524,85 @@ class AdminApiIT extends IntegrationTest {
         loginLimiter.reset();
         ResponseEntity<String> wrong = call(HttpMethod.POST, "/auth/login", null,
                 "{\"email\":\"" + OWNER + "\",\"password\":\"still-wrong\"}");
-        assertThat(right.getBody()).contains("LOCKED");
+        assertThat(right.getBody()).contains("INVALID_CREDENTIALS").doesNotContain("LOCKED");
+        // LOW: bloklangan va mavjud bo'lmagan email bir xil javob oladi (email enumeration yo'q)
+        loginLimiter.reset();
+        ResponseEntity<String> ghost = call(HttpMethod.POST, "/auth/login", null,
+                "{\"email\":\"nobody@sellerflow.test\",\"password\":\"whatever-123\"}");
+        assertThat(ghost.getStatusCode()).isEqualTo(right.getStatusCode());
+        assertThat(ghost.getBody()).isEqualTo(right.getBody());
         // M-2: bloklangan akkauntda javob parol to'g'ri/noto'g'riligiga bog'liq emas
         assertThat(wrong.getStatusCode()).isEqualTo(right.getStatusCode());
         assertThat(wrong.getBody()).isEqualTo(right.getBody());
         jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+    }
+
+    /** LOW (step-up): admin yaratish va 2FA reset joriy parolni talab qiladi. */
+    @Test
+    void privilegedActions_requireStepUpPassword() throws Exception {
+        String token = owner();
+        String email = "s" + System.nanoTime() + "@sellerflow.test";
+        ResponseEntity<String> bad = call(HttpMethod.POST, "/admins", token,
+                "{\"confirmPassword\":\"wrong-password-1\",\"email\":\"" + email + "\",\"role\":\"SUPERADMIN\",\"tempPassword\":\"temporary-pass-123\"}");
+        assertThat(bad.getStatusCode().value()).isEqualTo(403);
+        assertThat(bad.getBody()).contains("STEP_UP_REQUIRED");
+        assertThat(jdbc.queryForObject("select count(*) from admins where email = ?", Long.class, email)).isZero();
+        assertThat(jdbc.queryForObject("select failed_attempts from admins where email = ?", Integer.class, OWNER)).isEqualTo(1);
+        long id = json(call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}")).path("id").asLong();
+        assertThat(call(HttpMethod.POST, "/admins/" + id + "/reset-2fa", token, "{\"confirmPassword\":\"nope-nope-nope\"}")
+                .getStatusCode().value()).isEqualTo(403);
+        assertThat(call(HttpMethod.POST, "/admins/" + id + "/reset-2fa", token, null).getStatusCode().value()).isEqualTo(200);
+        jdbc.update("update admins set failed_attempts = 0 where email = ?", OWNER);
+    }
+
+    /** N-6: parallel login urinishlari IP limitidan oshib keta olmaydi (atomik band qilish). */
+    @Test
+    void ipRateLimit_isAtomicUnderConcurrency() throws Exception {
+        jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(12);
+        try {
+            var start = new java.util.concurrent.CountDownLatch(1);
+            java.util.List<java.util.concurrent.Future<Integer>> fs = new java.util.ArrayList<>();
+            for (int i = 0; i < 12; i++) {
+                int n = i;
+                fs.add(pool.submit(() -> {
+                    start.await();
+                    return call(HttpMethod.POST, "/auth/login", null,
+                            "{\"email\":\"" + OWNER + "\",\"password\":\"par-wrong-" + n + "\"}").getStatusCode().value();
+                }));
+            }
+            start.countDown();
+            int checked = 0;
+            for (var f : fs) if (f.get() == 401) checked++;
+            assertThat(checked).isEqualTo(5); // faqat 5 tasi parol tekshiruviga yetdi, qolgani 429
+            assertThat(jdbc.queryForObject("select failed_attempts from admins where email = ?", Integer.class, OWNER)).isEqualTo(5);
+        } finally {
+            pool.shutdownNow();
+            loginLimiter.reset();
+            jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        }
+    }
+
+    /** M-5 qoldig'i, confirmTotp null, so'rov hajmi, bootstrap. */
+    @Test
+    void authEdgeCases_reusedPassword_nullTotp_bodySize() throws Exception {
+        String email = "r" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", owner(),
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
+        String t = login(email, "temporary-pass-123");
+        ResponseEntity<String> same = call(HttpMethod.POST, "/auth/password", t,
+                "{\"currentPassword\":\"temporary-pass-123\",\"newPassword\":\"temporary-pass-123\"}");
+        assertThat(same.getStatusCode().value()).isEqualTo(400);
+        assertThat(same.getBody()).contains("PASSWORD_REUSED");
+        assertThat(call(HttpMethod.GET, "/stats", t, null).getStatusCode().value()).isEqualTo(403); // hali cheklangan
+
+        assertThat(call(HttpMethod.POST, "/auth/totp/confirm", null, "{\"code\":\"123456\"}").getStatusCode().value()).isEqualTo(400);
+        assertThat(call(HttpMethod.POST, "/auth/totp/confirm", null, "{}").getStatusCode().value()).isEqualTo(400);
+
+        String big = "{\"email\":\"" + "a".repeat(70_000) + "\",\"password\":\"x\"}";
+        ResponseEntity<String> r = call(HttpMethod.POST, "/auth/login", null, big);
+        assertThat(r.getStatusCode().value()).isEqualTo(413);
     }
 
     /** M-2 regression: bitta IP'dan 5 ta xatodan keyin 429, akkaunt esa bloklanmaydi (lockout DoS yo'q). */
@@ -589,11 +684,11 @@ class AdminApiIT extends IntegrationTest {
     void suspendAndReactivate_areAudited_andBlockBot() throws Exception {
         String token = owner();
         long u = onboardedUser();
-        assertThat(call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"test\"}").getBody())
+        assertThat(call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"test sababi\"}").getBody())
                 .contains("SUSPENDED");
         text(u, Texts.BTN_PRODUCTS);
         assertThat(lastText(u)).contains("cheklangan");
-        call(HttpMethod.POST, "/sellers/" + u + "/reactivate", token, "{}");
+        call(HttpMethod.POST, "/sellers/" + u + "/reactivate", token, "{\"reason\":\"tekshiruv tugadi\"}");
         text(u, Texts.BTN_PRODUCTS);
         assertThat(lastText(u)).contains("Mahsulotlarim");
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ADMIN_STATUS_CHANGE' and actor_id = ?",
@@ -738,6 +833,19 @@ class AdminApiIT extends IntegrationTest {
         assertThat(json(call(HttpMethod.GET, "/grants?status=REQUESTED", token, null)).size()).isEqualTo(1);
         assertThat(json(call(HttpMethod.GET, "/grants?telegramUserId=123", token, null)).size()).isZero();
         assertThat(call(HttpMethod.GET, "/grants?status=BOGUS", token, null).getStatusCode().value()).isEqualTo(400);
+        // 13-noyabr LOW: tablar uchun server sonlari, sahifalash va jami soni (100 qatorga kesilmaydi)
+        JsonNode counts = json(call(HttpMethod.GET, "/grants/counts", token, null));
+        assertThat(counts.path("APPROVED").asLong()).isEqualTo(1);
+        assertThat(counts.path("REQUESTED").asLong()).isEqualTo(1);
+        assertThat(json(call(HttpMethod.GET, "/grants/counts?telegramUserId=" + a, token, null)).path("REQUESTED").asLong()).isZero();
+        ResponseEntity<String> p1 = call(HttpMethod.GET, "/grants?size=1&page=1", token, null);
+        assertThat(p1.getHeaders().getFirst("X-Total-Count")).isEqualTo("2");
+        assertThat(json(p1).size()).isEqualTo(1);
+        assertThat(call(HttpMethod.GET, "/grants?size=1000", token, null).getStatusCode().value()).isEqualTo(400);
+        jdbc.update("update access_grants set expires_at = now() - interval '1 minute' where id = ?", ga);
+        assertThat(json(call(HttpMethod.GET, "/grants?status=EXPIRED", token, null)).size()).isEqualTo(1); // samarali holat SQL'da
+        assertThat(json(call(HttpMethod.GET, "/grants/" + ga + "/status", token, null)).path("status").asText()).isEqualTo("EXPIRED");
+        jdbc.update("update access_grants set expires_at = now() + interval '20 minutes' where id = ?", ga);
 
         JsonNode d = json(call(HttpMethod.GET, "/grants/" + ga + "/data?productPage=0&historyPage=0", token, null));
         assertThat(d.path("productPage").path("total").asLong()).isEqualTo(1);
@@ -890,7 +998,7 @@ class AdminApiIT extends IntegrationTest {
         JsonNode list = json(call(HttpMethod.GET, "/grants", token, null));
         assertThat(list.get(0).path("telegramUserId").asLong()).isEqualTo(u); // LOW (DB): batch so'rov
         assertThat(list.get(0).path("adminEmail").asText()).isEqualToIgnoringCase(OWNER);
-        call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"test\"}");
+        call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"test sababi\"}");
         assertThat(jdbc.queryForObject("select status from access_grants where id = ?", String.class, gid)).isEqualTo("REVOKED");
     }
 
@@ -902,8 +1010,8 @@ class AdminApiIT extends IntegrationTest {
         jdbc.update("update users set status = 'CLOSED' where telegram_user_id = ?", u);
         var base = props;
         var purgeProps = new uz.sellerflow.common.SellerFlowProperties(base.telegram(), base.admin(), base.terms(), base.draft(),
-                base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true), base.rateLimit());
-        txTemplate.executeWithoutResult(st -> new DeletionJob(jdbc, auditService, purgeProps, txManager).run());
+                base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true, 30), base.rateLimit());
+        txTemplate.executeWithoutResult(st -> new DeletionJob(jdbc, auditService, purgeProps, txManager, purger).run());
         assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, u)).isZero();
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACCOUNT_PURGED'", Long.class)).isEqualTo(1);
     }
@@ -915,13 +1023,159 @@ class AdminApiIT extends IntegrationTest {
         jdbc.update("update users set status = 'DELETION_REQUESTED', deletion_requested_at = now() - interval '31 days' where telegram_user_id = ?", u);
         var base = props;
         var purgeProps = new uz.sellerflow.common.SellerFlowProperties(base.telegram(), base.admin(), base.terms(), base.draft(),
-                base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true), base.rateLimit());
-        var job = new DeletionJob(jdbc, auditService, purgeProps, txManager);
+                base.support(), new uz.sellerflow.common.SellerFlowProperties.Deletion(30, true, 30), base.rateLimit());
+        var job = new DeletionJob(jdbc, auditService, purgeProps, txManager, purger);
         assertThat((int) txTemplate.execute(st -> job.run())).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, u)).isZero();
         assertThat(jdbc.queryForObject("select count(*) from users where status = 'CLOSED' and telegram_user_id < 0", Long.class)).isEqualTo(1);
         // keyingi /start — yangi akkaunt (onboarding)
         text(u, "/start");
         assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("ONBOARDING");
+    }
+
+    // ------------------------------------------------------------ 8-bosqich: maxfiylik (N-9/N-10/N-11 + LOW)
+
+    private void addProduct(long u, String name) {
+        text(u, Texts.BTN_PRODUCTS);
+        click(u, "Yangi mahsulot");
+        text(u, name);
+        text(u, "1000");
+        click(u, "O‘tkazib yuborish");
+        click(u, "O‘tkazib yuborish");
+        click(u, "Saqlash");
+    }
+
+    /** N-9: yopilgan akkaunt egasi yangidan boshlasa, eski tijoriy ma'lumot yetim qolmaydi — tozalanadi. */
+    @Test
+    void reopeningClosedAccount_purgesOldCommercialData() {
+        long u = onboardedUser();
+        addProduct(u, "Eski mahsulot");
+        long oldId = jdbc.queryForObject("select id from users where telegram_user_id = ?", Long.class, u);
+        jdbc.update("update users set status = 'CLOSED' where id = ?", oldId);
+        text(u, "/start");
+        callback(u, "rn:x");
+        assertThat(jdbc.queryForObject("select count(*) from products p join businesses b on b.id = p.business_id where b.owner_user_id = ?",
+                Long.class, oldId)).isZero();
+        assertThat(jdbc.queryForObject("select purged_at is not null and telegram_user_id < 0 from users where id = ?", Boolean.class, oldId)).isTrue();
+        assertThat(jdbc.queryForObject("select count(*) from user_activity_days where user_id = ?", Long.class, oldId)).isZero();
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("ONBOARDING");
+    }
+
+    /** N-11: tugallanmagan onboarding yozuvi 30 kundan keyin psevdonimlanadi; faol onboarding tegilmaydi. */
+    @Test
+    void staleOnboardingRecords_arePseudonymizedAfterRetention() {
+        long stale = newUserId();
+        long fresh = newUserId();
+        text(stale, "/help");
+        text(fresh, "/start");
+        jdbc.update("update users set updated_at = now() - interval '40 days', last_seen_at = now() - interval '40 days' where telegram_user_id = ?", stale);
+        var job = new DeletionJob(jdbc, auditService, props, txManager, purger);
+        assertThat(job.cleanupStaleOnboarding()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, stale)).isZero();
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, fresh)).isEqualTo("ONBOARDING");
+    }
+
+    /** N-10: admin orqali to'liq o'chirish — faqat yopilgan/o'chirish so'ralgan, step-up bilan. */
+    @Test
+    void adminPurge_requiresClosedAccountAndStepUp() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        addProduct(u, "Mahsulot P");
+        assertThat(call(HttpMethod.POST, "/sellers/" + u + "/purge", token,
+                "{\"reason\":\"sotuvchi so'radi\",\"confirmPassword\":\"" + OWNER_PASS + "\"}").getBody()).contains("PURGE_ONLY_CLOSED");
+        jdbc.update("update users set status = 'CLOSED' where telegram_user_id = ?", u);
+        assertThat(call(HttpMethod.POST, "/sellers/" + u + "/purge", token,
+                "{\"reason\":\"sotuvchi so'radi\",\"confirmPassword\":\"wrong-password\"}").getStatusCode().value()).isEqualTo(403);
+        assertThat(call(HttpMethod.POST, "/sellers/" + u + "/purge", token,
+                "{\"reason\":\"x\",\"confirmPassword\":\"" + OWNER_PASS + "\"}").getStatusCode().value()).isEqualTo(400);
+        jdbc.update("update admins set failed_attempts = 0 where email = ?", OWNER);
+        assertThat(call(HttpMethod.POST, "/sellers/" + u + "/purge", token,
+                "{\"reason\":\"sotuvchi so'radi\",\"confirmPassword\":\"" + OWNER_PASS + "\"}").getStatusCode().value()).isEqualTo(200);
+        assertThat(jdbc.queryForObject("select count(*) from users where telegram_user_id = ?", Long.class, u)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from products where name = 'Mahsulot P'", Long.class)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACCOUNT_PURGED'", Long.class)).isEqualTo(1);
+    }
+
+    /** LOW: o'chirish so'rovi grantlarni bekor qiladi; bloklangan foydalanuvchi so'ray oladi va bekor qilsa bloklanganicha qoladi. */
+    @Test
+    void deletionRequest_revokesGrants_suspendedCanRequest_andCancelKeepsSuspension() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        call(HttpMethod.POST, "/grants", token, "{\"telegramUserId\":" + u + ",\"purpose\":\"Hisobni birga tekshirish kerak\",\"minutes\":30}");
+        click(u, "Ruxsat berish");
+        call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"tekshiruv sababi\"}");
+        text(u, "/delete");
+        assertThat(lastText(u)).contains("Akkauntni o‘chirish so‘rovi");
+        click(u, Texts.BTN_DELETE_CONTINUE);
+        click(u, Texts.BTN_DELETE_FINAL);
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("DELETION_REQUESTED");
+        assertThat(jdbc.queryForObject("select count(*) from access_grants where status in ('REQUESTED','APPROVED')", Long.class)).isZero();
+        callback(u, "dc:x");
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("SUSPENDED");
+    }
+
+    /** LOW: admin o'chirish so'rovini bekor qilsa — foydalanuvchi xabar oladi; sabab serverda majburiy. */
+    @Test
+    void adminCancellingDeletion_notifiesUser_andReasonRequired() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        text(u, "/delete");
+        click(u, Texts.BTN_DELETE_CONTINUE);
+        click(u, Texts.BTN_DELETE_FINAL);
+        assertThat(call(HttpMethod.POST, "/sellers/" + u + "/reactivate", token, "{}").getBody()).contains("REASON_REQUIRED");
+        call(HttpMethod.POST, "/sellers/" + u + "/reactivate", token, "{\"reason\":\"foydalanuvchi qo'ng'iroq qildi\"}");
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("ACTIVE");
+        assertThat(jdbc.queryForObject("select deletion_requested_at is null from users where telegram_user_id = ?", Boolean.class, u)).isTrue();
+        assertThat(lastText(u)).contains("administrator tomonidan bekor qilindi").contains("qo'ng'iroq qildi");
+    }
+
+    /** LOW: yopilganda faollik izlari (V8) tozalanadi; psevdonim yozuvlar ro'yxatda ko'rinmaydi. */
+    @Test
+    void closingAccount_clearsActivity_andPseudonymsHiddenFromList() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        jdbc.update("update users set status = 'DELETION_REQUESTED', deletion_requested_at = now() - interval '31 days' where telegram_user_id = ?", u);
+        long id = jdbc.queryForObject("select id from users where telegram_user_id = ?", Long.class, u);
+        new DeletionJob(jdbc, auditService, props, txManager, purger).run();
+        assertThat(jdbc.queryForObject("select count(*) from user_activity_days where user_id = ?", Long.class, id)).isZero();
+        jdbc.update("update users set telegram_user_id = -12345 where id = ?", id);
+        assertThat(json(call(HttpMethod.GET, "/sellers", token, null)).path("items").toString()).doesNotContain("-12345");
+    }
+
+    /** LOW: onboardingda buyruq nom sifatida saqlanmaydi; noto'g'ri TERMS_VERSION aniq xato beradi. */
+    @Test
+    void commandAsName_rejected_andTermsVersionValidated() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> uz.sellerflow.account.AccountService.ProfileRules.normalizeBusinessName("/cancel"))
+                .isInstanceOf(uz.sellerflow.common.Errors.Validation.class).hasMessageContaining("NAME_IS_COMMAND");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> termsGuard.verify("v1:bad", "text"))
+                .hasMessageContaining("TERMS_VERSION");
+    }
+
+    /** LOW: yakuniy o'chirish tugmasi nonce'siz (eski/soxta callback) ishlamaydi. */
+    @Test
+    void deleteFinalButton_requiresNonce() {
+        long u = onboardedUser();
+        text(u, "/delete");
+        click(u, Texts.BTN_DELETE_CONTINUE);
+        callback(u, "s:del3");          // nonce yo'q
+        callback(u, "s:del3:deadbeef"); // noto'g'ri nonce
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("ACTIVE");
+        click(u, Texts.BTN_DELETE_FINAL);
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("DELETION_REQUESTED");
+    }
+
+    /** LOW: sotuvchi botda faol ruxsatlarini ko'radi va bekor qila oladi. */
+    @Test
+    void sellerSeesActiveGrantsInBot_andCanRevoke() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        call(HttpMethod.POST, "/grants", token, "{\"telegramUserId\":" + u + ",\"purpose\":\"Hisobni birga tekshirish kerak\",\"minutes\":30}");
+        click(u, "Ruxsat berish");
+        callback(u, "s:acc");
+        assertThat(lastText(u)).contains("Admin kirish ruxsatlari").contains("Hisobni birga tekshirish");
+        click(u, tg.last(u).buttons().get(0).text());
+        assertThat(jdbc.queryForObject("select status from access_grants order by id desc limit 1", String.class)).isEqualTo("REVOKED");
+        callback(u, "s:acc");
+        assertThat(lastText(u)).contains("hech bir administratorda");
     }
 }

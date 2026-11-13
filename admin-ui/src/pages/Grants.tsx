@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, errorText, type Me } from '../api'
+import { api, apiPage, errorText, type Me } from '../api'
 import {
   Badge, Button, Card, ChannelTag, CountdownChip, DataTable, EmptyState, Field, Icon, InlineAlert, Input, Modal,
   ReadOnlyBanner, SegmentedControl, SkeletonText, Tabs, TelegramPreview, Textarea,
@@ -99,6 +99,20 @@ export function GrantViewer({ grantId, sellerLabel, onClosed }: { grantId: numbe
     if (data.error && !gone) { setGone(true); onClosed('forbidden') }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.error])
+  // 13-noyabr LOW: sotuvchi botda bekor qilsa — ma'lumot 60 daqiqa emas, ~10 soniya ichida ekrandan olinadi
+  useEffect(() => {
+    if (gone) return
+    const t = window.setInterval(async () => {
+      try {
+        const st = await api<{ status: string }>(`/grants/${grantId}/status`)
+        if (st.status !== 'APPROVED') { setGone(true); onClosed(st.status === 'EXPIRED' ? 'expired' : 'forbidden') }
+      } catch {
+        /* tarmoq xatosi — keyingi tekshiruvda */
+      }
+    }, 10_000)
+    return () => window.clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grantId, gone])
   if (gone) return null
   const d = data.data
   if (!d) return <Card><SkeletonText lines={6} gap={14} /></Card>
@@ -162,6 +176,7 @@ function MiniPager({ info, onPage }: { info: PageInfo; onPage: (p: number) => vo
 
 // ------------------------------------------------------------------ ro'yxat sahifasi
 
+const GRANT_PAGE = 50
 const TABS: Record<string, string> = { all: '', REQUESTED: 'REQUESTED', APPROVED: 'APPROVED', closed: 'DECLINED,REVOKED,EXPIRED' }
 
 export function Grants({ me }: { me: Me }) {
@@ -173,16 +188,31 @@ export function Grants({ me }: { me: Me }) {
   const nav = useNavigate()
   const { confirm, toast } = useShell()
   const superadmin = me.role === 'SUPERADMIN'
-  const all = useLoad((signal) => api<Grant[]>(`/grants${sellerQ ? `?telegramUserId=${sellerQ}` : ''}`, { signal }), [sellerQ])
-  const rows = (all.data ?? []).filter((g) => !TABS[tab] || TABS[tab].split(',').includes(g.status))
-  const count = (k: string) => (all.data ?? []).filter((g) => !TABS[k] || TABS[k].split(',').includes(g.status)).length
+  const [page, setPage] = useState(0)
+  // 13-noyabr LOW: filtr va sahifalash serverda (100 qatorga kesilmaydi), tab sonlari — /grants/counts
+  const all = useLoad((signal) => {
+    const q = new URLSearchParams({ page: String(page), size: String(GRANT_PAGE) })
+    if (sellerQ) q.set('telegramUserId', sellerQ)
+    if (TABS[tab]) q.set('status', TABS[tab])
+    return apiPage<Grant>(`/grants?${q}`, { signal })
+  }, [sellerQ, tab, page])
+  const counts = useLoad((signal) => api<Record<string, number>>(`/grants/counts${sellerQ ? `?telegramUserId=${sellerQ}` : ''}`, { signal }), [sellerQ])
+  const rows = all.data?.items ?? []
+  const count = (k: string) => {
+    const c = counts.data
+    if (!c) return undefined
+    return (TABS[k] ? TABS[k].split(',') : Object.keys(c)).reduce((a, s) => a + (c[s] ?? 0), 0)
+  }
+  const reloadAll = () => { all.reload(); counts.reload() }
 
   // kutilayotgan so'rov bo'lsa holat har 15 soniyada yangilanadi (sotuvchi javobi)
+  const reloadList = all.reload
+  const reloadCounts = counts.reload
   useEffect(() => {
-    if (!all.data?.some((g) => g.status === 'REQUESTED')) return
-    const t = window.setInterval(all.reload, 15_000)
+    if (!counts.data?.REQUESTED) return
+    const t = window.setInterval(() => { reloadList(); reloadCounts() }, 15_000)
     return () => window.clearInterval(t)
-  }, [all.data, all.reload])
+  }, [counts.data, reloadList, reloadCounts])
 
   const revoke = async (g: Grant) => {
     const ok = await confirm({ title: g.status === 'REQUESTED' ? 'So‘rovni bekor qilish' : 'Ruxsatni bekor qilish',
@@ -191,12 +221,13 @@ export function Grants({ me }: { me: Me }) {
     try {
       await api(`/grants/${g.id}/revoke`, { method: 'POST' })
       toast({ tone: 'success', title: 'Bekor qilindi', audit: true })
-      all.reload()
+      reloadAll()
     } catch (e) {
       toast({ tone: 'danger', title: errorText(e) })
     }
   }
   const applySeller = () => {
+    setPage(0)
     setSellerQ(seller)
     setParams(seller ? { tg: seller } : {})
   }
@@ -211,7 +242,7 @@ export function Grants({ me }: { me: Me }) {
     { key: 'status', header: 'Holat', render: (g) => (
       <span className="sf-row">
         <GrantBadge status={g.status} />
-        {g.status === 'APPROVED' && g.expiresAt && <CountdownChip expiresAt={g.expiresAt} onExpire={all.reload} />}
+        {g.status === 'APPROVED' && g.expiresAt && <CountdownChip expiresAt={g.expiresAt} onExpire={reloadAll} />}
       </span>) },
   ]
 
@@ -220,14 +251,15 @@ export function Grants({ me }: { me: Me }) {
       <PageHeader title="Kirish so‘rovlari"
         description="Tijoriy ma’lumotni ko‘rish faqat sotuvchining botdagi aniq roziligi bilan, 30–60 daqiqaga, faqat o‘qish uchun. Har bir ko‘rish auditga yoziladi."
         actions={<Button variant="privacy" icon="send" onClick={() => setDialog(true)}>Yangi so‘rov</Button>} />
-      <Tabs label="Holat bo‘yicha" value={tab} onChange={setTab} items={[
+      <Tabs label="Holat bo‘yicha" value={tab} onChange={(v) => { setTab(v); setPage(0) }} items={[
         { value: 'all', label: 'Hammasi', count: count('all') },
         { value: 'REQUESTED', label: GRANT_STATUS.REQUESTED.label, count: count('REQUESTED') },
         { value: 'APPROVED', label: 'Faol', count: count('APPROVED') },
         { value: 'closed', label: 'Yopilgan', count: count('closed') },
       ]} />
       <DataTable caption="Kirish so‘rovlari" selectable={false} columns={columns} rows={rows} pageSize={20}
-        loading={all.loading && !all.data} error={all.error} onRetry={all.reload}
+        loading={all.loading && !all.data} error={all.error} onRetry={reloadAll}
+        footer={all.data ? <Pager page={page} total={all.data.total} size={GRANT_PAGE} onPage={setPage} /> : null}
         emptyTitle={sellerQ ? 'Bu sotuvchi uchun so‘rov yo‘q' : 'Kirish so‘rovlari yo‘q'}
         emptyDescription="Sotuvchi kartasidan yoki «Yangi so‘rov» tugmasi orqali so‘rov yuboring."
         onRowClick={(g) => (g.status === 'APPROVED' && g.adminEmail === me.email ? nav(`/grants/${g.id}`) : nav(`/sellers/${g.telegramUserId}`))}
@@ -244,7 +276,7 @@ export function Grants({ me }: { me: Me }) {
             ? [{ separator: true as const }, { label: 'Bekor qilish', icon: 'circle-x', danger: true, onSelect: () => revoke(g) }] : []),
         ]} />
       <RequestAccessModal open={dialog} onClose={() => setDialog(false)}
-        onSent={(g) => { setDialog(false); toast({ tone: 'success', title: 'So‘rov yuborildi', description: `Sotuvchi ${g.telegramUserId} botda tasdiqlashi kerak.`, audit: true }); all.reload() }} />
+        onSent={(g) => { setDialog(false); toast({ tone: 'success', title: 'So‘rov yuborildi', description: `Sotuvchi ${g.telegramUserId} botda tasdiqlashi kerak.`, audit: true }); reloadAll() }} />
     </div>
   )
 }

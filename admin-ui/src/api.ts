@@ -51,9 +51,18 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
     signal: init.signal,
   })
   const text = await res.text()
-  const data = text ? JSON.parse(text) : null
+  // LOW: proxy 502/413 kabi JSON bo'lmagan javob SyntaxError bermasin
+  let data: unknown = null
+  if (text) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      if (res.ok) throw new ApiError(res.status, 'BAD_RESPONSE')
+    }
+  }
   if (!res.ok) {
-    const code = (data && data.error) || `HTTP_${res.status}`
+    const err = data && typeof data === 'object' ? (data as { error?: unknown }).error : undefined
+    const code = typeof err === 'string' && err ? err : `HTTP_${res.status}`
     if (res.status === 401 && path !== '/auth/login' && path !== '/auth/totp/confirm') {
       setToken(null)
       sessionExpiredFlag = true
@@ -64,8 +73,31 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   return data as T
 }
 
+/** Ro'yxat + server jami soni (X-Total-Count). */
+export async function apiPage<T>(path: string, init: { signal?: AbortSignal } = {}): Promise<{ items: T[]; total: number }> {
+  const headers: Record<string, string> = {}
+  if (memoryToken) headers.Authorization = `Bearer ${memoryToken}`
+  const res = await fetch(BASE + path, { headers, signal: init.signal })
+  if (!res.ok) {
+    // xato yo'li api() bilan bir xil bo'lishi uchun
+    return api<{ items: T[]; total: number }>(path, init)
+  }
+  const items = (await res.json()) as T[]
+  const total = Number(res.headers.get('X-Total-Count') ?? items.length)
+  return { items, total: Number.isFinite(total) ? total : items.length }
+}
+
 const MESSAGES: Record<string, string> = {
-  INVALID_CREDENTIALS: 'Email yoki parol noto‘g‘ri.',
+  INVALID_CREDENTIALS: 'Email yoki parol noto‘g‘ri. Ko‘p xato urinishdan keyin hisob 15 daqiqaga bloklanadi.',
+  STEP_UP_REQUIRED: 'Joriy parolingiz noto‘g‘ri. Amal bajarilmadi.',
+  PURGE_ONLY_CLOSED: 'Faqat yopilgan yoki o‘chirish so‘ralgan akkauntni to‘liq o‘chirish mumkin.',
+  DATE_INVALID: 'Sana noto‘g‘ri.',
+  PASSWORD_REUSED: 'Yangi parol joriy paroldan farq qilishi kerak.',
+  CONCURRENT_MODIFICATION: 'Ma’lumot boshqa joyda o‘zgartirildi. Sahifani yangilab, qayta urinib ko‘ring.',
+  PAYLOAD_TOO_LARGE: 'So‘rov juda katta.',
+  BAD_RESPONSE: 'Serverdan kutilmagan javob keldi.',
+  INVALID_REQUEST: 'So‘rov to‘liq emas.',
+  REASON_REQUIRED: 'Sababni yozing (kamida 5 belgi).',
   INVALID_CODE: 'Tasdiqlash kodi noto‘g‘ri yoki eskirgan.',
   INVALID_SESSION: 'Sessiya muddati tugagan. Qaytadan kiring.',
   LOCKED: 'Ko‘p marta xato kiritildi. 15 daqiqadan keyin urinib ko‘ring.',
@@ -98,6 +130,7 @@ export function errorText(e: unknown): string {
   if (e instanceof ApiError) {
     if (MESSAGES[e.code]) return MESSAGES[e.code]
     if (e.code.startsWith('CANNOT_REACTIVATE_FROM_')) return 'Bu holatdan qayta faollashtirib bo‘lmaydi.'
+    if (e.code === 'HTTP_502' || e.code === 'HTTP_503' || e.code === 'HTTP_504') return 'Server vaqtincha javob bermayapti. Birozdan keyin urinib ko‘ring.'
     return `Xatolik: ${e.code}`
   }
   return 'Server bilan aloqa yo‘q. Qaytadan urinib ko‘ring.'
@@ -113,7 +146,7 @@ export const fmtMoney = (v?: string | number | null) => {
 }
 
 /** D-6: autentifikatsiyalangan fayl yuklab olish (CSV eksport) — token header orqali, URL'da emas. */
-export async function download(path: string, filename: string): Promise<void> {
+export async function download(path: string, filename: string): Promise<{ truncated: boolean }> {
   const headers: Record<string, string> = {}
   if (memoryToken) headers.Authorization = `Bearer ${memoryToken}`
   const res = await fetch(BASE + path, { headers })
@@ -130,4 +163,5 @@ export async function download(path: string, filename: string): Promise<void> {
   a.click()
   a.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return { truncated: res.headers.get('X-Export-Truncated') === 'true' }
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, type Me } from '../api'
+import { api, errorText, type Me } from '../api'
 import {
-  Badge, Button, Card, ChannelTag, CountdownChip, DataTable, InlineAlert, PrivacyGuard, Redacted, SkeletonText, Tabs,
+  Badge, Button, Card, ChannelTag, CountdownChip, DataTable, Field, InlineAlert, Input, Modal, PrivacyGuard, Redacted, SkeletonText, Tabs, Textarea,
   formatDateTime, formatNumber, type Column, type GuardState,
 } from '../components'
 import { useShell } from '../shell'
@@ -12,6 +12,7 @@ import { GrantViewer, RequestAccessModal, type Grant } from './Grants'
 import type { SellerCard } from './Sellers'
 import { useSellerStatusAction } from './useSellerStatusAction'
 import { useLoad } from './useLoad'
+import { useBusy } from './useBusy'
 
 /** /sellers/:tg — sotuvchi kartasi: metadata, PrivacyGuard → so'rov → READ-ONLY → qayta yopilish, kirish tarixi. */
 export function SellerDetail({ me }: { me: Me }) {
@@ -20,6 +21,7 @@ export function SellerDetail({ me }: { me: Me }) {
   const tab = params.get('tab') ?? 'overview'
   const setTab = (t: string) => setParams(t === 'overview' ? {} : { tab: t }, { replace: true })
   const [dialog, setDialog] = useState(false)
+  const [purgeOpen, setPurgeOpen] = useState(false)
   const nav = useNavigate()
   const { toast } = useShell()
   const statusAction = useSellerStatusAction()
@@ -48,8 +50,12 @@ export function SellerDetail({ me }: { me: Me }) {
   const canToggle = me.role === 'SUPERADMIN' && ['ACTIVE', 'SUSPENDED', 'DELETION_REQUESTED'].includes(s.status)
   const cancelPending = async () => {
     if (!latest) return
-    await api(`/grants/${latest.id}/revoke`, { method: 'POST' }).catch(() => undefined)
-    toast({ tone: 'success', title: 'So‘rov bekor qilindi', audit: true })
+    try {
+      await api(`/grants/${latest.id}/revoke`, { method: 'POST' })
+      toast({ tone: 'success', title: 'So‘rov bekor qilindi', audit: true })
+    } catch (e) {
+      toast({ tone: 'danger', title: errorText(e) }) // 13-noyabr LOW: xato «muvaffaqiyat» deb ko'rsatilmaydi
+    }
     grants.reload()
   }
 
@@ -69,6 +75,8 @@ export function SellerDetail({ me }: { me: Me }) {
           {s.displayName && s.businessName && <span className="sf-cell-sub">{s.displayName}</span>}</div>}
         actions={<>
           <Button icon="arrow-left" onClick={() => nav('/sellers')}>Sotuvchilar</Button>
+          {me.role === 'SUPERADMIN' && (s.status === 'CLOSED' || s.status === 'DELETION_REQUESTED') &&
+            <Button variant="danger" icon="trash-2" onClick={() => setPurgeOpen(true)}>To‘liq o‘chirish</Button>}
           {canToggle && !active && <Button variant={s.status === 'ACTIVE' ? 'danger' : 'secondary'} icon="ban"
             onClick={async () => { if (await statusAction(s.telegramUserId, s.status)) { card.reload(); grants.reload() } }}>
             {s.status === 'ACTIVE' ? 'Bloklash' : 'Qayta faollashtirish'}</Button>}
@@ -125,8 +133,46 @@ export function SellerDetail({ me }: { me: Me }) {
           emptyTitle="Kirish so‘rovlari bo‘lmagan" emptyDescription="Bu sotuvchidan hali tijoriy ma’lumotga ruxsat so‘ralmagan." />
       )}
 
+      <PurgeModal open={purgeOpen} tg={s.telegramUserId} onClose={() => setPurgeOpen(false)}
+        onDone={() => { setPurgeOpen(false); toast({ tone: 'success', title: 'Ma’lumotlar o‘chirildi', audit: true }); nav('/sellers') }} />
       <RequestAccessModal open={dialog} telegramUserId={s.telegramUserId} sellerLabel={label} onClose={() => setDialog(false)}
         onSent={() => { setDialog(false); toast({ tone: 'success', title: 'So‘rov yuborildi', description: 'Sotuvchi botda tasdiqlashi kerak.', audit: true }); grants.reload(); setTab('data') }} />
     </div>
+  )
+}
+
+/** N-10: sotuvchi so'roviga ko'ra to'liq o'chirish — sabab va joriy parol (step-up), qaytarib bo'lmaydi. */
+function PurgeModal({ open, tg, onClose, onDone }: { open: boolean; tg: number; onClose: () => void; onDone: () => void }) {
+  const [reason, setReason] = useState('')
+  const [pass, setPass] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const { busy, run } = useBusy()
+  const close = () => { setReason(''); setPass(''); setError(null); onClose() }
+  const submit = () => run(async () => {
+    if (reason.trim().length < 5) { setError('Sababni yozing (kamida 5 belgi).'); return }
+    if (!pass) { setError('Joriy parolingizni kiriting.'); return }
+    try {
+      await api(`/sellers/${tg}/purge`, { method: 'POST', body: { reason: reason.trim(), confirmPassword: pass } })
+      setReason(''); setPass(''); setError(null)
+      onDone()
+    } catch (e) {
+      setError(errorText(e))
+    }
+  })
+  return (
+    <Modal open={open} onClose={close} title="Ma’lumotlarni to‘liq o‘chirish" icon="trash-2" tone="danger" width={520}
+      description="Mahsulotlar, saqlangan hisoblashlar, profil va faollik izlari o‘chiriladi, Telegram ID ajratiladi. Bu amalni qaytarib bo‘lmaydi. Rozilik va audit yozuvlari dalil sifatida qoladi."
+      footer={<><Button onClick={close}>Bekor qilish</Button><Button variant="danger" loading={busy} onClick={submit}>O‘chirish</Button></>}>
+      <form className="sf-form" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+        {error && <InlineAlert tone="danger">{error}</InlineAlert>}
+        <Field label="Sabab" hint="Masalan: sotuvchi qo‘llab-quvvatlash orqali to‘liq o‘chirishni so‘radi">
+          <Textarea rows={2} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} />
+        </Field>
+        <Field label="Sizning joriy parolingiz">
+          <Input type="password" autoComplete="current-password" value={pass} onChange={(e) => setPass(e.target.value)} />
+        </Field>
+        <button type="submit" hidden />
+      </form>
+    </Modal>
   )
 }

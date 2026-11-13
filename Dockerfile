@@ -23,5 +23,6 @@ RUN useradd --system --uid 10001 sellerflow
 COPY --from=build /app/target/sellerflow-*.jar /app/app.jar
 USER sellerflow
 EXPOSE 8080
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -Duser.timezone=UTC"
+# N-7: OOM bo'lsa JVM chiqadi (Docker restart: unless-stopped qayta ishga tushiradi); heap 65% — non-heap uchun joy
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=65 -XX:+ExitOnOutOfMemoryError -Duser.timezone=UTC"
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
