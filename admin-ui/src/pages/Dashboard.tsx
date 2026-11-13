@@ -38,10 +38,11 @@ export function Dashboard({ me }: { me: Me }) {
   const [period, setPeriod] = useState('30')
   const nav = useNavigate()
   const dash = useLoad((signal) => api<DashboardData>(`/dashboard?period=${period}`, { signal }), [period])
-  const grants = useLoad((signal) => api<Grant[]>('/grants', { signal }))
+  const grants = useLoad((signal) => api<Grant[]>('/grants?size=5', { signal }))
+  const grantCounts = useLoad((signal) => api<Record<string, number>>('/grants/counts', { signal }))
   const d = dash.data
   const loading = dash.loading && !d
-  const openGrants = grants.data?.filter((g) => g.status === 'REQUESTED' || g.status === 'APPROVED').length
+  const openGrants = grantCounts.data ? (grantCounts.data.REQUESTED ?? 0) + (grantCounts.data.APPROVED ?? 0) : undefined
 
   const series = useMemo(() => ({
     newSellers: d?.series.map((x) => x.newSellers) ?? [],
@@ -68,7 +69,7 @@ export function Dashboard({ me }: { me: Me }) {
               delta={d?.kpis.newSellers.changePct} trend={trendOf(series.newSellers)} />
             <StatCard loading={loading} label="Saqlangan hisoblashlar" icon="calculator" value={d && formatNumber(d.kpis.savedCalculations.value)}
               delta={d?.kpis.savedCalculations.changePct} trend={trendOf(series.calcs)} />
-            <StatCard loading={loading || (grants.loading && !grants.data)} label="Ochiq kirish so‘rovlari" icon="key-round"
+            <StatCard loading={loading || (grantCounts.loading && !grantCounts.data)} label="Ochiq kirish so‘rovlari" icon="key-round"
               value={openGrants === undefined ? '—' : formatNumber(openGrants)} />
           </div>
 

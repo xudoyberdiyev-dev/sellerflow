@@ -443,35 +443,88 @@ public class AdminController {
         return grantView(g);
     }
 
+    /** Grantning samarali holati SQL'da ({@code Grant.effectiveStatus} bilan bir xil qoida). */
+    private static final String EFFECTIVE_STATUS = """
+            case when g.status = 'APPROVED' and g.expires_at is not null and g.expires_at <= now() then 'EXPIRED'
+                 when g.status = 'REQUESTED' and g.requested_at < now() - interval '24 hours' then 'EXPIRED'
+                 else g.status end""";
+
+    /**
+     * D-5 + 13-noyabr LOW: ro'yxat serverda 100 qatorga kesilib, tablar shu kesilgan to'plam ustida hisoblanmaydi —
+     * holat (samarali) va sotuvchi filtri DB'da, sahifalash {@code page/size} (≤ 200), jami soni {@code X-Total-Count}.
+     */
     @GetMapping("/grants")
-    public List<Map<String, Object>> listGrants(@RequestAttribute(PRINCIPAL) Principal p,
-                                                @RequestParam(required = false) String status,
-                                                @RequestParam(required = false) Long telegramUserId) {
-        // D-5: sotuvchi filtri (DB darajasida) va holat tablari (samarali holat bo'yicha)
-        Long businessId = null;
-        if (telegramUserId != null) {
-            List<Long> b = jdbc.queryForList("select b.id from businesses b join users u on u.id = b.owner_user_id"
-                    + " where u.telegram_user_id = ?", Long.class, telegramUserId);
-            if (b.isEmpty()) return List.of();
-            businessId = b.get(0);
-        }
-        java.util.Set<String> statuses = new java.util.HashSet<>();
+    public ResponseEntity<List<Map<String, Object>>> listGrants(@RequestAttribute(PRINCIPAL) Principal p,
+                                                                @RequestParam(required = false) String status,
+                                                                @RequestParam(required = false) Long telegramUserId,
+                                                                @RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "100") int size) {
+        if (page < 0 || page > MAX_PAGE || size < 1 || size > 200) throw new Errors.Validation("PAGE_RANGE");
+        List<Object> args = new java.util.ArrayList<>();
+        String where = grantWhere(p, telegramUserId, args);
         if (status != null && !status.isBlank()) {
-            for (String x : status.split(",")) statuses.add(AccessGrantService.Status.valueOf(x.strip()).name());
+            List<String> st = new java.util.ArrayList<>();
+            for (String x : status.split(",")) st.add(AccessGrantService.Status.valueOf(x.strip()).name());
+            where += " and (" + EFFECTIVE_STATUS + ") = any(?)";
+            args.add(st.toArray(String[]::new));
         }
-        // LOW (DB): N+1 o'rniga ikki so'rov — sotuvchi Telegram ID'lari va admin email'lari bir yo'la
-        List<Grant> list = grants.listFor(p, businessId).stream()
-                .filter(g -> statuses.isEmpty() || statuses.contains(grants.statusOf(g).name())).toList();
-        if (list.isEmpty()) return List.of();
-        Long[] bids = list.stream().map(Grant::getBusinessId).distinct().toArray(Long[]::new);
-        Long[] aids = list.stream().map(Grant::getAdminId).distinct().toArray(Long[]::new);
-        Map<Long, Long> tg = new java.util.HashMap<>();
-        jdbc.query("select b.id, u.telegram_user_id from businesses b join users u on u.id = b.owner_user_id where b.id = any(?)",
-                rs -> { tg.put(rs.getLong(1), rs.getLong(2)); }, (Object) bids);
-        Map<Long, String> emails = new java.util.HashMap<>();
-        jdbc.query("select id, email from admins where id = any(?)", rs -> { emails.put(rs.getLong(1), rs.getString(2)); },
-                (Object) aids);
-        return list.stream().map(g -> grantView(g, tg.get(g.getBusinessId()), emails.get(g.getAdminId()))).toList();
+        Long total = jdbc.queryForObject("select count(*) from access_grants g" + where, Long.class, args.toArray());
+        List<Object> pageArgs = new java.util.ArrayList<>(args);
+        pageArgs.add(size);
+        pageArgs.add((long) page * size);
+        List<Long> ids = jdbc.queryForList("select g.id from access_grants g" + where + " order by g.id desc limit ? offset ?",
+                Long.class, pageArgs.toArray());
+        List<Map<String, Object>> body = List.of();
+        if (!ids.isEmpty()) {
+            Map<Long, Grant> byId = new java.util.HashMap<>();
+            for (Grant g : grants.findAllById(ids)) byId.put(g.getId(), g);
+            List<Grant> list = ids.stream().map(byId::get).filter(java.util.Objects::nonNull).toList();
+            // LOW (DB): N+1 o'rniga ikki so'rov — sotuvchi Telegram ID'lari va admin email'lari bir yo'la
+            Long[] bids = list.stream().map(Grant::getBusinessId).distinct().toArray(Long[]::new);
+            Long[] aids = list.stream().map(Grant::getAdminId).distinct().toArray(Long[]::new);
+            Map<Long, Long> tg = new java.util.HashMap<>();
+            jdbc.query("select b.id, u.telegram_user_id from businesses b join users u on u.id = b.owner_user_id where b.id = any(?)",
+                    rs -> { tg.put(rs.getLong(1), rs.getLong(2)); }, (Object) bids);
+            Map<Long, String> emails = new java.util.HashMap<>();
+            jdbc.query("select id, email from admins where id = any(?)", rs -> { emails.put(rs.getLong(1), rs.getString(2)); },
+                    (Object) aids);
+            body = list.stream().map(g -> grantView(g, tg.get(g.getBusinessId()), emails.get(g.getAdminId()))).toList();
+        }
+        return ResponseEntity.ok().header("X-Total-Count", String.valueOf(total))
+                .header("Access-Control-Expose-Headers", "X-Total-Count").body(body);
+    }
+
+    /** Tablar uchun: samarali holat bo'yicha sonlar (rol va sotuvchi filtri bilan, sahifalashsiz). */
+    @GetMapping("/grants/counts")
+    public Map<String, Object> grantCounts(@RequestAttribute(PRINCIPAL) Principal p,
+                                           @RequestParam(required = false) Long telegramUserId) {
+        List<Object> args = new java.util.ArrayList<>();
+        String where = grantWhere(p, telegramUserId, args);
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (AccessGrantService.Status st : AccessGrantService.Status.values()) out.put(st.name(), 0L);
+        jdbc.query("select (" + EFFECTIVE_STATUS + ") s, count(*) from access_grants g" + where + " group by 1",
+                rs -> { out.put(rs.getString(1), rs.getLong(2)); }, args.toArray());
+        return out;
+    }
+
+    private String grantWhere(Principal p, Long telegramUserId, List<Object> args) {
+        StringBuilder w = new StringBuilder(" where 1=1");
+        if (!p.isSuperadmin()) {
+            w.append(" and g.admin_id = ?");
+            args.add(p.id());
+        }
+        if (telegramUserId != null) {
+            w.append(" and g.business_id in (select b.id from businesses b join users u on u.id = b.owner_user_id where u.telegram_user_id = ?)");
+            args.add(telegramUserId);
+        }
+        return w.toString();
+    }
+
+    /** Viewer har 10 s da so'raydi: sotuvchi botda bekor qilsa ma'lumot ekrandan darhol olinadi. */
+    @GetMapping("/grants/{id}/status")
+    public Map<String, Object> grantStatus(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id) {
+        Grant g = grants.ownGrant(p, id);
+        return m("id", id, "status", grants.statusOf(g).name(), "expiresAt", str(g.getExpiresAt()));
     }
 
     @PostMapping("/grants/{id}/revoke")

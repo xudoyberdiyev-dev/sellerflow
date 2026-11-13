@@ -245,6 +245,14 @@ public class AccessGrantService {
                 pp.getTotalElements(), pp.getTotalPages(), pp.getSize(), hp.getTotalElements(), hp.getTotalPages(), hp.getSize());
     }
 
+    /** 13-noyabr LOW: viewer uchun yengil holat tekshiruvi (auditlanmaydi, tijoriy ma'lumotsiz). */
+    @Transactional(readOnly = true)
+    public Grant ownGrant(Principal admin, long grantId) {
+        Grant g = grants.findById(grantId).orElseThrow(() -> new Errors.NotFound("grant"));
+        if (!g.adminId.equals(admin.id()) && !admin.isSuperadmin()) throw new Errors.Forbidden("NOT_YOUR_GRANT");
+        return g;
+    }
+
     @Transactional
     public Grant revokeByAdmin(Principal admin, long grantId) {
         Grant g = grants.findById(grantId).orElseThrow(() -> new Errors.NotFound("grant"));
@@ -304,6 +312,12 @@ public class AccessGrantService {
     }
 
     public Status statusOf(Grant g) { return g.effectiveStatus(Instant.now()); }
+
+    /** Admin ro'yxati uchun: ID'lar bo'yicha (filtr va huquq tekshiruvi chaqiruvchida). */
+    @Transactional(readOnly = true)
+    public List<Grant> findAllById(List<Long> ids) {
+        return grants.findAllById(ids);
+    }
 
     @Scheduled(fixedDelayString = "PT5M", initialDelayString = "PT1M")
     @Transactional

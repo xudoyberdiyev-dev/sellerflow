@@ -1,18 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { ApiError, api, getToken, setToken, type Me } from './api'
 import { Login } from './Login'
-import { Dashboard } from './pages/Dashboard'
-import { SystemStatus } from './pages/SystemStatus'
-import { Sellers } from './pages/Sellers'
-import { SellerDetail } from './pages/SellerDetail'
-import { AccessViewer, Grants } from './pages/Grants'
 import { ErrorBoundary } from './pages/common'
 import { Notifications } from './Notifications'
-import { SupportPage } from './pages/Support'
-import { AuditPage } from './pages/Audit'
-import { Admins } from './pages/Admins'
 import { Profile } from './pages/Profile'
+
+// 13-noyabr LOW: sahifalar alohida chunk'larda (lazy) — birinchi yuklanish kichikroq
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const SystemStatus = lazy(() => import('./pages/SystemStatus').then((m) => ({ default: m.SystemStatus })))
+const Sellers = lazy(() => import('./pages/Sellers').then((m) => ({ default: m.Sellers })))
+const SellerDetail = lazy(() => import('./pages/SellerDetail').then((m) => ({ default: m.SellerDetail })))
+const Grants = lazy(() => import('./pages/Grants').then((m) => ({ default: m.Grants })))
+const AccessViewer = lazy(() => import('./pages/Grants').then((m) => ({ default: m.AccessViewer })))
+const SupportPage = lazy(() => import('./pages/Support').then((m) => ({ default: m.SupportPage })))
+const AuditPage = lazy(() => import('./pages/Audit').then((m) => ({ default: m.AuditPage })))
+const Admins = lazy(() => import('./pages/Admins').then((m) => ({ default: m.Admins })))
 import {
   Badge, Button, CommandPalette, EmptyState, Icon, IconButton, InlineAlert, Logo, Sidebar, SkeletonText, Topbar,
   type CommandItem, type Crumb, type NavGroup,
@@ -186,6 +189,7 @@ function Shell({ me, mustChange, onPasswordChanged, onLogout }:
               </>
             ) : (
               <ErrorBoundary resetKey={loc.pathname}>
+                <Suspense fallback={<div className="sf-page" aria-busy="true"><SkeletonText lines={6} gap={14} /></div>}>
                 <Routes>
                   <Route path="/" element={<Dashboard me={me} />} />
                   <Route path="/status" element={<SystemStatus />} />
@@ -199,6 +203,7 @@ function Shell({ me, mustChange, onPasswordChanged, onLogout }:
                   <Route path="/profile" element={<Profile me={me} onChanged={onPasswordChanged} />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+                </Suspense>
               </ErrorBoundary>
             )}
           </div>

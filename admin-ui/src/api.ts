@@ -73,6 +73,20 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   return data as T
 }
 
+/** Ro'yxat + server jami soni (X-Total-Count). */
+export async function apiPage<T>(path: string, init: { signal?: AbortSignal } = {}): Promise<{ items: T[]; total: number }> {
+  const headers: Record<string, string> = {}
+  if (memoryToken) headers.Authorization = `Bearer ${memoryToken}`
+  const res = await fetch(BASE + path, { headers, signal: init.signal })
+  if (!res.ok) {
+    // xato yo'li api() bilan bir xil bo'lishi uchun
+    return api<{ items: T[]; total: number }>(path, init)
+  }
+  const items = (await res.json()) as T[]
+  const total = Number(res.headers.get('X-Total-Count') ?? items.length)
+  return { items, total: Number.isFinite(total) ? total : items.length }
+}
+
 const MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: 'Email yoki parol noto‘g‘ri. Ko‘p xato urinishdan keyin hisob 15 daqiqaga bloklanadi.',
   STEP_UP_REQUIRED: 'Joriy parolingiz noto‘g‘ri. Amal bajarilmadi.',

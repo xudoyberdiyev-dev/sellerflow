@@ -833,6 +833,19 @@ class AdminApiIT extends IntegrationTest {
         assertThat(json(call(HttpMethod.GET, "/grants?status=REQUESTED", token, null)).size()).isEqualTo(1);
         assertThat(json(call(HttpMethod.GET, "/grants?telegramUserId=123", token, null)).size()).isZero();
         assertThat(call(HttpMethod.GET, "/grants?status=BOGUS", token, null).getStatusCode().value()).isEqualTo(400);
+        // 13-noyabr LOW: tablar uchun server sonlari, sahifalash va jami soni (100 qatorga kesilmaydi)
+        JsonNode counts = json(call(HttpMethod.GET, "/grants/counts", token, null));
+        assertThat(counts.path("APPROVED").asLong()).isEqualTo(1);
+        assertThat(counts.path("REQUESTED").asLong()).isEqualTo(1);
+        assertThat(json(call(HttpMethod.GET, "/grants/counts?telegramUserId=" + a, token, null)).path("REQUESTED").asLong()).isZero();
+        ResponseEntity<String> p1 = call(HttpMethod.GET, "/grants?size=1&page=1", token, null);
+        assertThat(p1.getHeaders().getFirst("X-Total-Count")).isEqualTo("2");
+        assertThat(json(p1).size()).isEqualTo(1);
+        assertThat(call(HttpMethod.GET, "/grants?size=1000", token, null).getStatusCode().value()).isEqualTo(400);
+        jdbc.update("update access_grants set expires_at = now() - interval '1 minute' where id = ?", ga);
+        assertThat(json(call(HttpMethod.GET, "/grants?status=EXPIRED", token, null)).size()).isEqualTo(1); // samarali holat SQL'da
+        assertThat(json(call(HttpMethod.GET, "/grants/" + ga + "/status", token, null)).path("status").asText()).isEqualTo("EXPIRED");
+        jdbc.update("update access_grants set expires_at = now() + interval '20 minutes' where id = ?", ga);
 
         JsonNode d = json(call(HttpMethod.GET, "/grants/" + ga + "/data?productPage=0&historyPage=0", token, null));
         assertThat(d.path("productPage").path("total").asLong()).isEqualTo(1);

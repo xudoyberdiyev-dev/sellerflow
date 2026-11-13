@@ -50,8 +50,12 @@ export function SellerDetail({ me }: { me: Me }) {
   const canToggle = me.role === 'SUPERADMIN' && ['ACTIVE', 'SUSPENDED', 'DELETION_REQUESTED'].includes(s.status)
   const cancelPending = async () => {
     if (!latest) return
-    await api(`/grants/${latest.id}/revoke`, { method: 'POST' }).catch(() => undefined)
-    toast({ tone: 'success', title: 'So‘rov bekor qilindi', audit: true })
+    try {
+      await api(`/grants/${latest.id}/revoke`, { method: 'POST' })
+      toast({ tone: 'success', title: 'So‘rov bekor qilindi', audit: true })
+    } catch (e) {
+      toast({ tone: 'danger', title: errorText(e) }) // 13-noyabr LOW: xato «muvaffaqiyat» deb ko'rsatilmaydi
+    }
     grants.reload()
   }
 
