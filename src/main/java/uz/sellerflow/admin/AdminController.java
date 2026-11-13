@@ -52,7 +52,9 @@ public class AdminController {
     public record LoginRequest(String email, String password, String code) {}
     public record TotpConfirm(String setupToken, String code) {}
     public record PasswordChange(String currentPassword, String newPassword) {}
-    public record NewAdmin(String email, String role, String tempPassword) {}
+    public record NewAdmin(String email, String role, String tempPassword, String confirmPassword) {}
+
+    public record StepUp(String confirmPassword) {}
     public record StatusChange(String reason) {}
     public record SupportUpdate(boolean enabled, String label, String url) {}
     public record GrantRequest(Long telegramUserId, String purpose, Integer minutes) {}
@@ -103,11 +105,17 @@ public class AdminController {
     /** M-2: IP bo'yicha limit — limitdan oshgan IP uchun parol umuman tekshirilmaydi (429). */
     private Map<String, Object> limited(HttpServletRequest req, java.util.function.Supplier<LoginResult> attempt) {
         String ip = req.getRemoteAddr();
-        if (loginLimiter.isBlocked(ip)) throw new TooManyAttempts();
+        // N-6: urinish OLDINDAN band qilinadi (increment-then-check) — parallel so'rovlar limitdan oshib keta olmaydi
+        LoginRateLimiter.Ticket ticket = loginLimiter.tryAcquire(ip);
+        if (ticket == null) throw new TooManyAttempts();
         try {
-            return loginView(attempt.get());
+            Map<String, Object> r = loginView(attempt.get());
+            loginLimiter.release(ticket); // muvaffaqiyatli urinish hisobga olinmaydi
+            return r;
         } catch (Errors.Forbidden e) {
-            loginLimiter.recordFailure(ip);
+            throw e; // xato urinish band qilingan holida qoladi
+        } catch (RuntimeException e) {
+            loginLimiter.release(ticket); // validatsiya/server xatosi — parol tekshirilmagan
             throw e;
         }
     }
@@ -604,7 +612,7 @@ public class AdminController {
     @PostMapping("/admins")
     public Map<String, Object> createAdmin(@RequestAttribute(PRINCIPAL) Principal p, @RequestBody NewAdmin r) {
         Role role = r.role() == null ? Role.SUPPORT : Role.valueOf(r.role());
-        return adminView(auth.create(p, r.email(), role, r.tempPassword()));
+        return adminView(auth.create(p, r.email(), role, r.tempPassword(), r.confirmPassword()));
     }
 
     @PostMapping("/admins/{id}/disable")
@@ -618,8 +626,9 @@ public class AdminController {
     }
 
     @PostMapping("/admins/{id}/reset-2fa")
-    public Map<String, Object> reset2fa(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id) {
-        return adminView(auth.reset2fa(p, id));
+    public Map<String, Object> reset2fa(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long id,
+                                        @RequestBody(required = false) StepUp r) {
+        return adminView(auth.reset2fa(p, id, r == null ? null : r.confirmPassword()));
     }
 
     private static Map<String, Object> adminView(Admin a) {
@@ -629,6 +638,13 @@ public class AdminController {
     }
 
     // ================================================================= errors & helpers
+
+    /** LOW: @Version bilan parallel o'zgartirish — 500 emas, 409. */
+    @ExceptionHandler({org.springframework.orm.ObjectOptimisticLockingFailureException.class,
+            org.springframework.dao.OptimisticLockingFailureException.class})
+    public ResponseEntity<Map<String, Object>> conflict(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(m("error", "CONCURRENT_MODIFICATION"));
+    }
 
     @ExceptionHandler(Errors.NotFound.class)
     public ResponseEntity<Map<String, Object>> notFound(Errors.NotFound e) {

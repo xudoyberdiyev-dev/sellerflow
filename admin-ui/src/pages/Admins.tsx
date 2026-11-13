@@ -17,16 +17,16 @@ export function Admins({ me }: { me: Me }) {
   const [dialog, setDialog] = useState(false)
   const { confirm, toast } = useShell()
 
+  const [stepUp, setStepUp] = useState<Admin | null>(null)
   const act = async (a: Admin, action: 'disable' | 'enable' | 'reset-2fa') => {
+    if (action === 'reset-2fa') { setStepUp(a); return } // step-up: joriy parol so'raladi
     const ok = await confirm(action === 'disable'
       ? { title: 'Adminni o‘chirib qo‘yish', description: `${a.email} panelga kira olmaydi, barcha sessiyalari darhol yopiladi. Hisob va audit izi saqlanadi — keyin qayta yoqish mumkin.`, confirmLabel: 'O‘chirib qo‘yish', tone: 'danger' }
-      : action === 'reset-2fa'
-        ? { title: '2FA’ni qayta o‘rnatish', description: `${a.email} keyingi kirishda yangi QR kodni skanerlaydi. Joriy sessiyalari yopiladi.`, confirmLabel: '2FA’ni qayta o‘rnatish', tone: 'warning' }
-        : { title: 'Adminni yoqish', description: `${a.email} yana panelga kira oladi.`, confirmLabel: 'Yoqish', tone: 'info' })
+      : { title: 'Adminni yoqish', description: `${a.email} yana panelga kira oladi.`, confirmLabel: 'Yoqish', tone: 'info' })
     if (ok === null) return
     try {
       await api(`/admins/${a.id}/${action}`, { method: 'POST' })
-      toast({ tone: 'success', title: action === 'disable' ? 'Admin o‘chirib qo‘yildi' : action === 'reset-2fa' ? '2FA qayta o‘rnatildi' : 'Admin yoqildi', audit: true })
+      toast({ tone: 'success', title: action === 'disable' ? 'Admin o‘chirib qo‘yildi' : 'Admin yoqildi', audit: true })
       list.reload()
     } catch (e) {
       toast({ tone: 'danger', title: errorText(e) })
@@ -59,6 +59,11 @@ export function Admins({ me }: { me: Me }) {
             : { label: 'Yoqish', icon: 'user-check', onSelect: () => act(a, 'enable') },
           { label: '2FA’ni qayta o‘rnatish', icon: 'rotate-ccw-key', onSelect: () => act(a, 'reset-2fa') },
         ])} />
+      <StepUpModal admin={stepUp} onClose={() => setStepUp(null)} onDone={() => {
+        setStepUp(null)
+        toast({ tone: 'success', title: '2FA qayta o‘rnatildi', audit: true })
+        list.reload()
+      }} />
       <CreateAdminModal open={dialog} onClose={() => setDialog(false)} onCreated={(email) => {
         setDialog(false)
         toast({ tone: 'success', title: 'Admin yaratildi', description: `Vaqtinchalik parolni ${email} ga xavfsiz kanal orqali bering. Birinchi kirishda parol almashtiriladi va 2FA ulanadi.`, audit: true })
@@ -72,19 +77,20 @@ function CreateAdminModal({ open, onClose, onCreated }: { open: boolean; onClose
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('SUPPORT')
   const [pass, setPass] = useState('')
+  const [mine, setMine] = useState('')
   const [touched, setTouched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { busy, run } = useBusy()
   const emailBad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   const passBad = pass.length < 12 || new TextEncoder().encode(pass).length > 72
-  const close = () => { setEmail(''); setPass(''); setRole('SUPPORT'); setTouched(false); setError(null); onClose() }
+  const close = () => { setEmail(''); setPass(''); setMine(''); setRole('SUPPORT'); setTouched(false); setError(null); onClose() }
   const submit = () => run(async () => {
     setTouched(true)
-    if (emailBad || passBad) return
+    if (emailBad || passBad || !mine) return
     try {
-      await api('/admins', { method: 'POST', body: { email: email.trim(), role, tempPassword: pass } })
+      await api('/admins', { method: 'POST', body: { email: email.trim(), role, tempPassword: pass, confirmPassword: mine } })
       const e = email.trim()
-      setEmail(''); setPass(''); setRole('SUPPORT'); setTouched(false); setError(null)
+      setEmail(''); setPass(''); setMine(''); setRole('SUPPORT'); setTouched(false); setError(null)
       onCreated(e)
     } catch (err) {
       setError(errorText(err))
@@ -106,6 +112,40 @@ function CreateAdminModal({ open, onClose, onCreated }: { open: boolean; onClose
         <Field label="Vaqtinchalik parol" hint="12–72 belgi. Admin birinchi kirishda almashtiradi."
           error={touched && passBad ? 'Parol 12–72 belgi bo‘lishi kerak.' : null}>
           <Input type="password" autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} />
+        </Field>
+        <Field label="Sizning joriy parolingiz" hint="Xavfsizlik uchun: yangi admin yaratishni tasdiqlang." error={touched && !mine ? 'Joriy parolingizni kiriting.' : null}>
+          <Input type="password" autoComplete="current-password" value={mine} onChange={(e) => setMine(e.target.value)} />
+        </Field>
+        <button type="submit" hidden />
+      </form>
+    </Modal>
+  )
+}
+
+/** Step-up: boshqa adminning 2FA'sini qayta o'rnatishdan oldin joriy parol. */
+function StepUpModal({ admin, onClose, onDone }: { admin: Admin | null; onClose: () => void; onDone: () => void }) {
+  const [mine, setMine] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const { busy, run } = useBusy()
+  const close = () => { setMine(''); setError(null); onClose() }
+  const submit = () => run(async () => {
+    if (!admin || !mine) { setError('Joriy parolingizni kiriting.'); return }
+    try {
+      await api(`/admins/${admin.id}/reset-2fa`, { method: 'POST', body: { confirmPassword: mine } })
+      setMine(''); setError(null)
+      onDone()
+    } catch (e) {
+      setError(errorText(e))
+    }
+  })
+  return (
+    <Modal open={!!admin} onClose={close} title="2FA’ni qayta o‘rnatish" icon="rotate-ccw-key" tone="warning" width={480}
+      description={admin ? `${admin.email} keyingi kirishda yangi QR kodni skanerlaydi. Joriy sessiyalari yopiladi.` : undefined}
+      footer={<><Button onClick={close}>Bekor qilish</Button><Button variant="primary" loading={busy} onClick={submit}>Tasdiqlash</Button></>}>
+      <form className="sf-form" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+        {error && <InlineAlert tone="danger">{error}</InlineAlert>}
+        <Field label="Sizning joriy parolingiz">
+          <Input type="password" autoComplete="current-password" value={mine} onChange={(e) => setMine(e.target.value)} autoFocus />
         </Field>
         <button type="submit" hidden />
       </form>

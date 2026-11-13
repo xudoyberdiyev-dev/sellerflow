@@ -23,6 +23,34 @@ public class LoginRateLimiter {
 
     private final Map<String, Deque<Long>> failures = new ConcurrentHashMap<>();
 
+    /** Band qilingan urinish: muvaffaqiyatli bo'lsa {@link #release} bilan qaytariladi. */
+    public record Ticket(String key, Long at) {}
+
+    /**
+     * N-6: atomik «tekshir va band qil». Limit to'lgan bo'lsa — null (parol tekshirilmaydi).
+     * Aks holda urinish darhol hisobga olinadi — bir vaqtdagi parallel so'rovlar ham limitdan oshmaydi.
+     */
+    public Ticket tryAcquire(String ip) {
+        long now = System.currentTimeMillis();
+        String k = key(ip);
+        Deque<Long> q = failures.computeIfAbsent(k, x -> new ArrayDeque<>());
+        synchronized (q) {
+            prune(q, now);
+            if (q.size() >= MAX_FAILURES_PER_IP) return null;
+            Long at = now; // alohida obyekt — release aynan shu yozuvni olib tashlaydi
+            q.addLast(at);
+            return new Ticket(k, at);
+        }
+    }
+
+    public void release(Ticket t) {
+        Deque<Long> q = failures.get(t.key());
+        if (q == null) return;
+        synchronized (q) {
+            q.removeIf(x -> x == t.at());
+        }
+    }
+
     /** IP limitdan oshgan bo'lsa — true (so'rov parol tekshirilmasdan rad etiladi). */
     public boolean isBlocked(String ip) {
         Deque<Long> q = failures.get(key(ip));

@@ -40,6 +40,11 @@ class AdminApiIT extends IntegrationTest {
     // ------------------------------------------------------------ helpers
 
     private ResponseEntity<String> call(HttpMethod method, String path, String token, String body) {
+        // Step-up: testlarda bu endpointlarni faqat OWNER chaqiradi — parol avtomatik qo'shiladi (aniq test alohida)
+        if (method == HttpMethod.POST && (path.equals("/admins") || path.endsWith("/reset-2fa")) && (body == null || !body.contains("confirmPassword"))) {
+            String cp = "\"confirmPassword\":\"" + OWNER_PASS + "\"";
+            body = body == null || body.isBlank() ? "{" + cp + "}" : body.replaceFirst("\\{", "{" + cp + ",");
+        }
         // JDK HttpClient: 401 javoblarida HttpURLConnection'dagi "streaming mode" muammosi yo'q
         try {
             var b = java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://localhost:" + port + "/admin/api/v1" + path))
@@ -503,11 +508,85 @@ class AdminApiIT extends IntegrationTest {
         loginLimiter.reset();
         ResponseEntity<String> wrong = call(HttpMethod.POST, "/auth/login", null,
                 "{\"email\":\"" + OWNER + "\",\"password\":\"still-wrong\"}");
-        assertThat(right.getBody()).contains("LOCKED");
+        assertThat(right.getBody()).contains("INVALID_CREDENTIALS").doesNotContain("LOCKED");
+        // LOW: bloklangan va mavjud bo'lmagan email bir xil javob oladi (email enumeration yo'q)
+        loginLimiter.reset();
+        ResponseEntity<String> ghost = call(HttpMethod.POST, "/auth/login", null,
+                "{\"email\":\"nobody@sellerflow.test\",\"password\":\"whatever-123\"}");
+        assertThat(ghost.getStatusCode()).isEqualTo(right.getStatusCode());
+        assertThat(ghost.getBody()).isEqualTo(right.getBody());
         // M-2: bloklangan akkauntda javob parol to'g'ri/noto'g'riligiga bog'liq emas
         assertThat(wrong.getStatusCode()).isEqualTo(right.getStatusCode());
         assertThat(wrong.getBody()).isEqualTo(right.getBody());
         jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+    }
+
+    /** LOW (step-up): admin yaratish va 2FA reset joriy parolni talab qiladi. */
+    @Test
+    void privilegedActions_requireStepUpPassword() throws Exception {
+        String token = owner();
+        String email = "s" + System.nanoTime() + "@sellerflow.test";
+        ResponseEntity<String> bad = call(HttpMethod.POST, "/admins", token,
+                "{\"confirmPassword\":\"wrong-password-1\",\"email\":\"" + email + "\",\"role\":\"SUPERADMIN\",\"tempPassword\":\"temporary-pass-123\"}");
+        assertThat(bad.getStatusCode().value()).isEqualTo(403);
+        assertThat(bad.getBody()).contains("STEP_UP_REQUIRED");
+        assertThat(jdbc.queryForObject("select count(*) from admins where email = ?", Long.class, email)).isZero();
+        assertThat(jdbc.queryForObject("select failed_attempts from admins where email = ?", Integer.class, OWNER)).isEqualTo(1);
+        long id = json(call(HttpMethod.POST, "/admins", token,
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}")).path("id").asLong();
+        assertThat(call(HttpMethod.POST, "/admins/" + id + "/reset-2fa", token, "{\"confirmPassword\":\"nope-nope-nope\"}")
+                .getStatusCode().value()).isEqualTo(403);
+        assertThat(call(HttpMethod.POST, "/admins/" + id + "/reset-2fa", token, null).getStatusCode().value()).isEqualTo(200);
+        jdbc.update("update admins set failed_attempts = 0 where email = ?", OWNER);
+    }
+
+    /** N-6: parallel login urinishlari IP limitidan oshib keta olmaydi (atomik band qilish). */
+    @Test
+    void ipRateLimit_isAtomicUnderConcurrency() throws Exception {
+        jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(12);
+        try {
+            var start = new java.util.concurrent.CountDownLatch(1);
+            java.util.List<java.util.concurrent.Future<Integer>> fs = new java.util.ArrayList<>();
+            for (int i = 0; i < 12; i++) {
+                int n = i;
+                fs.add(pool.submit(() -> {
+                    start.await();
+                    return call(HttpMethod.POST, "/auth/login", null,
+                            "{\"email\":\"" + OWNER + "\",\"password\":\"par-wrong-" + n + "\"}").getStatusCode().value();
+                }));
+            }
+            start.countDown();
+            int checked = 0;
+            for (var f : fs) if (f.get() == 401) checked++;
+            assertThat(checked).isEqualTo(5); // faqat 5 tasi parol tekshiruviga yetdi, qolgani 429
+            assertThat(jdbc.queryForObject("select failed_attempts from admins where email = ?", Integer.class, OWNER)).isEqualTo(5);
+        } finally {
+            pool.shutdownNow();
+            loginLimiter.reset();
+            jdbc.update("update admins set failed_attempts = 0, locked_until = null");
+        }
+    }
+
+    /** M-5 qoldig'i, confirmTotp null, so'rov hajmi, bootstrap. */
+    @Test
+    void authEdgeCases_reusedPassword_nullTotp_bodySize() throws Exception {
+        String email = "r" + System.nanoTime() + "@sellerflow.test";
+        call(HttpMethod.POST, "/admins", owner(),
+                "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
+        String t = login(email, "temporary-pass-123");
+        ResponseEntity<String> same = call(HttpMethod.POST, "/auth/password", t,
+                "{\"currentPassword\":\"temporary-pass-123\",\"newPassword\":\"temporary-pass-123\"}");
+        assertThat(same.getStatusCode().value()).isEqualTo(400);
+        assertThat(same.getBody()).contains("PASSWORD_REUSED");
+        assertThat(call(HttpMethod.GET, "/stats", t, null).getStatusCode().value()).isEqualTo(403); // hali cheklangan
+
+        assertThat(call(HttpMethod.POST, "/auth/totp/confirm", null, "{\"code\":\"123456\"}").getStatusCode().value()).isEqualTo(400);
+        assertThat(call(HttpMethod.POST, "/auth/totp/confirm", null, "{}").getStatusCode().value()).isEqualTo(400);
+
+        String big = "{\"email\":\"" + "a".repeat(70_000) + "\",\"password\":\"x\"}";
+        ResponseEntity<String> r = call(HttpMethod.POST, "/auth/login", null, big);
+        assertThat(r.getStatusCode().value()).isEqualTo(413);
     }
 
     /** M-2 regression: bitta IP'dan 5 ta xatodan keyin 429, akkaunt esa bloklanmaydi (lockout DoS yo'q). */

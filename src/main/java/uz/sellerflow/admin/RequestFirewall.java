@@ -23,6 +23,14 @@ public class RequestFirewall extends OncePerRequestFilter {
 
     private static final String[] FORBIDDEN = {";", "\\", "//", "%2f", "%5c", "%2e", "%25", "%3b", "%00"};
 
+    static final long MAX_BODY_BYTES = 64 * 1024;
+
+    private static void reject(HttpServletResponse res, int status, String code) throws IOException {
+        res.setStatus(status);
+        res.setContentType("application/json");
+        res.getWriter().write("{\"error\":\"" + code + "\"}");
+    }
+
     static boolean isRejected(String rawUri) {
         if (rawUri == null || rawUri.isEmpty() || rawUri.charAt(0) != '/') return true;
         String u = rawUri.toLowerCase(Locale.ROOT);
@@ -43,6 +51,18 @@ public class RequestFirewall extends OncePerRequestFilter {
             res.setContentType("application/json");
             res.getWriter().write("{\"error\":\"BAD_REQUEST_PATH\"}");
             return;
+        }
+        // LOW: admin API so'rov tanasi hajmi cheklangan (autentifikatsiyasiz login endpointlari ham) — xotira DoS yo'q
+        if (req.getRequestURI().startsWith("/admin/api/")) {
+            long len = req.getContentLengthLong();
+            if (len > MAX_BODY_BYTES) {
+                reject(res, 413, "PAYLOAD_TOO_LARGE");
+                return;
+            }
+            if (len < 0 && req.getHeader("Transfer-Encoding") != null) {
+                reject(res, 411, "LENGTH_REQUIRED");
+                return;
+            }
         }
         chain.doFilter(req, res);
     }
