@@ -1,17 +1,23 @@
 # Audit tuzatishlari — yakuniy hisobot
 
-Manba: `PRODUCTION_AUDIT_2026-11-06.md` (1 CRITICAL, 3 HIGH, 26 MEDIUM, 83 LOW).
-Bajarilgan ish: 2026-11-07 (avtomatik sessiya 11:30–13:15 va kechki davom ettirish).
+Manbalar:
+- `PRODUCTION_AUDIT_2026-11-06.md` (1 CRITICAL, 3 HIGH, 26 MEDIUM, 83 LOW) — 2026-11-07 da yopildi (pastdagi 1–6 bo'limlar);
+- `PRODUCTION_REAUDIT_2026-11-07.md` (N-1…N-12 va ~75 LOW) va `PRODUCTION_REAUDIT_2026-11-13.md` (yangi kod LOW) —
+  2026-11-13 da yopildi (**«8-bosqich» bo'limi**).
+
+> Oldingi versiyadagi «barcha MEDIUM yopildi» degan gap faqat 06-noyabr auditiga tegishli edi (13-noyabr auditi buni
+> to'g'ri ta'kidlagan). Endi 07- va 13-noyabr topilmalari ham shu hisobotda.
 Batafsil ish rejasi va har band izohi: `docs/AUDIT_PROGRESS.md`.
 
 ## Natija
 
 | Ko'rsatkich | Holat |
 |---|---|
-| `mvn -B verify` | **145 test, 0 xato** (2026-11-07 23:23) |
+| `mvn -B verify` | **164 test, 0 xato** (2026-11-13) |
 | Admin UI | `npm run build` va `npm run lint` toza, `npm audit --omit=dev` — 0 zaiflik |
+| Skript testlari | `restore.test.sh` (7 holat), `backup-loop.test.sh` — o'tdi; shellcheck toza |
 | UI vizual tekshiruvi | `admin-ui/e2e/screens.py`: 2 mavzu × 3 kenglik × 8 sahifa, SUPERADMIN va SUPPORT bilan — 0 muammo |
-| CI | gitleaks, shellcheck, Docker image build, UI lint/audit, bog'liqliklar hisoboti |
+| CI | gitleaks (sha256), osv-scanner (Java + npm), shellcheck, Docker image build, UI lint/audit; action'lar SHA bilan; Dependabot |
 
 **Kod tomonidan tuzatilishi mumkin bo'lgan barcha CRITICAL, HIGH va MEDIUM topilmalar yopildi.** Ochiq qolganlari faqat loyiha egasi bajara oladigan ishlar (pastda).
 
@@ -69,20 +75,49 @@ Tailwind va eski UI kodi olib tashlandi. Commitlar: b46147d … c4b134b.
 
 Yangi migratsiya: **V8** (`users.last_seen_at`, `user_activity_days`). Unda faqat sana saqlanadi, tijoriy ma'lumot yo'q.
 
+## 8-bosqich — qayta auditlar (2026-11-13)
+
+| Topilma | Nima qilindi | Commit | Test |
+|---|---|---|---|
+| C-1 (REGRESSED) | Hisobotlardan sir prefikslari va sir yashiringan commit ID olib tashlandi. Parollarni almashtirish — **egasi** | 84eb90f | — |
+| N-1 | Shartlar xeshi CRLF/CR/BOM'ga bog'liq emas; `.gitattributes` `eol=lf` | 84eb90f | `TermsGuardTest` |
+| N-2/N-3 | `status.json` yo'q → MISSING (health DOWN + alert); alert sozlanmasa WARN | a64a16d | `BackupMonitorTest` |
+| N-4/N-5 | restore-drill nullglob; restore vaqtinchalik bazaga → Flyway tekshiruvi → bazalarni almashtirish, `--rollback` | a64a16d | `restore.test.sh` |
+| M-15/16 | Backup shifrlash majburiy; snapshot'lar shifrlanadi va rotatsiya qilinadi | a64a16d | `backup-loop.test.sh` |
+| N-6, M-5 qoldig'i, auth LOW | Atomik IP limit, `PASSWORD_REUSED`, step-up parol, enumeration yo'q, 409/413, confirmTotp 400/lockout | 9367f9a | `ipRateLimit_isAtomicUnderConcurrency`, `authEdgeCases_*`, `privilegedActions_*` |
+| N-7/N-12, Telegram LOW | Doimiy worker navbatlari, dead-letter, watchdog, polling advisory lock, dublikatsiz sendMessage, HTML-xavfsiz bo'lish, OOM'da exit | f5c5f67 | `TelegramPollerTest`, `PollingLockIT`, `TextUtilTest` |
+| N-9/N-10/N-11, maxfiylik LOW | `AccountPurger`, admin «To'liq o'chirish», onboarding retention, `/delete`, grantlar bekor, foydalanuvchiga xabar | a289971 | AdminApiIT (7 ta) |
+| SUPPORT/CSV LOW | Eksport faqat SUPERADMIN, karta ma'lumoti va audit, CSV injection, vaqt offseti, kesish ogohlantirishi, indekslar | b153930 | `auditFilters_andCsvExports` |
+| N-8, DevOps LOW | osv-scanner, Dependabot, pinlangan action'lar, CI huquqlari, yangilash tartibi | ec87444 | CI |
+| 13-noyabr yangi kod LOW | Dashboard so'rovlari, grants server sahifalash, viewer tez yopiladi, ildiz ErrorBoundary, lazy UI | 3284a38 | `grants_filtersAndDataPagination`, Playwright |
+| Qolgan LOW | Botda faol ruxsatlar, o'chirish nonce, guruh rate-limit, grant limit lock, ishonchli proxy | b6498fd | `deleteFinalButton_requiresNonce`, `sellerSeesActiveGrantsInBot_*` |
+
+Yangi migratsiyalar: **V9** (`purged_at`, `status_before_deletion`), **V10** (indekslar). Qarorlar: `docs/DECISIONS.md` → «8-bosqich».
+
+**Lokal ishga tushirishga ta'sir:** backup shifrlash endi majburiy. Lokal sinovda `.env` ga `BACKUP_ENCRYPTION_PASSPHRASE`
+bering yoki ataylab `BACKUP_ALLOW_PLAINTEXT=true` qo'ying — aks holda admin panel backup xatosini ko'rsatadi.
+
 ## Qoldirilganlar (sababi bilan)
 
 | Topilma | Sabab / keyingi qadam |
 |---|---|
-| TOTP secret DB va backupda ochiq matnda (LOW) | Backup `BACKUP_ENCRYPTION_PASSPHRASE` bilan shifrlanadi. DB darajasida shifrlash kalitni boshqarish (KMS yoki env kalit, rotatsiya) qarorini talab qiladi, shu sabab V1.1 ga qoldirildi. |
-| Ikkinchi bot instansiyasi texnik bloklanmagan (LOW) | Telegram `409` holati health'da DOWN bo'lib ko'rinadi. Bitta server, bitta compose — amalda yetarli. Ko'p serverga o'tilganda DB advisory lock qo'shiladi. |
-| Production hostda build, versiyalangan image va rollback yo'q (LOW) | Registry (GHCR) va deploy jarayoni egasining qarori. CI image'ni build qiladi, lekin push qilmaydi. |
-| Lokal PG 14 va prod PG 16 farqi (LOW) | Compose va CI PG 16 ishlatadi. Lokal muhit dasturchining mashinasiga bog'liq. |
-| Spring Boot 4.x | Alohida katta migratsiya (Jackson 3, Spring 7). Hozir 3.5.16 — oxirgi patch. Egasiga savol sifatida qoldirildi. |
+| TOTP secret DB'da ochiq matnda | Backup shifrlangan. DB darajasida shifrlash uchun kalitni boshqarish (KMS yoki alohida env kalit + rotatsiya) qarori kerak. |
+| Versiyalangan image, registry va rollback avtomatlashtirilmagan | Registry (masalan, GHCR) va deploy jarayoni egasining qarori. Hozircha rollback qo'lda: `git checkout <tag>` + `restore.sh --rollback` (OPERATIONS §5). |
+| Base image'lar digest bilan pinlanmagan | Dependabot (docker) haftalik yangilaydi. Digest pinlash registry'ga tarmoq ruxsati bilan qilinadi. |
+| Sirlar `docker inspect` da ko'rinadi | Docker secrets / `_FILE` o'zgaruvchilariga o'tish kerak. Server root huquqiga ega odamgagina ko'rinadi. |
+| Lokal PG 14 va prod PG 16 | Compose va CI PG 16 ishlatadi; lokal muhit dasturchiga bog'liq. |
+| UI: OtpInput siljishi, sidebar va ⌘K fokus nazorati, 2FA sozlashdan orqaga qaytish, sessiya tugashidan oldin ogohlantirish | Funksional xavf yo'q, launchni to'smaydi. Keyingi UI iteratsiyasida. |
+| `version` ustunini native UPDATE'lar oshirmaydi | Ziddiyatli yozuvlar hozircha bitta joydan (admin) bo'ladi va 409 qaytadi. Kerak bo'lsa barcha native UPDATE'lar `version = version + 1` ga o'tkaziladi. |
+| Spring Boot 4.x | Alohida katta migratsiya (Jackson 3, Spring 7; 2–5 kun). 3.5.x oxirgi patch o'rnatilgan, CVE skaner CI'da. |
 
 ## Loyiha egasi bajaradigan ishlar
 1. **DB va admin parollarini almashtirish** — ular ochiq repo tarixida ko'ringan. Bot tokeni allaqachon almashtirilgan.
+   Repo'ni private qilish yoki tarixni tozalash (force push) — faqat egasining qarori bilan.
 2. **H-3** — yurist tasdiqlagan xizmat shartlari va maxfiylik siyosati. Matn o'zgarsa, `TERMS_VERSION` ham yangilanadi.
+   Matnda real saqlash muddatlari bo'lsin: audit 365 kun, backup'larda o'chirilgan ma'lumot 14 kungacha,
+   ro'yxatdan o'tmagan yozuvlar 30 kun, `DELETION_PURGE_DATA` qarori.
 3. Ikki savolga javob berish:
    - `LIMIT_APPLIED` limitlari nimani sanaydi;
    - Spring Boot 4.x ga o'tish qachon rejalashtiriladi.
-4. Ixtiyoriy: git tarixidagi eski sirlarni tozalash (force push kerak bo'ladi — faqat egasining roziligi bilan).
+4. Production'da `.env` ga `BACKUP_ENCRYPTION_PASSPHRASE` va `ALERT_TELEGRAM_CHAT_ID` ni to'ldirish.
+5. Audit hisobotlarini ommaviy repoga commit qilmaslik (yoki repo'ni private qilish).
