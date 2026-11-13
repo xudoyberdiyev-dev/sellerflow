@@ -31,6 +31,11 @@ server:
   port: ${PORT:8080}
   # Reverse proxy (Caddy) ortida haqiqiy mijoz IP'si — faqat ichki (private) proxy'dan kelgan X-Forwarded-For ishoniladi.
   forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      # LOW: X-Forwarded-For faqat shu manbalardan qabul qilinadi (standart: localhost va Docker bridge 172.16/12).
+      # Reverse proxy boshqa joyda bo'lsa — TRUSTED_PROXIES (Java regex) bilan aniq ko'rsating.
+      internal-proxies: ${TRUSTED_PROXIES:127\.\d+\.\d+\.\d+|0:0:0:0:0:0:0:1|::1|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+}
 
 management:
   endpoints:

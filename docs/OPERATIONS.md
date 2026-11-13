@@ -35,7 +35,7 @@ ssh -L 8080:127.0.0.1:8080 user@SERVER_IP
 # brauzer: http://localhost:8080/admin/
 ```
 
-**B) Domen + HTTPS (Caddy misoli) — faqat IP allowlist bilan.** Panelni internetga ochganda **IP cheklovi majburiy**
+**B) Domen + HTTPS (Caddy misoli) — faqat IP allowlist bilan.** Reverse proxy Docker host'ida bo'lsa standart ishonchli proxy ro'yxati (localhost, 172.16/12) yetarli; boshqa joyda bo'lsa `.env` da `TRUSTED_PROXIES` (Java regex) bering — aks holda `X-Forwarded-For` e'tiborga olinmaydi. Panelni internetga ochganda **IP cheklovi majburiy**
 (parol + 2FA + rate-limit yagona himoya bo'lib qolmasin). `docker-compose.yml` ga qo'shimcha servis qo'shing:
 ```yaml
   caddy:
@@ -82,6 +82,11 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 - Tiklash: `./scripts/restore.sh backups/<fayl>.dump.gpg`. Skript: (1) faylni tekshiradi va **vaqtinchalik** `sellerflow_restore` bazasiga tiklaydi — ishlab turgan baza o'zgarmaydi; (2) backup sxemasi koddagidan yangi bo'lsa to'xtaydi, eski bo'lsa ilova ishga tushganda migratsiyalarni qo'llaydi; (3) joriy baza snapshot'ini `backups/pre-restore/` ga oladi (passphrase bo'lsa shifrlangan, eng yangi 5 tasi saqlanadi); (4) ilovani to'xtatib bazalarni almashtiradi: eski baza `sellerflow_prev` bo'lib qoladi.
 - **Rollback** (masalan, muvaffaqiyatsiz yangilanishdan keyin): ilovaning oldingi versiyasini qaytaring (`git checkout <oldingi tag>` + `docker compose up -d --build app`), so'ng kerak bo'lsa `./scripts/restore.sh <yangilanishdan oldingi backup>`. Tiklashning o'zini bekor qilish: `./scripts/restore.sh --rollback` (`sellerflow_prev` qaytadi). Yangilashdan oldin doim qo'lda backup oling: `docker compose exec backup env BACKUP_RUN_ONCE=1 bash /backup-loop.sh`.
 - Oylik tiklash sinovi: `./scripts/restore-drill.sh` (ishlab turgan bazaga tegmaydi).
+- Backup fayllari konteyner ichida root nomidan, `600` huquq bilan yoziladi — hostda ko'rish/nusxalash uchun `sudo` kerak
+  (`sudo ls -l backups/`, `sudo ./scripts/restore.sh …`). Bu ataylab: boshqa foydalanuvchilar backupni o'qiy olmaydi.
+- **O'chirilgan ma'lumot va backup:** akkaunt o'chirilganda (purge) ma'lumot ishchi bazadan darhol o'chadi, lekin oldingi
+  shifrlangan backup'larda `BACKUP_KEEP_DAYS` (standart 14) kun davomida qoladi va rotatsiya bilan yo'qoladi
+  (eng yangi 7 nusxa minimal saqlanadi). Bu muddat maxfiylik siyosatida ko'rsatilishi kerak (yurist bilan).
 
 ## 6. Monitoring
 - Admin panel → «Boshqaruv paneli» → «Tizim holati»: baza, bot holati, oxirgi muvaffaqiyatli so'rov va oxirgi xato.

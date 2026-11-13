@@ -94,8 +94,10 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
     private void handleMessage(Tg.Message m) {
         long chatId = m.chat().id();
         if (!m.chat().isPrivate()) {
-            // CR-CHAT-01: guruhda biznes oqimi yo'q, faqat umumiy yo'riqnoma
-            if (m.text() != null && m.text().startsWith("/")) tg.sendMessage(chatId, Texts.GROUP_CHAT, null);
+            // CR-CHAT-01: guruhda biznes oqimi yo'q, faqat umumiy yo'riqnoma. LOW: guruhda ham rate-limit (spam yo'q)
+            if (m.text() != null && m.text().startsWith("/") && rateLimiter.check(m.from().id()) == RateLimiter.Verdict.OK) {
+                tg.sendMessage(chatId, Texts.GROUP_CHAT, null);
+            }
             return;
         }
         if (!allowed(chatId, m.from().id())) return;
@@ -152,7 +154,8 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             flows.save(ctx.session);
         } catch (Errors.Forbidden e) {
             ctx.send(Texts.FEATURE_LIMITED);
-        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            // LOW: NumberFormatException va enum valueOf (IllegalArgumentException) — soxta callback, stacktrace'siz
             // Soxta/eskirgan callback data yoki buzilgan kiritish — dastur xatosi emas, stacktrace'siz WARN
             log.warn("Malformed input for user {}: {}", ctx.account.user().getId(), e.toString());
             io.micrometer.core.instrument.Metrics.counter("sellerflow.update.errors", "type", "malformed").increment();

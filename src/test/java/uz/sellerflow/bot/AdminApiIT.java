@@ -1106,8 +1106,8 @@ class AdminApiIT extends IntegrationTest {
         call(HttpMethod.POST, "/sellers/" + u + "/suspend", token, "{\"reason\":\"tekshiruv sababi\"}");
         text(u, "/delete");
         assertThat(lastText(u)).contains("Akkauntni o‘chirish so‘rovi");
-        callback(u, "s:del2");
-        callback(u, "s:del3");
+        click(u, Texts.BTN_DELETE_CONTINUE);
+        click(u, Texts.BTN_DELETE_FINAL);
         assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("DELETION_REQUESTED");
         assertThat(jdbc.queryForObject("select count(*) from access_grants where status in ('REQUESTED','APPROVED')", Long.class)).isZero();
         callback(u, "dc:x");
@@ -1120,8 +1120,8 @@ class AdminApiIT extends IntegrationTest {
         String token = owner();
         long u = onboardedUser();
         text(u, "/delete");
-        callback(u, "s:del2");
-        callback(u, "s:del3");
+        click(u, Texts.BTN_DELETE_CONTINUE);
+        click(u, Texts.BTN_DELETE_FINAL);
         assertThat(call(HttpMethod.POST, "/sellers/" + u + "/reactivate", token, "{}").getBody()).contains("REASON_REQUIRED");
         call(HttpMethod.POST, "/sellers/" + u + "/reactivate", token, "{\"reason\":\"foydalanuvchi qo'ng'iroq qildi\"}");
         assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("ACTIVE");
@@ -1149,5 +1149,33 @@ class AdminApiIT extends IntegrationTest {
                 .isInstanceOf(uz.sellerflow.common.Errors.Validation.class).hasMessageContaining("NAME_IS_COMMAND");
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> termsGuard.verify("v1:bad", "text"))
                 .hasMessageContaining("TERMS_VERSION");
+    }
+
+    /** LOW: yakuniy o'chirish tugmasi nonce'siz (eski/soxta callback) ishlamaydi. */
+    @Test
+    void deleteFinalButton_requiresNonce() {
+        long u = onboardedUser();
+        text(u, "/delete");
+        click(u, Texts.BTN_DELETE_CONTINUE);
+        callback(u, "s:del3");          // nonce yo'q
+        callback(u, "s:del3:deadbeef"); // noto'g'ri nonce
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("ACTIVE");
+        click(u, Texts.BTN_DELETE_FINAL);
+        assertThat(jdbc.queryForObject("select status from users where telegram_user_id = ?", String.class, u)).isEqualTo("DELETION_REQUESTED");
+    }
+
+    /** LOW: sotuvchi botda faol ruxsatlarini ko'radi va bekor qila oladi. */
+    @Test
+    void sellerSeesActiveGrantsInBot_andCanRevoke() throws Exception {
+        String token = owner();
+        long u = onboardedUser();
+        call(HttpMethod.POST, "/grants", token, "{\"telegramUserId\":" + u + ",\"purpose\":\"Hisobni birga tekshirish kerak\",\"minutes\":30}");
+        click(u, "Ruxsat berish");
+        callback(u, "s:acc");
+        assertThat(lastText(u)).contains("Admin kirish ruxsatlari").contains("Hisobni birga tekshirish");
+        click(u, tg.last(u).buttons().get(0).text());
+        assertThat(jdbc.queryForObject("select status from access_grants order by id desc limit 1", String.class)).isEqualTo("REVOKED");
+        callback(u, "s:acc");
+        assertThat(lastText(u)).contains("hech bir administratorda");
     }
 }

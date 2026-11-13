@@ -248,6 +248,9 @@ public final class Texts {
     public static final String BTN_S_CHANNEL = "🛒 Asosiy kanal";
     public static final String BTN_S_TERMS = "📄 Shartlar";
     public static final String BTN_S_DELETE = "🗑 Akkauntni o‘chirish";
+    public static final String BTN_S_ACCESS = "🔐 Admin kirish ruxsatlari";
+    public static final String ACCESS_NONE = "🔐 Hozir hech bir administratorda ma’lumotlaringizga kirish ruxsati yo‘q.";
+    public static final String ACCESS_LIST_TITLE = "🔐 <b>Admin kirish ruxsatlari</b>\nIstalgan payt bekor qilishingiz mumkin.";
     public static final String BTN_CLEAR = "🧹 Tozalash";
     public static final String ASK_S_BNAME = "🏪 Yangi biznes nomini yozing (1–80 belgi) yoki tozalang.";
     public static final String ASK_S_DNAME = "🙂 Yangi ismni yozing (1–60 belgi) yoki tozalang.";
