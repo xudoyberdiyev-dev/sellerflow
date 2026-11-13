@@ -76,6 +76,7 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
 const MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: 'Email yoki parol noto‘g‘ri. Ko‘p xato urinishdan keyin hisob 15 daqiqaga bloklanadi.',
   STEP_UP_REQUIRED: 'Joriy parolingiz noto‘g‘ri. Amal bajarilmadi.',
+  PURGE_ONLY_CLOSED: 'Faqat yopilgan yoki o‘chirish so‘ralgan akkauntni to‘liq o‘chirish mumkin.',
   PASSWORD_REUSED: 'Yangi parol joriy paroldan farq qilishi kerak.',
   CONCURRENT_MODIFICATION: 'Ma’lumot boshqa joyda o‘zgartirildi. Sahifani yangilab, qayta urinib ko‘ring.',
   PAYLOAD_TOO_LARGE: 'So‘rov juda katta.',

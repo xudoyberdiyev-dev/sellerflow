@@ -549,7 +549,8 @@ public class AdminAuthService {
      * LOW (step-up): o'g'irlangan sessiya bilan yangi admin yaratib yoki boshqa adminning 2FA'sini o'chirib bo'lmasin —
      * joriy parol qayta so'raladi. Xato urinish akkaunt lockout hisoblagichiga qo'shiladi.
      */
-    void requireStepUp(Principal by, String password) {
+    @Transactional(noRollbackFor = Errors.Forbidden.class)
+    public void requireStepUp(Principal by, String password) {
         Admin me = admins.findById(by.id()).orElseThrow(() -> new Errors.Forbidden("STEP_UP_REQUIRED"));
         if (password == null || tooLong(password) || !encoder.matches(password, me.passwordHash)) {
             if (admins.registerFailure(me.id, MAX_FAILED, Instant.now().plus(LOCK)) > 0) {

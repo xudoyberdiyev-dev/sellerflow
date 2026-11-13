@@ -68,7 +68,14 @@ public class SupportService {
         SupportSettings s = repo.findById((short) 1).orElseThrow();
         if (s.enabled || s.contactUrl != null) return;
         String label = props.support().defaultLabel();
-        apply(s, true, label == null || label.isBlank() ? "Qo‘llab-quvvatlash" : label, url);
+        try {
+            apply(s, true, label == null || label.isBlank() ? "Qo‘llab-quvvatlash" : label, url);
+        } catch (Errors.Validation e) {
+            // LOW: noto'g'ri SUPPORT_URL ilovani yiqitmaydi — kontakt yoqilmaydi, admin panelda sozlanadi
+            org.slf4j.LoggerFactory.getLogger(SupportService.class)
+                    .error("SUPPORT_URL is invalid ({}) — support contact not enabled; set it in the admin panel", e.code());
+            return;
+        }
         audit.record(Actor.SYSTEM, "env", null, "SUPPORT_SEEDED", "SUPPORT", 1, null);
     }
 

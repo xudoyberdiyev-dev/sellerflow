@@ -11,7 +11,7 @@ public record SellerFlowProperties(Telegram telegram, Admin admin, Terms terms, 
     public record Admin(String bootstrapEmail, String bootstrapPassword, String recoveryEmail, String recoveryPassword) {}
 
     /** graceDays — o'chirish so'rovidan keyin CLOSED gacha; purgeData — yurist qaroriga qadar false. */
-    public record Deletion(int graceDays, boolean purgeData) {}
+    public record Deletion(int graceDays, boolean purgeData, int onboardingRetentionDays) {}
 
     public record RateLimit(int maxUpdates, int windowSeconds) {}
 

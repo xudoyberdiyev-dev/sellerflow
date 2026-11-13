@@ -45,7 +45,7 @@ export function SupportPage() {
   const label = (s.label ?? '').trim() || 'Qo‘llab-quvvatlash'
   const ok = s.enabled && !urlBad
   // bot InfoHandler bilan bir xil: HELP matni + (yoqilgan bo'lsa) «📞 Qo'llab-quvvatlash: <label>» va URL tugma
-  const helpText = '❓ Yordam\n\nSavolni tanlang. Asosiy bo‘limlar pastdagi menyuda.\nBuyruqlar: /menu — bosh menyu, /cancel — jarayonni bekor qilish, /settings — sozlamalar.'
+  const helpText = '❓ Yordam\n\nSavolni tanlang. Asosiy bo‘limlar pastdagi menyuda.\nBuyruqlar: /menu — bosh menyu, /cancel — jarayonni bekor qilish, /settings — sozlamalar, /delete — akkaunt va ma’lumotlarni o‘chirish.'
     + (ok ? `\n\n📞 Qo‘llab-quvvatlash: ${label}` : '')
   const faq = [[{ text: 'Foyda qanday hisoblanadi?' }], [{ text: 'Marja nima?' }]]
 

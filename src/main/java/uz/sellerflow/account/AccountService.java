@@ -34,6 +34,10 @@ public class AccountService {
     private final AuditService audit;
     private final SellerFlowProperties props;
     private final GrantRevoker revokeGrants;
+    private AccountPurger purger;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void setPurger(AccountPurger purger) { this.purger = purger; }
 
     /** access paketiga bog'liqlik aylanasi bo'lmasligi uchun kichik JDBC yordamchi. */
     @org.springframework.stereotype.Component
@@ -158,10 +162,17 @@ public class AccountService {
     public UserAccount requestDeletion(long userId) {
         UserAccount u = users.findById(userId).orElseThrow(() -> new Errors.NotFound("user"));
         if (u.getStatus() == AccountStatus.DELETION_REQUESTED) return u;
-        if (u.getStatus() != AccountStatus.ACTIVE) throw new Errors.Forbidden("Deletion not allowed in " + u.getStatus());
+        // LOW: bloklangan foydalanuvchi ham o'z ma'lumotini o'chirishni so'ray oladi
+        if (u.getStatus() != AccountStatus.ACTIVE && u.getStatus() != AccountStatus.SUSPENDED) {
+            throw new Errors.Forbidden("Deletion not allowed in " + u.getStatus());
+        }
+        AccountStatus before = u.getStatus();
         u.markDeletionRequested(Instant.now());
         Long businessId = businesses.findByOwnerUserId(userId).map(Business::getId).orElse(null);
-        audit.record(Actor.USER, userId, businessId, "DELETION_REQUESTED", "USER", userId, "grace 30 days");
+        // LOW: o'chirish so'ralgach admin kirish ruxsatlari darhol bekor qilinadi
+        int revoked = businessId == null ? 0 : revokeGrants.revokeActive(businessId);
+        audit.record(Actor.USER, userId, businessId, "DELETION_REQUESTED", "USER", userId,
+                "grace 30 days; from " + before + "; grants revoked=" + revoked);
         return u;
     }
 
@@ -175,9 +186,7 @@ public class AccountService {
         if (u.getStatus() != AccountStatus.ONBOARDING || businesses.findByOwnerUserId(userId).isPresent()) {
             throw new Errors.Forbidden("Wipe allowed only during onboarding");
         }
-        u.detachTelegramId(pseudonymousTelegramId());
-        u.setStatus(AccountStatus.CLOSED);
-        users.saveAndFlush(u);
+        purger.purge(userId, "user", "onboarding data deleted by user before activation");
         audit.record(Actor.USER, userId, null, "ONBOARDING_DATA_DELETED", "USER", userId, "by user before activation");
     }
 
@@ -206,10 +215,11 @@ public class AccountService {
     public void reopenClosed(long telegramUserId) {
         UserAccount u = users.findByTelegramUserId(telegramUserId).orElseThrow(() -> new Errors.NotFound("user"));
         if (u.getStatus() != AccountStatus.CLOSED) throw new Errors.Forbidden("Reopen not allowed in " + u.getStatus());
-        u.detachTelegramId(pseudonymousTelegramId());
-        users.saveAndFlush(u);
+        // N-9: eski akkaunt Telegram ID'dan ajratilgach uni hech kim topa olmaydi — shuning uchun eski tijoriy
+        // ma'lumot shu yerda tozalanadi (yetim qolmaydi). Rozilik va audit dalil sifatida qoladi.
+        purger.purge(u.getId(), "user", "user started a new account; old data purged, not transferred");
         audit.record(Actor.USER, u.getId(), null, "CLOSED_ACCOUNT_DETACHED", "USER", u.getId(),
-                "user started a new account; old data not transferred");
+                "user started a new account; old data purged");
     }
 
     private static final java.security.SecureRandom RNG = new java.security.SecureRandom();
@@ -221,8 +231,21 @@ public class AccountService {
 
     // ----------------------------------------------------------- admin
 
+    /** N-10: admin orqali to'liq o'chirish (faqat CLOSED yoki DELETION_REQUESTED). */
+    @Transactional
+    public void adminPurge(long telegramUserId, String adminId, String reason) {
+        UserAccount u = users.findByTelegramUserId(telegramUserId).orElseThrow(() -> new Errors.NotFound("user"));
+        if (u.getStatus() != AccountStatus.CLOSED && u.getStatus() != AccountStatus.DELETION_REQUESTED) {
+            throw new Errors.Validation("PURGE_ONLY_CLOSED");
+        }
+        long id = u.getId();
+        purger.purge(id, adminId, "purged on request via admin; reason: " + reason);
+    }
+
     @Transactional
     public UserAccount adminSetStatus(long telegramUserId, AccountStatus target, String adminId, String reason) {
+        // LOW: sabab faqat UI'da emas, serverda ham majburiy
+        if (reason == null || reason.strip().length() < 5) throw new Errors.Validation("REASON_REQUIRED");
         UserAccount u = users.findByTelegramUserId(telegramUserId).orElseThrow(() -> new Errors.NotFound("user"));
         AccountStatus old = u.getStatus();
         if (target == AccountStatus.SUSPENDED && old != AccountStatus.ACTIVE) {
@@ -234,6 +257,7 @@ public class AccountService {
         if (target == AccountStatus.ACTIVE && businesses.findByOwnerUserId(u.getId()).isEmpty()) {
             throw new Errors.Validation("NO_BUSINESS");
         }
+        if (old == AccountStatus.DELETION_REQUESTED) u.cancelDeletion(); // so'rov sanasi va oldingi holat tozalanadi
         u.setStatus(target);
         Long businessId = businesses.findByOwnerUserId(u.getId()).map(Business::getId).orElse(null);
         if (target == AccountStatus.SUSPENDED && businessId != null) {
@@ -261,6 +285,8 @@ public class AccountService {
             if (v == null) return null;
             String t = v.strip().replaceAll("\\s+", " ");
             if (t.isEmpty()) return null;
+            // LOW: /cancel kabi buyruqlar ism yoki biznes nomi sifatida saqlanmasin
+            if (t.startsWith("/")) throw new Errors.Validation("NAME_IS_COMMAND");
             if (t.codePointCount(0, t.length()) > max) throw new Errors.Validation(code);
             return t;
         }

@@ -320,7 +320,7 @@ public class AdminController {
             default -> throw new Errors.Validation("SORT_INVALID");
         };
         // D-5: status dan tashqari filtrlar (holatlar bo'yicha sonlar shu filtrlar bilan hisoblanadi)
-        StringBuilder base = new StringBuilder(" where 1=1");
+        StringBuilder base = new StringBuilder(" where u.telegram_user_id > 0");
         List<Object> baseArgs = new java.util.ArrayList<>();
         if (telegramUserId != null) {
             base.append(" and u.telegram_user_id = ?");
@@ -386,9 +386,41 @@ public class AdminController {
     public Map<String, Object> reactivate(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long telegramUserId,
                                           @RequestBody(required = false) StatusChange body) {
         AdminAuthService.requireSuper(p);
-        var u = accounts.adminSetStatus(telegramUserId, AccountStatus.ACTIVE, p.email(), body == null ? null : body.reason());
+        var before = accounts.find(telegramUserId).map(a -> a.user().getStatus()).orElse(null);
+        String reason = body == null ? null : body.reason();
+        var u = accounts.adminSetStatus(telegramUserId, AccountStatus.ACTIVE, p.email(), reason);
+        if (before == AccountStatus.DELETION_REQUESTED && telegram != null) {
+            // LOW: o'chirish so'rovini admin bekor qilsa — foydalanuvchi bundan bexabar qolmaydi
+            try {
+                telegram.sendMessage(telegramUserId, String.format(uz.sellerflow.bot.Texts.DELETION_CANCELLED_BY_ADMIN,
+                        uz.sellerflow.bot.Ctx.esc(reason.strip())), null);
+            } catch (RuntimeException e) {
+                org.slf4j.LoggerFactory.getLogger(AdminController.class).warn("Deletion-cancel notice not sent: {}", e.getClass().getSimpleName());
+            }
+        }
         return m("telegramUserId", telegramUserId, "status", u.getStatus().name());
     }
+
+    /**
+     * N-10: «to'liq o'chirishni qo'llab-quvvatlash orqali so'rang» va'dasining mexanizmi. Faqat SUPERADMIN, joriy parol
+     * (step-up) va sabab bilan; yopilgan yoki o'chirish so'ralgan akkauntning tijoriy ma'lumoti darhol o'chiriladi.
+     */
+    @PostMapping("/sellers/{telegramUserId}/purge")
+    public Map<String, Object> purge(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long telegramUserId,
+                                     @RequestBody PurgeRequest body) {
+        AdminAuthService.requireSuper(p);
+        if (body == null || body.reason() == null || body.reason().strip().length() < 5) throw new Errors.Validation("REASON_REQUIRED");
+        auth.requireStepUp(p, body.confirmPassword());
+        accounts.adminPurge(telegramUserId, p.email(), body.reason().strip());
+        return m("telegramUserId", telegramUserId, "status", "CLOSED", "purged", true);
+    }
+
+    public record PurgeRequest(String reason, String confirmPassword) {}
+
+    private uz.sellerflow.telegram.TelegramGateway telegram;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setTelegram(uz.sellerflow.telegram.TelegramGateway telegram) { this.telegram = telegram; }
 
     // ================================================================= access grants
 

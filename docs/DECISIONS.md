@@ -72,3 +72,17 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 6. **TOTP sirlari** DB'da ochiq holda saqlanadi (baza himoyasiga tayanadi). Keyingi bosqichda ularni alohida kalit bilan shifrlash tavsiya etiladi.
 7. **Tashqi monitoring/alerting:** uptime-monitor va backupni server tashqarisiga nusxalash (`docs/OPERATIONS.md`).
 8. **Admin ko'rish oynasi:** rozilik asosidagi kirishda oxirgi 10 ta mahsulot va 10 ta hisoblash ko'rsatiladi. Kerak bo'lsa, sahifalash qo'shiladi.
+
+## 2026-11-13 — qayta auditlar (8-bosqich) qarorlari
+
+| ID | Qaror |
+|---|---|
+| RET-REOPEN (N-9) | Yopilgan akkaunt egasi «Yangi akkaunt ochish»ni bossa, eski akkauntning tijoriy ma'lumoti (mahsulotlar, hisoblashlar, profil, faollik) **darhol o'chiriladi** va Telegram ID psevdonimlanadi. Sabab: ajratilgan yozuvni hech kim (na sotuvchi, na support) topa olmaydi — yetim ma'lumot saqlashning maqsadi yo'q. Rozilik va audit qoladi. |
+| RET-PURGE-ADMIN (N-10) | «To'liq o'chirishni qo'llab-quvvatlash orqali so'rang» — admin panelda SUPERADMIN uchun «To'liq o'chirish» (faqat CLOSED yoki DELETION_REQUESTED, sabab + joriy parol, audit `ACCOUNT_PURGED`). |
+| RET-ONBOARDING (N-11) | Ro'yxatdan o'tishni tugatmagan (biznes yaratilmagan) yozuv `ONBOARDING_RETENTION_DAYS` (30) kun faolliksiz bo'lsa psevdonimlanadi va yopiladi (kunlik DeletionJob). |
+| DEL-SUSPENDED | Bloklangan foydalanuvchi ham `/delete` bilan o'chirishni so'ray oladi; bekor qilsa — bloklangan holiga qaytadi (`status_before_deletion`). O'chirish so'ralganda admin kirish ruxsatlari darhol bekor qilinadi. Admin so'rovni bekor qilsa — foydalanuvchiga sababi bilan xabar boradi. |
+| ACT-RETENTION | V8 faollik izlari (`user_activity_days`, `last_seen_at`) akkaunt yopilganda o'chiriladi. |
+| BACKUP-ENC | Backup shifrlash standartda majburiy; ochiq backup faqat `BACKUP_ALLOW_PLAINTEXT=true` bilan (lokal sinov). |
+| RESTORE-SWAP (N-5) | Tiklash vaqtinchalik bazaga, so'ng bazalar almashtiriladi; eski baza `sellerflow_prev` (`--rollback`). |
+| AUTH-STEPUP | Admin yaratish, boshqa adminning 2FA'sini reset qilish va to'liq o'chirish joriy parol bilan tasdiqlanadi. Bloklangan akkaunt login javobi `INVALID_CREDENTIALS` (email mavjudligi oshkor qilinmaydi). |
+| POLL-QUEUES (N-12) | Poller har worker'ga doimiy navbat bilan ishlaydi; offset faqat eng kichik tugamagan update'gacha suriladi (at-least-once saqlanadi). Vaqtinchalik xato 15 daqiqa qayta urinish, so'ng dead-letter (log). Bir vaqtda faqat bitta nusxa polling qiladi (PostgreSQL advisory lock). |

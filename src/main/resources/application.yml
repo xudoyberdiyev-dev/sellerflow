@@ -69,6 +69,8 @@ sellerflow:
     grace-days: 30
     # Yuridik retention siyosati tasdiqlanguncha tijoriy ma'lumot o'chirilmaydi (faqat CLOSED + shaxsiy maydonlar tozalanadi)
     purge-data: ${DELETION_PURGE_DATA:false}
+    # N-11: ro'yxatdan o'tishni tugatmagan foydalanuvchi yozuvi shuncha kun faolliksiz bo'lsa psevdonimlanadi
+    onboarding-retention-days: ${ONBOARDING_RETENTION_DAYS:30}
   backup:
     # H-2: backup servisi yozadigan holat fayli (compose: ./backups -> /backups:ro)
     status-file: ${BACKUP_STATUS_FILE:/backups/status.json}

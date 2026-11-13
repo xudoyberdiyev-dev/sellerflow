@@ -30,6 +30,11 @@ public class UserAccount {
     @Column(name = "deletion_requested_at")
     private Instant deletionRequestedAt;
 
+    /** LOW: bloklangan foydalanuvchi ham o'chirishni so'raydi; bekor qilsa — bloklangan holiga qaytadi. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_before_deletion")
+    private AccountStatus statusBeforeDeletion;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -61,7 +66,9 @@ public class UserAccount {
     /** M-25: o'chirish so'rovini bekor qilish (kutish davri ichida). */
     public void cancelDeletion() {
         this.deletionRequestedAt = null;
-        setStatus(AccountStatus.ACTIVE);
+        AccountStatus back = statusBeforeDeletion == AccountStatus.SUSPENDED ? AccountStatus.SUSPENDED : AccountStatus.ACTIVE;
+        this.statusBeforeDeletion = null;
+        setStatus(back);
     }
 
     /**
@@ -76,6 +83,7 @@ public class UserAccount {
     }
 
     public void markDeletionRequested(Instant at) {
+        this.statusBeforeDeletion = this.status;
         this.deletionRequestedAt = at;
         setStatus(AccountStatus.DELETION_REQUESTED);
     }
