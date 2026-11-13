@@ -47,7 +47,7 @@ export function Notifications() {
     return () => { ctrl.abort(); window.clearTimeout(timer) }
   }, [])
   const items = data?.items ?? []
-  const backupBad = data?.backupState === 'FAILED' || data?.backupState === 'STALE'
+  const backupBad = ['FAILED', 'STALE', 'MISSING'].includes(data?.backupState ?? '')
   const unread = items.filter((i) => i.id > seen).length + (backupBad ? 1 : 0)
   const markRead = () => { const top = items[0]?.id ?? 0; writeSeen(top); setSeen(top) }
 

@@ -14,7 +14,7 @@ const STATE: Record<string, { label: string; tone: Tone }> = {
   UP: { label: 'Ishlayapti', tone: 'success' }, DOWN: { label: 'Ishlamayapti', tone: 'danger' },
   DEGRADED: { label: 'Muammo bor', tone: 'warning' }, DISABLED: { label: 'O‘chiq', tone: 'neutral' },
   OK: { label: 'Muvaffaqiyatli', tone: 'success' }, FAILED: { label: 'Xato', tone: 'danger' },
-  STALE: { label: 'Eskirgan', tone: 'warning' }, UNKNOWN: { label: 'Ma’lumot yo‘q', tone: 'neutral' },
+  STALE: { label: 'Eskirgan', tone: 'warning' }, MISSING: { label: 'Ishlamayapti', tone: 'danger' }, UNKNOWN: { label: 'Ma’lumot yo‘q', tone: 'neutral' },
 }
 const badge = (s: string) => <Badge tone={STATE[s]?.tone ?? 'neutral'}>{STATE[s]?.label ?? s}</Badge>
 const dt = (s?: string | null) => (s ? formatDateTime(s) : '—')
@@ -30,7 +30,7 @@ export function SystemStatus() {
   const problems = h ? [
     h.database !== 'UP' && 'Ma’lumotlar bazasi javob bermayapti.',
     h.bot === 'DEGRADED' && 'Telegram bot so‘nggi 2 daqiqada muvaffaqiyatli so‘rov qilmagan.',
-    (h.backup?.state === 'FAILED' || h.backup?.state === 'STALE') && 'Zaxira nusxa muammosi — OPERATIONS.md dagi tiklash bo‘limini ko‘ring.',
+    (h.backup?.state === 'FAILED' || h.backup?.state === 'STALE' || h.backup?.state === 'MISSING') && 'Zaxira nusxa muammosi — OPERATIONS.md dagi tiklash bo‘limini ko‘ring.',
   ].filter(Boolean) as string[] : []
 
   return (

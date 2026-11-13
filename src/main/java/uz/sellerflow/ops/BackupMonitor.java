@@ -21,7 +21,10 @@ import java.time.Instant;
  * H-2: backup holati — backup servisi yozadigan {@code status.json} dan o'qiladi.
  * Admin /health va /actuator/health (indikator "backup") da ko'rinadi; ALERT_TELEGRAM_CHAT_ID berilsa,
  * backup xato bersa yoki eskirsa (oxirgi muvaffaqiyat > max-age) bot orqali ogohlantirish yuboriladi.
- * Fayl yo'q bo'lsa (masalan, lokal ishlab chiqish) — UNKNOWN, health'ga ta'sir qilmaydi.
+ * N-2: fayl yo'q bo'lsa — {@code sellerflow.backup.required=false} (lokal ishlab chiqish) da UNKNOWN; production'da
+ * (compose: {@code BACKUP_REQUIRED=true}) ilova ishga tushganidan {@code missing-grace-hours} o'tib ham fayl bo'lmasa —
+ * MISSING (health DOWN + alert): backup konteyneri umuman ishlamayapti degani.
+ * N-3: alert chat sozlanmagan bo'lsa startupda WARN.
  */
 @Component("backup")
 public class BackupMonitor implements HealthIndicator {
@@ -29,7 +32,7 @@ public class BackupMonitor implements HealthIndicator {
     private static final Logger log = LoggerFactory.getLogger(BackupMonitor.class);
     static final Duration REALERT = Duration.ofHours(24);
 
-    public enum State { OK, FAILED, STALE, UNKNOWN }
+    public enum State { OK, FAILED, STALE, MISSING, UNKNOWN }
 
     public record Status(State state, Instant lastSuccessAt, String lastSuccessFile, Instant lastFailureAt,
                          String lastError, int consecutiveFailures) {}
@@ -39,14 +42,22 @@ public class BackupMonitor implements HealthIndicator {
     private final String alertChatId;
     private final TelegramGateway tg;
     private final ObjectMapper mapper;
+    private final boolean required;
+    private final Duration missingGrace;
     private Clock clock = Clock.systemUTC();
+    private Instant startedAt;
     private String lastAlertKey;
     private Instant lastAlertAt;
 
     public BackupMonitor(@Value("${sellerflow.backup.status-file:/backups/status.json}") String file,
                          @Value("${sellerflow.backup.max-age-hours:26}") long maxAgeHours,
                          @Value("${sellerflow.backup.alert-chat-id:}") String alertChatId,
+                         @Value("${sellerflow.backup.required:false}") boolean required,
+                         @Value("${sellerflow.backup.missing-grace-hours:2}") long missingGraceHours,
                          TelegramGateway tg, ObjectMapper mapper) {
+        this.required = required;
+        this.missingGrace = Duration.ofHours(missingGraceHours);
+        this.startedAt = Instant.now();
         this.file = Path.of(file);
         this.maxAge = Duration.ofHours(maxAgeHours);
         this.alertChatId = alertChatId == null ? "" : alertChatId.strip();
@@ -54,10 +65,32 @@ public class BackupMonitor implements HealthIndicator {
         this.mapper = mapper;
     }
 
-    void setClock(Clock clock) { this.clock = clock; }
+    void setClock(Clock clock) {
+        this.clock = clock;
+        this.startedAt = clock.instant();
+    }
+
+    /** Test uchun: soatni o'zgartiradi, ishga tushish vaqtini saqlaydi. */
+    void setClockKeepStart(Clock clock) {
+        this.clock = clock;
+    }
+
+    @jakarta.annotation.PostConstruct
+    void warnIfUnconfigured() {
+        if (alertChatId.isEmpty()) {
+            log.warn("ALERT_TELEGRAM_CHAT_ID is not set — backup failures will NOT be reported to Telegram (see docs/OPERATIONS.md §5)");
+        }
+        if (!required) log.info("BACKUP_REQUIRED=false — missing backup status is not treated as a failure");
+    }
 
     public Status read() {
-        if (!Files.isRegularFile(file)) return new Status(State.UNKNOWN, null, null, null, null, 0);
+        if (!Files.isRegularFile(file)) {
+            if (required && !clock.instant().isBefore(startedAt.plus(missingGrace))) {
+                return new Status(State.MISSING, null, null, null,
+                        "status.json topilmadi — backup servisi ishlamayapti", 0);
+            }
+            return new Status(State.UNKNOWN, null, null, null, null, 0);
+        }
         try {
             JsonNode n = mapper.readTree(Files.readString(file));
             Instant ok = instant(n, "lastSuccessAt");
@@ -79,7 +112,7 @@ public class BackupMonitor implements HealthIndicator {
         Status s = read();
         Health.Builder b = switch (s.state()) {
             case OK, UNKNOWN -> Health.up();
-            case FAILED, STALE -> Health.down();
+            case FAILED, STALE, MISSING -> Health.down();
         };
         return b.withDetail("state", s.state().name()).build();
     }
@@ -89,7 +122,7 @@ public class BackupMonitor implements HealthIndicator {
     public void checkAndAlert() {
         if (alertChatId.isEmpty()) return;
         Status s = read();
-        if (s.state() != State.FAILED && s.state() != State.STALE) {
+        if (s.state() != State.FAILED && s.state() != State.STALE && s.state() != State.MISSING) {
             lastAlertKey = null;
             return;
         }
@@ -103,7 +136,8 @@ public class BackupMonitor implements HealthIndicator {
             log.warn("ALERT_TELEGRAM_CHAT_ID is not a number — backup alert skipped");
             return;
         }
-        String text = (s.state() == State.FAILED ? "⚠️ <b>SellerFlow: backup xatosi</b>" : "⚠️ <b>SellerFlow: backup eskirgan</b>")
+        String text = (s.state() == State.FAILED ? "⚠️ <b>SellerFlow: backup xatosi</b>"
+                : s.state() == State.MISSING ? "⚠️ <b>SellerFlow: backup ishlamayapti</b>" : "⚠️ <b>SellerFlow: backup eskirgan</b>")
                 + "\n\nOxirgi muvaffaqiyatli backup: " + (s.lastSuccessAt() == null ? "yo'q" : s.lastSuccessAt())
                 + (s.consecutiveFailures() > 0 ? "\nKetma-ket xatolar: " + s.consecutiveFailures() : "")
                 + (s.lastError() == null ? "" : "\nXato: " + esc(s.lastError()))

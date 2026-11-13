@@ -48,6 +48,7 @@ services:
       # Shartlar matni o'zgarsa versiyani oshiring — foydalanuvchilardan qayta rozilik so'raladi
       TERMS_VERSION: ${TERMS_VERSION:-2026-11-05-v0.1}
       ALERT_TELEGRAM_CHAT_ID: ${ALERT_TELEGRAM_CHAT_ID:-}
+      BACKUP_REQUIRED: ${BACKUP_REQUIRED:-true}
     volumes:
       # Backup holati (status.json) — faqat o'qish uchun
       - ./backups:/backups:ro
@@ -80,6 +81,7 @@ services:
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
       BACKUP_MIN_KEEP: ${BACKUP_MIN_KEEP:-7}
       BACKUP_ENCRYPTION_PASSPHRASE: ${BACKUP_ENCRYPTION_PASSPHRASE:-}
+      BACKUP_ALLOW_PLAINTEXT: ${BACKUP_ALLOW_PLAINTEXT:-false}
     volumes:
       - ./backups:/backups
       - ./scripts/backup-loop.sh:/backup-loop.sh:ro

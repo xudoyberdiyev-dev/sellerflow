@@ -67,7 +67,7 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 ## 5. Backup va tiklash
 - `backup` servisi har 24 soatda `./backups/sellerflow_*.dump` (huquq 600) faylini yaratadi. Eski nusxalar (`BACKUP_KEEP_DAYS`, 14 kun) **faqat muvaffaqiyatli backupdan keyin** o'chiriladi va eng yangi `BACKUP_MIN_KEEP` (7) nusxa hech qachon o'chirilmaydi — backup ketma-ket xato bersa ham eski nusxalar qoladi.
 - Holat fayli: `./backups/status.json` (`lastSuccessAt`, `lastError`, `consecutiveFailures`). Qo'lda tekshirish: `cat backups/status.json`.
-- **Shifrlash (tavsiya):** `.env` da `BACKUP_ENCRYPTION_PASSPHRASE` bering → fayllar `sellerflow_*.dump.gpg` (gpg, AES256). Parolni parol menejerida ham saqlang: usiz backup tiklanmaydi. Qo'lda ochish: `gpg -d backups/<fayl>.dump.gpg > /tmp/x.dump`.
+- **Shifrlash (majburiy):** `.env` da `BACKUP_ENCRYPTION_PASSPHRASE` bering → fayllar `sellerflow_*.dump.gpg` (gpg, AES256). Berilmasa backup **xato** beradi (admin panel va health'da ko'rinadi). Faqat lokal sinovda `BACKUP_ALLOW_PLAINTEXT=true` bilan ochiq backupga ruxsat beriladi. Parolni parol menejerida ham saqlang: usiz backup tiklanmaydi. Qo'lda ochish: `gpg -d backups/<fayl>.dump.gpg > /tmp/x.dump`.
 - **Backuplarni server tashqarisiga nusxalang** (server yo'qolsa backup ham yo'qoladi). Off-site nusxa faqat **shifrlangan** fayllar bilan. `rclone` misoli (S3/Backblaze B2/Google Drive va h.k.):
   ```bash
   # bir marta: rclone config  (masalan, "offsite" nomli remote)
@@ -75,7 +75,8 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
   30 4 * * * cd /opt/sellerflow && rclone copy backups offsite:sellerflow-backups --include "sellerflow_*.dump.gpg" --max-age 48h >> /var/log/sellerflow-offsite.log 2>&1
   ```
   Off-site tomonda ham saqlash muddati (lifecycle) sozlang, masalan 30–90 kun.
-- Tiklash: `./scripts/restore.sh backups/<fayl>.dump` (yoki `.dump.gpg` — gpg parol so'raydi). Skript avval faylni tekshiradi, joriy bazaning snapshot'ini `backups/pre-restore/` ga oladi, so'ng bitta tranzaksiyada tiklaydi: xato bo'lsa baza o'zgarmaydi. Snapshot'lar avtomatik o'chirilmaydi — keraksizini qo'lda o'chiring.
+- Tiklash: `./scripts/restore.sh backups/<fayl>.dump.gpg`. Skript: (1) faylni tekshiradi va **vaqtinchalik** `sellerflow_restore` bazasiga tiklaydi — ishlab turgan baza o'zgarmaydi; (2) backup sxemasi koddagidan yangi bo'lsa to'xtaydi, eski bo'lsa ilova ishga tushganda migratsiyalarni qo'llaydi; (3) joriy baza snapshot'ini `backups/pre-restore/` ga oladi (passphrase bo'lsa shifrlangan, eng yangi 5 tasi saqlanadi); (4) ilovani to'xtatib bazalarni almashtiradi: eski baza `sellerflow_prev` bo'lib qoladi.
+- **Rollback** (masalan, muvaffaqiyatsiz yangilanishdan keyin): ilovaning oldingi versiyasini qaytaring (`git checkout <oldingi tag>` + `docker compose up -d --build app`), so'ng kerak bo'lsa `./scripts/restore.sh <yangilanishdan oldingi backup>`. Tiklashning o'zini bekor qilish: `./scripts/restore.sh --rollback` (`sellerflow_prev` qaytadi). Yangilashdan oldin doim qo'lda backup oling: `docker compose exec backup env BACKUP_RUN_ONCE=1 bash /backup-loop.sh`.
 - Oylik tiklash sinovi: `./scripts/restore-drill.sh` (ishlab turgan bazaga tegmaydi).
 
 ## 6. Monitoring
@@ -84,7 +85,7 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 - Loglar: `docker compose logs --since 1h app`.
 - Metrikalar (Prometheus formatida): `curl -s localhost:8080/actuator/prometheus` — faqat server/ichki tarmoqdan (tashqi IP uchun 404). Asosiylari: `sellerflow_updates_total{kind}`, `sellerflow_update_errors_total{type}`, `sellerflow_calculations_total{type}`, `telegram_api_calls_total{method,outcome}`, `telegram_api_latency_seconds`, JVM/Hikari/HTTP metrikalari.
 - Backup holati: admin panel «Tizim holati» → Backup; `docker compose ps` (backup servisi `unhealthy` bo'lsa — oxirgi muvaffaqiyatli backup 26 soatdan eski); `/actuator/health` backup xato/eskirgan bo'lsa `DOWN`; `docker compose logs backup | tail`.
-- Alert: `.env` da `ALERT_TELEGRAM_CHAT_ID` berilsa, backup xato bersa yoki eskirsa bot shu chat'ga yozadi (bir muammo uchun 24 soatda bir marta).
+- Alert (**production'da majburiy**): `.env` da `ALERT_TELEGRAM_CHAT_ID` bering — backup xato bersa, eskirsa yoki umuman ishlamasa (status.json ilova ishga tushganidan 2 soat o'tib ham yo'q; `BACKUP_REQUIRED=true`) bot shu chat'ga yozadi (bir muammo uchun 24 soatda bir marta). Berilmasa ilova startupda WARN yozadi.
 
 - Audit jurnali `AUDIT_RETENTION_DAYS` (standart 365) kundan keyin avtomatik tozalanadi (har kuni 03:45). Rozilik yozuvlari bunga kirmaydi.
 - DB ulanishlar puli: `DB_POOL_SIZE` (standart 10).

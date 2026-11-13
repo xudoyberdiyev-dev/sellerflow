@@ -5,6 +5,8 @@
 #   Ilova shu faylni o'qiydi (health + Telegram alert), compose healthcheck ham shundan foydalanadi.
 # - BACKUP_ENCRYPTION_PASSPHRASE berilsa: nusxa gpg (AES256, simmetrik) bilan shifrlanadi -> sellerflow_*.dump.gpg.
 #   gpg topilmasa backup XATO hisoblanadi (shifrlanmagan nusxa jim yozilmaydi). Parol process ro'yxatida ko'rinmaydi (fd 3).
+# - M-15/16: shifrlash standartda MAJBURIY. Passphrase berilmasa va BACKUP_ALLOW_PLAINTEXT=true bo'lmasa — backup
+#   XATO hisoblanadi (status.json -> ilova health DOWN + alert), shifrlanmagan nusxa yozilmaydi.
 # - BACKUP_RUN_ONCE=1 — bitta backup va chiqish (test/qo'lda ishga tushirish uchun).
 set -u
 
@@ -64,6 +66,14 @@ run_backup() {
   local ts file err
   ts=$(date -u +%Y%m%dT%H%M%SZ)
   file="${BACKUP_DIR}/sellerflow_${ts}.dump"
+  if [ -z "${BACKUP_ENCRYPTION_PASSPHRASE:-}" ] && [ "${BACKUP_ALLOW_PLAINTEXT:-false}" != "true" ]; then
+    failures=$((failures + 1))
+    last_failure_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    last_error="BACKUP_ENCRYPTION_PASSPHRASE berilmagan (shifrlanmagan backup uchun BACKUP_ALLOW_PLAINTEXT=true)"
+    echo "[backup] FAILED at ${ts}: ${last_error}" >&2
+    write_status
+    return 1
+  fi
   err="$(pg_dump -Fc -f "${file}.tmp" 2>&1 >/dev/null)"
   local rc=$?
   if [ ${rc} -eq 0 ] && [ -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" ]; then

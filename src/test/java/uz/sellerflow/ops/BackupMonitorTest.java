@@ -23,7 +23,11 @@ class BackupMonitorTest {
     final Instant now = Instant.parse("2026-11-07T12:00:00Z");
 
     private BackupMonitor monitor(String chat) {
-        BackupMonitor m = new BackupMonitor(dir.resolve("status.json").toString(), 26, chat, tg, new ObjectMapper());
+        return monitor(chat, false);
+    }
+
+    private BackupMonitor monitor(String chat, boolean required) {
+        BackupMonitor m = new BackupMonitor(dir.resolve("status.json").toString(), 26, chat, required, 2, tg, new ObjectMapper());
         m.setClock(Clock.fixed(now, ZoneOffset.UTC));
         return m;
     }
@@ -41,6 +45,19 @@ class BackupMonitorTest {
         BackupMonitor m = monitor("");
         assertThat(m.read().state()).isEqualTo(BackupMonitor.State.UNKNOWN);
         assertThat(m.health().getStatus()).isEqualTo(Status.UP);
+    }
+
+    /** N-2: production'da status.json umuman bo'lmasa — grace davridan keyin MISSING, health DOWN, alert. */
+    @Test
+    void missingFile_whenRequired_becomesMissingAfterGrace_andAlerts() {
+        BackupMonitor m = monitor("777", true);
+        assertThat(m.read().state()).isEqualTo(BackupMonitor.State.UNKNOWN); // grace ichida
+        m.setClockKeepStart(Clock.fixed(now.plus(Duration.ofHours(3)), ZoneOffset.UTC));
+        assertThat(m.read().state()).isEqualTo(BackupMonitor.State.MISSING);
+        assertThat(m.health().getStatus()).isEqualTo(Status.DOWN);
+        m.checkAndAlert();
+        assertThat(tg.forChat(777)).hasSize(1);
+        assertThat(tg.last(777).text()).contains("backup ishlamayapti");
     }
 
     @Test

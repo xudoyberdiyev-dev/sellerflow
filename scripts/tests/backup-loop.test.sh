@@ -7,6 +7,9 @@ DIR="$(mktemp -d)"
 trap 'rm -rf "${DIR}"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+# 1-3 holatlar shifrlanmagan rejimda (ataylab ruxsat bilan)
+export BACKUP_ALLOW_PLAINTEXT=true
+
 # 10 ta eski (30 kunlik) backup
 for i in $(seq -w 1 10); do
   f="${DIR}/sellerflow_202601${i}T000000Z.dump"; echo old > "$f"; touch -d '30 days ago' "$f"
@@ -33,6 +36,13 @@ grep -q '"consecutiveFailures": 0' "${DIR}/status.json" || fail "consecutiveFail
 if PGHOST=127.0.0.1 PGPORT=1 BACKUP_DIR="${DIR}" BACKUP_RUN_ONCE=1 bash "${HERE}/backup-loop.sh"; then fail "xato kutilgan edi"; fi
 grep -q '"lastSuccessAt": "20' "${DIR}/status.json" || fail "xatodan keyin lastSuccessAt yo'qoldi"
 [ "$(ls "${DIR}"/sellerflow_*.dump | wc -l)" -eq 7 ] || fail "xatodan keyin nusxalar o'zgardi"
+
+# 3b) M-15/16: passphrase ham, ruxsat ham yo'q — XATO, ochiq nusxa yozilmaydi
+NOENC="$(mktemp -d)"
+if BACKUP_ALLOW_PLAINTEXT=false BACKUP_DIR="${NOENC}" BACKUP_RUN_ONCE=1 bash "${HERE}/backup-loop.sh"; then fail "shifrlashsiz backup qabul qilindi"; fi
+grep -q 'BACKUP_ENCRYPTION_PASSPHRASE berilmagan' "${NOENC}/status.json" || fail "shifrlash xatosi status.json'da yo'q"
+[ -z "$(find "${NOENC}" -name 'sellerflow_*.dump*')" ] || fail "shifrlanmagan nusxa yozildi"
+rm -rf "${NOENC}"
 
 # 4) Shifrlash (M-15): .dump.gpg, ochiq dump qolmaydi, to'g'ri parol bilan ochiladi
 if command -v gpg >/dev/null 2>&1; then

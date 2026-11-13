@@ -75,6 +75,9 @@ sellerflow:
     max-age-hours: 26
     # Ixtiyoriy: backup xatosi/eskirishi haqida shu Telegram chat'ga (bot orqali) ogohlantirish
     alert-chat-id: ${ALERT_TELEGRAM_CHAT_ID:}
+    # N-2: production'da true (compose) — status.json bo'lmasa (grace'dan keyin) health DOWN + alert
+    required: ${BACKUP_REQUIRED:false}
+    missing-grace-hours: ${BACKUP_MISSING_GRACE_HOURS:2}
   audit:
     # LOW (DB): audit_events saqlash muddati (kun). Rozilik yozuvlari (consents) bunga kirmaydi.
     retention-days: ${AUDIT_RETENTION_DAYS:365}
