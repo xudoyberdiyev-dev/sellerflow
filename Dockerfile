@@ -1,5 +1,5 @@
 # --- 1. Superadmin UI ---
-FROM node:22-alpine AS ui
+FROM node:25-alpine AS ui
 WORKDIR /ui
 COPY admin-ui/package.json admin-ui/package-lock.json ./
 RUN npm ci --no-audit --no-fund
