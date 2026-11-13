@@ -77,6 +77,7 @@ const MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: 'Email yoki parol noto‘g‘ri. Ko‘p xato urinishdan keyin hisob 15 daqiqaga bloklanadi.',
   STEP_UP_REQUIRED: 'Joriy parolingiz noto‘g‘ri. Amal bajarilmadi.',
   PURGE_ONLY_CLOSED: 'Faqat yopilgan yoki o‘chirish so‘ralgan akkauntni to‘liq o‘chirish mumkin.',
+  DATE_INVALID: 'Sana noto‘g‘ri.',
   PASSWORD_REUSED: 'Yangi parol joriy paroldan farq qilishi kerak.',
   CONCURRENT_MODIFICATION: 'Ma’lumot boshqa joyda o‘zgartirildi. Sahifani yangilab, qayta urinib ko‘ring.',
   PAYLOAD_TOO_LARGE: 'So‘rov juda katta.',
@@ -131,7 +132,7 @@ export const fmtMoney = (v?: string | number | null) => {
 }
 
 /** D-6: autentifikatsiyalangan fayl yuklab olish (CSV eksport) — token header orqali, URL'da emas. */
-export async function download(path: string, filename: string): Promise<void> {
+export async function download(path: string, filename: string): Promise<{ truncated: boolean }> {
   const headers: Record<string, string> = {}
   if (memoryToken) headers.Authorization = `Bearer ${memoryToken}`
   const res = await fetch(BASE + path, { headers })
@@ -148,4 +149,5 @@ export async function download(path: string, filename: string): Promise<void> {
   a.click()
   a.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return { truncated: res.headers.get('X-Export-Truncated') === 'true' }
 }

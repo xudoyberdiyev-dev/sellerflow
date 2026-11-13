@@ -475,16 +475,31 @@ class AdminApiIT extends IntegrationTest {
         assertThat(sellers.getBody()).contains(String.valueOf(u)).doesNotContain("unitCost");
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action in ('EXPORT_AUDIT','EXPORT_SELLERS')", Long.class)).isEqualTo(2);
 
-        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("=1+2")).isEqualTo("'=1+2");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("=1+2")).isEqualTo("\"'=1+2\"");
         assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("a,b")).isEqualTo("\"a,b\"");
-        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("@x")).startsWith("'");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("@x")).startsWith("\"'");
+        // LOW: ; va tab ajratgichli lokallar — katak bo'linmaydi (qo'shtirnoq), bo'shliqdan keyingi formula ham neytral
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("a;=cmd()")).isEqualTo("\"a;=cmd()\"");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("x\t=1")).isEqualTo("\"x\t=1\"");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("  =1+1")).isEqualTo("\"'  =1+1\"");
+        assertThat(uz.sellerflow.admin.AdminControllerCsv.cell("\t=1")).startsWith("\"'");
+        assertThat(csv.getHeaders().getFirst("X-Export-Truncated")).isEqualTo("false");
+        assertThat(csv.getBody()).contains("+05:00"); // vaqtlar Toshkent offseti bilan
+        assertThat(call(HttpMethod.GET, "/audit?from=%2B999999999-12-31", token, null).getStatusCode().value()).isEqualTo(400);
 
         String email = "csv" + System.nanoTime() + "@sellerflow.test";
         call(HttpMethod.POST, "/admins", token,
                 "{\"email\":\"" + email + "\",\"role\":\"SUPPORT\",\"tempPassword\":\"temporary-pass-123\"}");
         String support = loginWithNewPassword(email, "temporary-pass-123");
         assertThat(call(HttpMethod.GET, "/audit/export.csv", support, null).getStatusCode().value()).isEqualTo(403);
-        assertThat(call(HttpMethod.GET, "/sellers/export.csv", support, null).getStatusCode().value()).isEqualTo(200);
+        assertThat(call(HttpMethod.GET, "/sellers/export.csv", support, null).getStatusCode().value()).isEqualTo(403);
+        // LOW: SUPPORT kartada ism/biznes nomini va SUPERADMIN email'ini ko'rmaydi; ko'rish auditlanadi
+        JsonNode card = json(call(HttpMethod.GET, "/sellers/" + u, support, null));
+        assertThat(card.path("businessName").isNull()).isTrue();
+        assertThat(card.path("lastStatusChange").isNull()).isTrue();
+        assertThat(json(call(HttpMethod.GET, "/sellers/" + u, token, null)).path("lastStatusChange").asText()).contains("HYPERLINK");
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'SELLER_CARD_VIEWED'", Long.class)).isEqualTo(2);
+        assertThat(json(call(HttpMethod.GET, "/support", support, null)).path("updatedBy").isNull()).isTrue();
     }
 
     @Test

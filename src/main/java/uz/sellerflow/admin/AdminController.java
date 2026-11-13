@@ -268,7 +268,7 @@ public class AdminController {
      * SUPPORT ham o'qiy oladi (ro'yxat kabi).
      */
     @GetMapping("/sellers/{telegramUserId}")
-    public Map<String, Object> seller(@PathVariable long telegramUserId) {
+    public Map<String, Object> seller(@RequestAttribute(PRINCIPAL) Principal p, @PathVariable long telegramUserId) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 select u.id as "userId", u.telegram_user_id as "telegramUserId", u.status, u.created_at as "createdAt",
                        u.deletion_requested_at as "deletionRequestedAt",
@@ -300,6 +300,15 @@ public class AdminController {
                 select summary from audit_events where action = 'ADMIN_STATUS_CHANGE' and entity_type = 'USER'
                   and entity_id = ? order by id desc limit 1""", String.class, String.valueOf(userId));
         r.put("lastStatusChange", reason.isEmpty() ? null : reason.get(0));
+        if (!p.isSuperadmin()) {
+            // LOW: SUPPORT roziliksiz biznes nomi, ism va SUPERADMIN uchun mo'ljallangan sababni ko'rmaydi
+            r.put("businessName", null);
+            r.put("displayName", null);
+            r.put("lastStatusChange", null);
+        }
+        // LOW: sotuvchi kartasini ko'rish auditlanadi (tijoriy qiymatlarsiz)
+        audit.recordStandalone(AuditService.Actor.ADMIN, p.email(), bid == null ? null : ((Number) bid).longValue(),
+                "SELLER_CARD_VIEWED", "USER", userId, null);
         return r;
     }
 
@@ -367,7 +376,10 @@ public class AdminController {
 
     private static java.time.LocalDate day(String v) {
         try {
-            return java.time.LocalDate.parse(v.strip());
+            java.time.LocalDate d = java.time.LocalDate.parse(v.strip());
+            // LOW: ekstremal sanalar (+999999999-…) keyingi arifmetikada 500 bermasin
+            if (d.getYear() < 2000 || d.getYear() > 2100) throw new Errors.Validation("DATE_INVALID");
+            return d;
         } catch (java.time.format.DateTimeParseException e) {
             throw new Errors.Validation("DATE_INVALID");
         }
@@ -504,8 +516,10 @@ public class AdminController {
     // ================================================================= support & audit (SUPERADMIN)
 
     @GetMapping("/support")
-    public Map<String, Object> getSupport() {
-        return supportView(support.settings());
+    public Map<String, Object> getSupport(@RequestAttribute(PRINCIPAL) Principal p) {
+        Map<String, Object> v = new LinkedHashMap<>(supportView(support.settings()));
+        if (!p.isSuperadmin()) v.put("updatedBy", null); // LOW: SUPPORT SUPERADMIN email'ini ko'rmaydi
+        return v;
     }
 
     /** D-5: «oxirgi o'zgartirgan admin/vaqt» — audit'dagi oxirgi SUPPORT_UPDATED dan. */
@@ -599,6 +613,7 @@ public class AdminController {
     /** D-5: sotuvchilar CSV eksporti — faqat metadata (tijoriy qiymatlar yo'q), auditga yoziladi. */
     @GetMapping(value = "/sellers/export.csv", produces = "text/csv")
     public ResponseEntity<String> sellersCsv(@RequestAttribute(PRINCIPAL) Principal p) {
+        AdminAuthService.requireSuper(p); // LOW: SUPPORT butun sotuvchilar bazasini eksport qila olmaydi
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 select u.telegram_user_id as "telegramUserId", u.status, u.created_at as "createdAt",
                        b.primary_channel as "primaryChannel", b.plan_code as "planCode", b.created_at as "activatedAt"
@@ -610,27 +625,44 @@ public class AdminController {
 
     private static ResponseEntity<String> csv(String name, List<Map<String, Object>> rows) {
         StringBuilder sb = new StringBuilder("\uFEFF"); // Excel uchun UTF-8 BOM
+        boolean truncated = rows.size() >= EXPORT_MAX_ROWS;
         if (!rows.isEmpty()) {
             sb.append(String.join(",", rows.get(0).keySet().stream().map(AdminController::csvCell).toList())).append("\r\n");
             for (Map<String, Object> r : rows) {
-                sb.append(String.join(",", r.values().stream().map(v -> csvCell(v == null ? "" : v.toString())).toList()))
+                sb.append(String.join(",", r.values().stream().map(v -> csvCell(csvValue(v))).toList()))
                         .append("\r\n");
             }
         }
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=\"" + name + "\"")
                 .header("Content-Type", "text/csv; charset=UTF-8")
+                // LOW: 10 000 qatordan ko'p bo'lsa jim kesilmaydi — UI ogohlantiradi
+                .header("X-Export-Truncated", String.valueOf(truncated))
+                .header("Access-Control-Expose-Headers", "X-Export-Truncated")
                 .body(sb.toString());
     }
 
-    /** CSV injection himoyasi: = + - @ (va tab/CR) bilan boshlangan qiymat oldiga ' qo'shiladi. */
-    static String csvCell(String v) {
-        String s = v;
-        if (!s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) s = "'" + s;
-        if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
-            s = "\"" + s.replace("\"", "\"\"") + "\"";
+    /** LOW: CSV'dagi vaqtlar Asia/Tashkent offseti bilan (ISO-8601), UTC'da offsetsiz emas. */
+    static String csvValue(Object v) {
+        if (v == null) return "";
+        if (v instanceof java.sql.Timestamp t) {
+            return t.toInstant().atZone(DashboardService.TZ).toOffsetDateTime().toString();
         }
-        return s;
+        return v.toString();
+    }
+
+    /**
+     * CSV injection himoyasi (LOW: `;`/tab orqali chetlab o'tish yopildi): har bir katak qo'shtirnoqqa olinadi — `;` yoki
+     * tab ajratgichli lokallarda ham katak bo'linmaydi; birinchi bo'sh bo'lmagan belgi = + - @ yoki tab/CR bo'lsa,
+     * oldiga ' qo'shiladi.
+     */
+    static String csvCell(String v) {
+        String s = v == null ? "" : v;
+        String t = s.stripLeading();
+        if (!s.isEmpty() && ("=+-@\t\r".indexOf(s.charAt(0)) >= 0 || (!t.isEmpty() && "=+-@".indexOf(t.charAt(0)) >= 0))) {
+            s = "'" + s;
+        }
+        return "\"" + s.replace("\"", "\"\"") + "\"";
     }
 
     // ================================================================= admins (SUPERADMIN)
