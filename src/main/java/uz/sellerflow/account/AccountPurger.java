@@ -46,5 +46,7 @@ public class AccountPurger {
         jdbc.update("delete from telegram_flows where user_id = ?", userId);
         jdbc.update("delete from user_activity_days where user_id = ?", userId);
         jdbc.update("update users set last_seen_at = null where id = ?", userId);
+        // V2: yopilgan akkauntning marketplace kalitlari darhol o'chiriladi (sir saqlanib qolmasin)
+        jdbc.update("delete from marketplace_connections where business_id in (select id from businesses where owner_user_id = ?)", userId);
     }
 }

@@ -101,3 +101,17 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 | PRICE-VARIANTS | Natija ekranida «📊 Narx variantlari»: zararsizlik va 10/20/30/40% (+ minimal) marja uchun tavsiya narxlari, joriy yaxlitlash qadamida. Saqlanmaydi (ma'lumot uchun). |
 | EXPORT-CSV | Sozlamalar → «📤 Ma'lumotlarni yuklab olish»: `mahsulotlar.csv` va `hisoblashlar.csv` (UTF-8 BOM, formula-injection himoyasi, har biri ≤ 10 000 qator), 10 daqiqada bir marta; audit `USER_DATA_EXPORTED`. |
 | PURGE-V11 | To'liq o'chirishda kanal stavkalari va minimal marja ham o'chiriladi. |
+
+## 2026-11-23 — V2 (Uzum integratsiyasi va tahlil) qarorlari
+
+| ID | Qaror |
+|---|---|
+| UZ-API | Uzum Seller OpenAPI (`api-seller.uzum.uz/api/seller-openapi`), **faqat o'qish**: `GET /v1/shops`, `GET /v1/product/shop/{shopId}` (size=100). Kalit `Authorization` sarlavhasida «Bearer»siz. Bot narx, qoldiq yoki buyurtmalarni o'zgartirmaydi. Javob maydonlari ochiq qo'llanma (uzum-seller-api-guide) va rasmiy swagger asosida; tolerant parsing — noma'lum maydonlar e'tiborsiz. |
+| UZ-TOKEN | Sotuvchi kalitini botga yuboradi → bot xabarni **darhol o'chiradi**, kalitni sessiyaga yozmaydi, `/v1/shops` bilan tekshiradi va AES-256-GCM bilan shifrlab `marketplace_connections` ga yozadi (AAD = biznes ID). Shifrlash kaliti `SELLERFLOW_SECRETS_KEY` faqat muhitda — DB va backup'da yo'q. Kalit yo'q bo'lsa Uzum funksiyasi o'chiq. Ekranda faqat oxirgi 4 belgi. Uzish — kalit darhol o'chiriladi; akkaunt yopilganda ham. |
+| UZ-LIMITS | ~2 so'rov/s (har kalitga 550 ms tanaffus), kunlik 100 000. Kunlik 429 (`x-ratelimit-remaining-per-day: 0`) — qayta urinilmaydi, holat `QUOTA`. Sekundlik 429 va 5xx — cheklangan qayta urinish. 403 HTML — WAF (server IP), kalit «buzilgan» deb belgilanmaydi. 401/403 JSON — `INVALID`, fon sinxroni to'xtaydi. |
+| UZ-SYNC | Har SKU — bitta mahsulot (`external_sku_id` bo'yicha upsert; avval qo'lda qo'shilgan bo'lsa — SKU bo'yicha bog'lanadi). Uzum yangilaydi: sotish narxi, komissiya %, qoldiq (FBO+FBS), sotilgan/qaytgan soni. **Tannarx faqat bo'sh bo'lsa** Uzum `purchasePrice` dan olinadi (0 = yo'q); sotuvchi kiritgan tannarx va nom o'zgarmaydi. Arxiv/o'chirilgan kartochkalar o'tkaziladi. Kunlik fon sinxron 04:40 (Toshkent), qo'lda — 10 daqiqada bir marta; bir biznesga bir vaqtda bitta sinxron. |
+| COST-NULL | `products.unit_cost` endi bo'sh bo'lishi mumkin (import). Bunday mahsulot ro'yxatda «🟡 tannarx?», hisobga kirishda tannarx so'raladi; «🟡 Tannarxni kiritish» — ketma-ket tez kiritish. |
+| UZ-COMMISSION | Uzum mahsulotidan hisob boshlansa: kanal = Uzum, komissiya = SKU komissiyasi (kanal stavkasidan ustun), komissiya qadami o'tkaziladi. |
+| FILE-IMPORT | Botga .xlsx yoki .csv (≤ 5 MB, ≤ 5 000 qator). Ustunlar sarlavhadan avtomatik (uz/ru/en): nomi (majburiy), tannarx, narx, SKU/artikul, shtrix-kod. CSV: UTF-8/Windows-1251, `;` `,` tab. XLSX — o'z minimal o'quvchimiz (tashqi kutubxonasiz, XXE o'chiq, zip-bomb chegarasi 40 MB). Moslash: SKU → aynan nom → yangi. Fayldagi tannarx mavjudining ustidan yozadi (sotuvchining ongli kiritishi). `.xls` qo'llanmaydi. |
+| LEAKS | «🩸 Foyda yo'qotishlari»: faol mahsulotlar bo'yicha 1 dona foyda (narx, tannarx, Uzum komissiyasi + saqlangan kanal stavkalari). Zarar va minimal marjadan past ro'yxati; stavkalar yo'q bo'lsa — «taxminiy» ogohlantirishi. Sotuv hajmi bo'yicha (davr) foyda — V3 (Uzum `finance/orders`). |
+| WHAT-IF | Natijada «🔮 Agar…»: narx ±5/10%, tannarx +10%, komissiya +2 p.p., chegirma 10/20%, reklama 5% — foyda va farq. Saqlanmaydi. |

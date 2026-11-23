@@ -346,7 +346,7 @@ public class HistoryHandler {
         BigDecimal oldCost = new BigDecimal(read(e.getInputSnapshot()).path("cost").asText("0"));
         Optional<Product> product = e.getProductId() == null ? Optional.empty()
                 : products.find(ctx.businessId(), e.getProductId());
-        if (product.isPresent() && product.get().getUnitCost().compareTo(oldCost) != 0) {
+        if (product.isPresent() && product.get().hasCost() && product.get().getUnitCost().compareTo(oldCost) != 0) {
             ctx.send(String.format(Texts.RECALC_COST_CHOICE, Money.format(oldCost), Money.format(product.get().getUnitCost())),
                     Kb.create().row(Kb.cb(Texts.BTN_OLD_COST, "h:rcc:" + id + ":o"), Kb.cb(Texts.BTN_NEW_COST, "h:rcc:" + id + ":c")));
             return;
@@ -366,7 +366,7 @@ public class HistoryHandler {
         if (e.getProductId() != null) {
             products.find(ctx.businessId(), e.getProductId()).ifPresent(p -> {
                 s.put("pid", p.getId());
-                if (useCurrentCost) s.put("cost", p.getUnitCost());
+                if (useCurrentCost && p.hasCost()) s.put("cost", p.getUnitCost());
             });
         }
         s.markInput();

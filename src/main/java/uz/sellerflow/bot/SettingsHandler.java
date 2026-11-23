@@ -68,7 +68,7 @@ public class SettingsHandler {
                 .row(Kb.cb(Texts.BTN_S_CHANNEL, "s:ch"), Kb.cb(Texts.BTN_S_TERMS, "s:terms"))
                 .row(Kb.cb(Texts.BTN_TARIFFS_INLINE, "t:show"), Kb.cb("❓ Yordam", "f:list"))
                 .row(Kb.cb(Texts.BTN_S_RATES, "s:cr"), Kb.cb(Texts.BTN_S_MIN_MARGIN, "s:mm"))
-                .row(Kb.cb(Texts.BTN_S_EXPORT, "s:exp"))
+                .row(Kb.cb(Texts.BTN_IMPORT_UZUM, "mk:uz"), Kb.cb(Texts.BTN_S_EXPORT, "s:exp"))
                 .row(Kb.cb(Texts.BTN_S_ACCESS, "s:acc"))
                 .row(Kb.cb(Texts.BTN_S_DELETE, "s:del1")));
     }
