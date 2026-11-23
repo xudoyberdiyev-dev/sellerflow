@@ -40,6 +40,10 @@ public final class Ctx {
 
     public void send(String html, Tg.Kb kb) { tg.sendMessage(chatId, html, kb == null || kb.isEmpty() ? null : kb.build()); }
 
+    public void sendDocument(String fileName, byte[] content, String caption) {
+        tg.sendDocument(chatId, fileName, content, caption);
+    }
+
     public void sendMenu(String html) { tg.sendMessage(chatId, html, mainMenu()); }
 
     /** Bosilgan inline tugmalarni olib tashlash (best effort). */

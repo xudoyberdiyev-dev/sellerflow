@@ -1,8 +1,8 @@
-# SellerFlow — V1.0 Closed Beta
+# SellerFlow — V1.0+ Closed Beta
 
 Sotuvchilar uchun Telegram bot. U bir dona mahsulotdan **haqiqatda qancha foyda qolishini** va maqsadli foyda yoki marja uchun **nechaga sotish kerakligini** hisoblaydi.
 
-> Holat: **V1.0 Closed Beta** — faqat Free tarif, to‘lov yo‘q, marketplace API integratsiyasi yo‘q (qiymatlar qo‘lda kiritiladi).
+> Holat: **V1.0+ Closed Beta** (engine 1.1.0; Qo‘shimcha modullar TZ — kanal stavkalari, chegirma/qaytarish, narx variantlari, minimal marja, CSV eksport) — faqat Free tarif, to‘lov yo‘q, marketplace API integratsiyasi yo‘q (qiymatlar qo‘lda kiritiladi).
 > Asos: `SellerFlow_MASTER` v1.1 (PRD-01, PRD-02.01–02.10) va 05.11.2026 dagi qarorlar — [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## Nimalar tayyor
@@ -10,11 +10,12 @@ Sotuvchilar uchun Telegram bot. U bir dona mahsulotdan **haqiqatda qancha foyda 
 | Bo‘lim | Imkoniyatlar |
 |---|---|
 | `/start` va onboarding | Welcome → xizmat shartlari (aniq rozilik, versiyasi saqlanadi) → 7 kanaldan biri → ixtiyoriy biznes nomi va ism → tekshirish → faollashtirish → Free. Takroriy `/start` ikkinchi biznes yaratmaydi. Telefon so‘ralmaydi. |
-| 💰 Foydani hisoblash | Wizard: tannarx → narx → komissiya (foiz yoki summa, 0, noma’lum) → logistika → qo‘shimcha xarajatlar → tekshirish → natija. Xarajat holatlari: KNOWN / ZERO / UNKNOWN / NOT_SET. Natija PROFIT / BREAK_EVEN / LOSS, aniqligi COMPLETE yoki PARTIAL. Tarixga **faqat «💾 Saqlash»** bilan yoziladi. |
-| 🏷 Narxni aniqlash | 3 usul: maqsadli foyda, maqsadli marja, zararsizlik. Narx 1 / 100 / 1 000 so‘m qadamda yuqoriga yaxlitlanadi (standart 1 000) va natija qayta tekshiriladi. «Yechim yo‘q» va «yagona narx yo‘q» holatlari alohida ko‘rsatiladi. |
+| 💰 Foydani hisoblash | Wizard: tannarx → narx → komissiya (foiz yoki summa, 0, noma’lum) → logistika → qo‘shimcha xarajatlar (qadoqlash, reklama, soliq, xizmat, qaytarish, boshqa, **chegirma**) → tekshirish → natija. Chegirma xarajat emas: samarali narxni kamaytiradi, foiz xarajatlar va marja undan hisoblanadi. Xarajat holatlari: KNOWN / ZERO / UNKNOWN / NOT_SET. Natija PROFIT / BREAK_EVEN / LOSS, aniqligi COMPLETE yoki PARTIAL. Tarixga **faqat «💾 Saqlash»** bilan yoziladi. |
+| 🏷 Narxni aniqlash | 3 usul: maqsadli foyda, maqsadli marja, zararsizlik. Narx 1 / 100 / 1 000 so‘m qadamda yuqoriga yaxlitlanadi (standart 1 000) va natija qayta tekshiriladi. «Yechim yo‘q» va «yagona narx yo‘q» holatlari alohida ko‘rsatiladi. Chegirma bo‘lsa, tavsiya narxi chegirmadan keyin ham maqsadni saqlaydi. |
+| 📌 Kanal stavkalari va variantlar | Natijadan kanal stavkalarini eslab qolish — keyingi hisobda shu kanal uchun xarajat qadamlari o‘tkazib yuboriladi. «📊 Narx variantlari»: zararsizlik va 10–40% marja narxlari. Minimal marjadan past natijada ogohlantirish. |
 | 📦 Mahsulotlarim | Ro‘yxat (10 ta/sahifa), qidiruv (nom/SKU), yaratish (nom + tannarx majburiy), maydonlarni alohida tahrirlash (optimistic lock), arxivlash va tiklash, mahsulotdan foyda/narx kalkulyatoriga o‘tish. SKU biznes ichida noyob. |
 | 📊 Hisoblashlar tarixi | Foyda va narx natijalari bitta ro‘yxatda. Filtrlar: tur, Bugun / 7 kun / 30 kun / sana oralig‘i (Asia/Tashkent), hisoblash paytidagi nom bo‘yicha qidiruv. O‘zgarmas snapshot, arxivlash/tiklash, «🔁 Qayta hisoblash» (eski yoki hozirgi tannarx bilan yangi qoralama). |
-| ⚙️ Sozlamalar | Biznes nomi va ism (tahrirlash/tozalash), asosiy kanalni tasdiq bilan almashtirish, shartlar versiyasi, ikki bosqichli akkaunt o‘chirish so‘rovi (30 kunlik kutish davri). |
+| ⚙️ Sozlamalar | Biznes nomi va ism (tahrirlash/tozalash), asosiy kanalni tasdiq bilan almashtirish, shartlar versiyasi, kanal stavkalari ro‘yxati, minimal marja, **ma’lumotlarni CSV qilib yuklab olish** (mahsulotlar va hisoblashlar, 10 daqiqada bir marta), ikki bosqichli akkaunt o‘chirish so‘rovi (30 kunlik kutish davri). |
 | ⭐ Tariflar | Joriy tarif va imkoniyatlar faqat server konfiguratsiyasidan olinadi. Soxta narx ham, «sotib olish» tugmasi ham yo‘q. |
 | ❓ `/help` | 12 ta FAQ, Wizard qadamiga mos kontekstli savol, jarayonga xavfsiz qaytish. Support kontakti faqat admin sozlagan bo‘lsa ko‘rinadi. |
 | Xavfsizlik | Tenant izolyatsiyasi (begona ID → «topilmadi»), eski tugmalardan himoya (revision + qadam), takroriy `update_id` va Save idempotent, faqat private chat, qoralama oxirgi kiritishdan 24 soat saqlanadi, audit jurnali (tijoriy qiymatlarsiz). |

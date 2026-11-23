@@ -39,6 +39,21 @@ public class FakeTelegram implements TelegramGateway {
         sent.add(new Sent(chatId, html, markup));
     }
 
+    public record Doc(long chatId, String fileName, byte[] content, String caption) {}
+
+    private final List<Doc> docs = Collections.synchronizedList(new ArrayList<>());
+
+    @Override
+    public void sendDocument(long chatId, String fileName, byte[] content, String caption) {
+        docs.add(new Doc(chatId, fileName, content, caption));
+    }
+
+    public List<Doc> docsFor(long chatId) {
+        synchronized (docs) {
+            return docs.stream().filter(d -> d.chatId() == chatId).toList();
+        }
+    }
+
     @Override
     public void clearInlineKeyboard(long chatId, long messageId) {}
 
@@ -71,5 +86,5 @@ public class FakeTelegram implements TelegramGateway {
         return Optional.empty();
     }
 
-    public void clear() { sent.clear(); failNext = null; }
+    public void clear() { sent.clear(); docs.clear(); failNext = null; }
 }

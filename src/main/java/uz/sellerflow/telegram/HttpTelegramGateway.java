@@ -98,6 +98,21 @@ public class HttpTelegramGateway implements TelegramGateway {
     }
 
     @Override
+    public void sendDocument(long chatId, String fileName, byte[] content, String caption) {
+        org.springframework.util.LinkedMultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
+        body.add("chat_id", String.valueOf(chatId));
+        if (caption != null) {
+            body.add("caption", caption);
+            body.add("parse_mode", "HTML");
+        }
+        body.add("document", new org.springframework.core.io.ByteArrayResource(content) {
+            @Override
+            public String getFilename() { return fileName; }
+        });
+        post("sendDocument", body, MediaType.MULTIPART_FORM_DATA);
+    }
+
+    @Override
     public void clearInlineKeyboard(long chatId, long messageId) {
         Map<String, Object> body = new HashMap<>();
         body.put("chat_id", chatId);
@@ -145,10 +160,14 @@ public class HttpTelegramGateway implements TelegramGateway {
      * Metrikalar: {@code telegram.api.calls{method,outcome}}, {@code telegram.api.latency{method}}.
      */
     private void post(String method, Object body) {
+        post(method, body, MediaType.APPLICATION_JSON);
+    }
+
+    private void post(String method, Object body, MediaType type) {
         for (int attempt = 1; ; attempt++) {
             long started = System.nanoTime();
             try {
-                sendClient.post().uri("/" + method).contentType(MediaType.APPLICATION_JSON).body(body)
+                sendClient.post().uri("/" + method).contentType(type).body(body)
                         .retrieve().toBodilessEntity();
                 record(method, "ok", started);
                 return;
@@ -172,7 +191,7 @@ public class HttpTelegramGateway implements TelegramGateway {
             } catch (RestClientException e) {
                 // LOW: so'rov yetib borib, javobni kutishda timeout bo'lgan bo'lsa — sendMessage qayta yuborilmaydi
                 // (aks holda foydalanuvchi bir xil xabarni ikki marta oladi). Ulanish xatolari — qayta urinadi.
-                boolean delivered = isReadTimeout(e) && "sendMessage".equals(method);
+                boolean delivered = isReadTimeout(e) && ("sendMessage".equals(method) || "sendDocument".equals(method));
                 boolean retry = attempt < MAX_ATTEMPTS && !delivered;
                 record(method, retry ? "retry" : "error", started);
                 if (!retry) {

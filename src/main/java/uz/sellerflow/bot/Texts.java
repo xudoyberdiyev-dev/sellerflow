@@ -276,6 +276,35 @@ public final class Texts {
     public static final String DELETE_STEP2 = "❗ <b>Yakuniy tasdiq.</b> Akkauntni o‘chirish so‘rovini yuboraymi?";
     public static final String BTN_DELETE_CONTINUE = "Davom etish";
     public static final String BTN_DELETE_FINAL = "Ha, so‘rov yuborilsin";
+    // V1+: kanal stavkalari
+    public static final String BTN_SAVE_RATES = "📌 Stavkalarni «%s» uchun eslab qolish";
+    public static final String CHANNEL_RATES_APPLIED =
+            "📌 «%s» kanali uchun saqlangan stavkalar qo‘llandi. Tekshirish sahifasida o‘zgartirishingiz mumkin.";
+    public static final String CHANNEL_RATES_SAVED =
+            "✅ «%s» kanali uchun %d ta xarajat stavkasi saqlandi. Keyingi hisoblarda avtomatik qo‘llanadi (chegirma saqlanmaydi).";
+    public static final String BTN_S_RATES = "📌 Kanal stavkalari";
+    public static final String BTN_S_MIN_MARGIN = "📉 Minimal marja";
+    public static final String BTN_S_EXPORT = "📤 Ma’lumotlarni yuklab olish";
+    public static final String RATES_TITLE = "📌 <b>Kanal stavkalari</b>\nHisob boshlanganda shu kanal tanlansa, stavkalar avtomatik qo‘llanadi.\n";
+    public static final String RATES_NONE = "📌 Hali saqlangan kanal stavkasi yo‘q.\n\n"
+            + "Hisob natijasida «📌 Stavkalarni … uchun eslab qolish» tugmasini bosing — keyingi safar komissiya, logistika va "
+            + "boshqa xarajatlar qayta so‘ralmaydi.";
+    public static final String RATES_DELETED = "🗑 «%s» kanali stavkalari o‘chirildi.";
+    public static final String ASK_S_MIN_MARGIN = "📉 <b>Minimal marja</b> (hozir: %s)\n\n"
+            + "Natijadagi marja shundan past bo‘lsa, bot ogohlantiradi. Foizni kiriting (masalan, 15) yoki «Tozalash» ni bosing.";
+    public static final String ERR_MIN_MARGIN = "⚠️ 0 dan 99,99 gacha foiz kiriting (masalan, 15).";
+    public static final String MIN_MARGIN_WARNING =
+            "⚠️ <b>Diqqat:</b> marja %s%% — siz belgilagan minimal %s%% dan past.";
+    public static final String BTN_VARIANTS = "📊 Narx variantlari";
+    public static final String BTN_BACK_TO_RESULT = "↩️ Natijaga qaytish";
+    public static final String VARIANTS_TITLE = "📊 <b>Narx variantlari</b>\n"
+            + "Joriy tannarx va xarajatlar bilan (%s so‘m qadamda yaxlitlangan):\n\n";
+    public static final String EXPORT_PRODUCTS_CAPTION = "📦 Mahsulotlar: %d ta";
+    public static final String EXPORT_HISTORY_CAPTION = "🧮 Saqlangan hisoblashlar: %d ta";
+    public static final String EXPORT_DONE = "📤 Fayllar yuborildi. Ularni Excel yoki Google Sheets'da ochishingiz mumkin.\n"
+            + "<i>Fayllarda tijoriy ma’lumotlaringiz bor — ehtiyot bo‘lib ulashing.</i>";
+    public static final String EXPORT_COOLDOWN = "⏳ Yuklab olish 10 daqiqada bir marta mumkin. Taxminan %d daqiqadan keyin qayta urinib ko‘ring.";
+    public static final String CHANNEL_RATES_EMPTY = "ℹ️ Saqlanadigan xarajat yo‘q — avval xarajatlarni kiriting.";
     public static final String ERR_DISCOUNT_TOO_LARGE =
             "⚠️ Chegirma sotish narxidan katta yoki unga teng — natijani hisoblab bo‘lmaydi. Chegirma yoki narxni o‘zgartiring.";
     public static final String ERR_NAME_IS_COMMAND = "Nom «/» bilan boshlanmasin — buyruqlar nom sifatida saqlanmaydi. Boshqa nom yozing.";

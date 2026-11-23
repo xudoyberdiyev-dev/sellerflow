@@ -53,6 +53,10 @@ public class Business {
     @Version
     private int version;
 
+    /** V1+: minimal marja (%) — natija shundan past bo'lsa ogohlantirish. null = o'rnatilmagan. */
+    @Column(name = "min_margin_pct", precision = 5, scale = 2)
+    private java.math.BigDecimal minMarginPct;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -92,6 +96,8 @@ public class Business {
     public void setBusinessName(String v) { this.businessName = v; touch(); }
     public void setDisplayName(String v) { this.displayName = v; touch(); }
     public void setPrimaryChannel(SalesChannel c) { this.primaryChannel = c; touch(); }
+    public java.math.BigDecimal getMinMarginPct() { return minMarginPct; }
+    public void setMinMarginPct(java.math.BigDecimal v) { this.minMarginPct = v; touch(); }
 
     private void touch() { this.updatedAt = Instant.now(); }
 }

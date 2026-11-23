@@ -50,11 +50,15 @@ public class CalcHandler {
     private final ObjectMapper mapper;
     private BotDispatcher dispatcher;
 
-    public CalcHandler(ProductService products, HistoryService history, PlanService plans, ObjectMapper mapper) {
+    private final uz.sellerflow.channel.ChannelRateService rates;
+
+    public CalcHandler(ProductService products, HistoryService history, PlanService plans, ObjectMapper mapper,
+                       uz.sellerflow.channel.ChannelRateService rates) {
         this.products = products;
         this.history = history;
         this.plans = plans;
         this.mapper = mapper;
+        this.rates = rates;
     }
 
     void bind(BotDispatcher d) { this.dispatcher = d; }
@@ -89,7 +93,48 @@ public class CalcHandler {
         s.start(kind, Session.PROFIT.equals(kind) ? C : G);
         s.put("ch", ctx.business().getPrimaryChannel().name());
         ctx.send(Session.PROFIT.equals(kind) ? Texts.PROFIT_TITLE : Texts.PRICE_TITLE);
+        applyChannelRates(ctx, false);
         render(ctx);
+    }
+
+    // ================================================================= V1+: kanal stavkalari
+
+    /**
+     * Joriy kanal uchun saqlangan stavkalarni qoralamaga qo'llaydi.
+     * @param overwrite true — kanal almashtirilganda barcha saqlangan toifalar ustidan yoziladi; false — faqat kiritilmaganlar
+     */
+    private void applyChannelRates(Ctx ctx, boolean overwrite) {
+        Session s = ctx.session;
+        SalesChannel ch;
+        try {
+            ch = SalesChannel.valueOf(s.str("ch"));
+        } catch (RuntimeException e) {
+            return;
+        }
+        var saved = rates.get(ctx.businessId(), ch);
+        if (saved.isEmpty() || saved.get().isEmpty()) {
+            s.data().remove("chr");
+            return;
+        }
+        var exp = s.obj("exp");
+        saved.get().fields().forEachRemaining(en -> {
+            ExpenseCategory c;
+            try {
+                c = ExpenseCategory.byCode(en.getKey());
+            } catch (RuntimeException e) {
+                return;
+            }
+            if (overwrite || CalcModel.expense(s, c).status() == ExpenseStatus.NOT_SET) exp.set(en.getKey(), en.getValue().deepCopy());
+        });
+        s.put("chr", ch.name());
+        ctx.send(String.format(Texts.CHANNEL_RATES_APPLIED, ch.label()));
+    }
+
+    /** Asosiy qiymatlardan (tannarx/narx) keyingi qadam: kanal stavkalari qo'llangan bo'lsa xarajat qadamlari o'tkaziladi. */
+    private static String afterBasics(Session s) {
+        if (s.str("chr") == null || !s.str("chr").equals(s.str("ch"))) return KT;
+        if (s.isFlow(Session.PROFIT)) return R;
+        return PriceGoal.BREAK_EVEN.name().equals(s.str("goal")) ? R : T;
     }
 
     /** Katalogdan: joriy tannarx (va reja narxi) taklif qilinadi; boshqa xarajatlar 0 deb olinmaydi (UX-PROD-033..035). */
@@ -102,19 +147,20 @@ public class CalcHandler {
         s.put("pid", p.getId());
         s.put("name", p.getName());
         s.put("cost", p.getUnitCost());
-        if (Session.PROFIT.equals(kind)) {
-            if (p.getPlannedSalePrice() != null) {
-                s.put("price", p.getPlannedSalePrice());
-                s.step(KT);
-            } else {
-                s.step(P);
-            }
-        }
         s.markInput();
         ctx.send((Session.PROFIT.equals(kind) ? Texts.PROFIT_TITLE : Texts.PRICE_TITLE)
                 + "\n📦 " + Ctx.esc(p.getName()) + " · tannarx: " + Money.format(p.getUnitCost()) + " so‘m"
                 + (p.getPlannedSalePrice() != null && Session.PROFIT.equals(kind)
                 ? " · narx: " + Money.format(p.getPlannedSalePrice()) + " so‘m" : ""));
+        applyChannelRates(ctx, false);
+        if (Session.PROFIT.equals(kind)) {
+            if (p.getPlannedSalePrice() != null) {
+                s.put("price", p.getPlannedSalePrice());
+                s.step(afterBasics(s));
+            } else {
+                s.step(P);
+            }
+        }
         render(ctx);
     }
 
@@ -255,8 +301,10 @@ public class CalcHandler {
             }
             Kb kb = Kb.create();
             if (!saved) kb.row(btn(rev, RS, Texts.BTN_SAVE, "save"));
+            kb.row(btn(rev, RS, Texts.BTN_VARIANTS, "var"));
+            addRateButton(s, kb, rev);
             kb.row(btn(rev, RS, Texts.BTN_EDIT, "edit"), Kb.cb(Texts.BTN_MAIN, "m"));
-            ctx.send(formatProfit(s.str("name"), r), kb);
+            ctx.send(minMarginWarning(ctx, r.marginPct()) + formatProfit(s.str("name"), r), kb);
         } else {
             PriceResult r = CalcModel.computePrice(s);
             Kb kb = Kb.create();
@@ -269,11 +317,67 @@ public class CalcHandler {
                 }
                 kb.row(steps.toArray(new uz.sellerflow.telegram.Tg.InlineButton[0]));
                 if (!saved) kb.row(btn(rev, RS, Texts.BTN_SAVE, "save"));
-                kb.row(btn(rev, RS, Texts.BTN_TO_PROFIT, "toprofit"));
+                kb.row(btn(rev, RS, Texts.BTN_TO_PROFIT, "toprofit"), btn(rev, RS, Texts.BTN_VARIANTS, "var"));
+                addRateButton(s, kb, rev);
             }
             kb.row(btn(rev, RS, Texts.BTN_EDIT, "edit"), Kb.cb(Texts.BTN_MAIN, "m"));
-            ctx.send(formatPrice(s.str("name"), r), kb);
+            String warn = r.status() == PriceStatus.OK ? minMarginWarning(ctx, r.verification().marginPct()) : "";
+            ctx.send(warn + formatPrice(s.str("name"), r), kb);
         }
+    }
+
+    /** Minimal marja o'rnatilgan va natija undan past bo'lsa — xabar boshida ogohlantirish. */
+    private static String minMarginWarning(Ctx ctx, BigDecimal margin) {
+        BigDecimal min = ctx.business().getMinMarginPct();
+        if (min == null || margin == null || margin.compareTo(min) >= 0) return "";
+        return String.format(Texts.MIN_MARGIN_WARNING, Money.formatPercent(margin), Money.formatPercent(min)) + "\n\n";
+    }
+
+    /** V1+ (TZ 4-modul): zararsizlik va 10/20/30/40% (va minimal) marja uchun tavsiya narxlari. */
+    private void renderVariants(Ctx ctx) {
+        Session s = ctx.session;
+        BigDecimal step = CalcModel.roundingStep(s);
+        var exp = CalcModel.expenses(s);
+        BigDecimal cost = s.dec("cost");
+        java.util.TreeSet<BigDecimal> margins = new java.util.TreeSet<>();
+        for (String m : new String[]{"10", "20", "30", "40"}) margins.add(new BigDecimal(m));
+        if (ctx.business().getMinMarginPct() != null && ctx.business().getMinMarginPct().signum() > 0) {
+            margins.add(ctx.business().getMinMarginPct().stripTrailingZeros());
+        }
+        StringBuilder sb = new StringBuilder(String.format(Texts.VARIANTS_TITLE, Money.format(step)));
+        appendVariant(sb, "⚖️ Zararsizlik", CalculationEngine.price(PriceGoal.BREAK_EVEN, cost, exp, null, null, step));
+        for (BigDecimal m : margins) {
+            boolean isMin = ctx.business().getMinMarginPct() != null && m.compareTo(ctx.business().getMinMarginPct()) == 0;
+            appendVariant(sb, "📈 Marja " + Money.formatPercent(m) + "%" + (isMin ? " (minimal)" : ""),
+                    CalculationEngine.price(PriceGoal.TARGET_MARGIN, cost, exp, null, m, step));
+        }
+        if (s.isFlow(Session.PROFIT) && s.dec("price") != null) {
+            sb.append("\n🏷 Siz kiritgan narx: <b>").append(Money.format(s.dec("price"))).append(" so‘m</b>\n");
+        }
+        PriceResult any = CalculationEngine.price(PriceGoal.BREAK_EVEN, cost, exp, null, null, step);
+        if (any.accuracy() == Accuracy.PARTIAL_ESTIMATE) {
+            sb.append("\n⚠️ Taxminiy: ").append(CalcModel.missingList(any.missing())).append(" kiritilmagan.\n");
+        }
+        sb.append("\n").append(Texts.DISCLAIMER);
+        int rev = s.revision();
+        ctx.send(sb.toString(), Kb.create().row(btn(rev, RS, Texts.BTN_BACK_TO_RESULT, "show")));
+    }
+
+    private static void appendVariant(StringBuilder sb, String label, PriceResult r) {
+        sb.append(label).append(": ");
+        if (r.status() == PriceStatus.OK) {
+            sb.append("<b>").append(Money.format(r.recommendedPrice())).append(" so‘m</b> · foyda ")
+                    .append(Money.format(r.verification().profit())).append("\n");
+        } else if (r.status() == PriceStatus.NO_UNIQUE_PRICE) {
+            sb.append("istalgan musbat narx\n");
+        } else {
+            sb.append("<i>erishib bo‘lmaydi</i>\n");
+        }
+    }
+
+    private static void addRateButton(Session s, Kb kb, int rev) {
+        if (s.str("rid") != null && s.str("rid").equals(s.str("rsaved"))) return;
+        kb.row(btn(rev, RS, String.format(Texts.BTN_SAVE_RATES, CalcModel.channelLabel(s.str("ch"))), "rate"));
     }
 
     // ================================================================= formatting (shared with history)
@@ -492,7 +596,7 @@ public class CalcHandler {
                     if (!PriceGoal.BREAK_EVEN.name().equals(arg)) s.put("ret", R);
                     s.data().remove("target");
                 } else {
-                    s.step(s.str("cost") == null ? C : KT);
+                    s.step(s.str("cost") == null ? C : afterBasics(s));
                 }
                 render(ctx);
                 return;
@@ -560,6 +664,7 @@ public class CalcHandler {
             case CH -> {
                 if ("ch".equals(action)) {
                     s.put("ch", SalesChannel.valueOf(arg).name());
+                    applyChannelRates(ctx, true);
                     advance(ctx, CH);
                     return;
                 }
@@ -579,6 +684,9 @@ public class CalcHandler {
             case RS -> {
                 switch (action) {
                     case "save" -> { save(ctx); return; }
+                    case "rate" -> { saveChannelRates(ctx); return; }
+                    case "var" -> { renderVariants(ctx); return; }
+                    case "show" -> { render(ctx); return; }
                     case "edit" -> { s.step(R); render(ctx); return; }
                     case "s" -> {
                         BigDecimal stepValue = new BigDecimal(arg);
@@ -616,8 +724,8 @@ public class CalcHandler {
         boolean profit = s.isFlow(Session.PROFIT);
         boolean returnToReview = R.equals(s.str("ret"));
         String next = switch (from) {
-            case C -> profit ? P : KT;
-            case P -> KT;
+            case C -> profit ? P : afterBasics(s);
+            case P -> afterBasics(s);
             case KT, KV -> LT;
             case LT, LV -> X;
             case XT, XV -> X;
@@ -684,6 +792,20 @@ public class CalcHandler {
         newResultId(s);
         s.data().remove("_done");
         s.step(RS);
+        render(ctx);
+    }
+
+    private void saveChannelRates(Ctx ctx) {
+        Session s = ctx.session;
+        SalesChannel ch = SalesChannel.valueOf(s.str("ch"));
+        int n = rates.save(ctx.businessId(), ch, s.data().get("exp"));
+        if (n == 0) {
+            ctx.send(Texts.CHANNEL_RATES_EMPTY);
+        } else {
+            s.put("chr", ch.name());
+            s.put("rsaved", s.str("rid"));
+            ctx.send(String.format(Texts.CHANNEL_RATES_SAVED, ch.label(), n));
+        }
         render(ctx);
     }
 

@@ -28,6 +28,8 @@ public class AccountPurger {
         if (businessId != null) {
             jdbc.update("delete from calculation_history where business_id = ?", businessId);
             jdbc.update("delete from products where business_id = ?", businessId);
+            jdbc.update("delete from business_channels where business_id = ?", businessId);
+            jdbc.update("update businesses set min_margin_pct = null where id = ?", businessId);
             jdbc.update("update businesses set business_name = null, display_name = null, updated_at = now() where id = ?", businessId);
             jdbc.update("update access_grants set status = 'REVOKED', revoked_at = now(), revoked_by = 'SYSTEM', version = version + 1 "
                     + "where business_id = ? and status in ('REQUESTED','APPROVED')", businessId);

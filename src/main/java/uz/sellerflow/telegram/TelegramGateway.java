@@ -12,5 +12,10 @@ public interface TelegramGateway {
 
     void answerCallback(String callbackId, String text);
 
+    /** V1+: fayl yuborish (CSV eksport). Standart — qo'llab-quvvatlanmaydi (Noop/test stublari). */
+    default void sendDocument(long chatId, String fileName, byte[] content, String caption) {
+        throw new UnsupportedOperationException("sendDocument");
+    }
+
     List<Tg.Update> getUpdates(long offset, int timeoutSeconds);
 }

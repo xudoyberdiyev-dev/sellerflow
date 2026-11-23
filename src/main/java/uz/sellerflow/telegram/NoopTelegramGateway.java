@@ -28,6 +28,9 @@ public class NoopTelegramGateway implements TelegramGateway {
     public void answerCallback(String callbackId, String text) {}
 
     @Override
+    public void sendDocument(long chatId, String fileName, byte[] content, String caption) {}
+
+    @Override
     public List<Tg.Update> getUpdates(long offset, int timeoutSeconds) {
         return List.of();
     }
