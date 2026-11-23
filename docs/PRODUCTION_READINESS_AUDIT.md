@@ -34,7 +34,7 @@ Bundan tashqari audit davomida ikkita jiddiy holat topildi:
 
 | Mezon | Holat | Dalil / izoh |
 |---|---|---|
-| Barcha kritik testlar PASS | **PASS** (lokal) | `mvn verify`: 203 test, 0 xato (2026-11-23). CI qayta yashil bo'lishi — `dbd06f3` dan keyingi run (§4) |
+| Barcha kritik testlar PASS | **PASS** | `mvn verify`: 203 test, 0 xato — lokal va CI (`d324a90`, barcha job'lar yashil) |
 | Migratsiyalar toza muhitda ishlaydi | **PASS** | Bo'sh `sf_clean` bazasi: Flyway V1–V14 «Successfully applied 14 migrations», ilova `UP` |
 | Tenant isolation tasdiqlangan | **PASS** | `TenantIsolationIT` (hisobot, import, tannarx oqimi, Uzum kaliti AAD), avvalgi `BotFlowsIT`/`AdminApiIT` |
 | Moliyaviy formulalar testlangan | **PASS** (mock) | `CalculationEngineTest`, `MarketplaceFlowsIT.periodReport…` (qo'lda hisoblangan qiymatlar), chekka qiymatlar. Uzum manbasi bilan solishtirish — **NOT VERIFIED** |
@@ -204,4 +204,4 @@ Bundan tashqari audit davomida ikkita jiddiy holat topildi:
 | dependency-report | ✅ success | |
 | vulnerability-scan | ❌ failure | 25 zaiflikdan 23 tasi yopildi; qolgan 2 tasi — spring-webmvc 6.2.19 (CVE-2026-47884, CVE-2026-47890), ochiq tuzatma faqat 7.0.9 da. Bizga tegishli emasligi asoslangan (`PRODUCTION_SECURITY.md` §3), keyingi commitda `osv-scanner.toml` bilan 2027-02-28 gacha istisno + H-1 reja |
 
-Keyingi commit (hujjatlar + `osv-scanner.toml`) CI natijasi `PROJECT_STATUS.md` da qayd etiladi.
+**Run `d324a90`** (hujjatlar + `osv-scanner.toml`): **barcha 6 job — success** (test, docker, secrets, shellcheck, vulnerability-scan, dependency-report). CI V1+ dan beri birinchi marta to'liq yashil.

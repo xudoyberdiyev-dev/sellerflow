@@ -3,7 +3,7 @@
 **Sana:** 2026-11-23 (production readiness auditidan keyin) · **Repo:** `xudoyberdiyev-dev/sellerflow`, `main` · **Holat:** V3 — yopiq betaga tayyorlanmoqda
 
 > **Qisqacha:**
-> - V1, V1+, V2, V3 kodda tayyor: 203 avtomatik test o'tadi, CI'da `test` va `docker` job'lari yashil.
+> - V1, V1+, V2, V3 kodda tayyor: 203 avtomatik test o'tadi, GitHub CI to'liq yashil (`d324a90`).
 > - Production readiness auditi o'tkazildi: kritik kamchiliklar tuzatildi (TOTP shifrlash, 23 zaiflik, CI, HTTPS, sirlar).
 > - **Lekin V3 hali production-ready EMAS.** Real server, real Telegram bot va real Uzum kaliti bilan tekshiruv qilinmagan (NOT VERIFIED).
 > - Batafsil: `docs/PRODUCTION_READINESS_AUDIT.md`.
