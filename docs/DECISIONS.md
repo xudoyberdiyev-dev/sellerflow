@@ -115,3 +115,14 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 | FILE-IMPORT | Botga .xlsx yoki .csv (≤ 5 MB, ≤ 5 000 qator). Ustunlar sarlavhadan avtomatik (uz/ru/en): nomi (majburiy), tannarx, narx, SKU/artikul, shtrix-kod. CSV: UTF-8/Windows-1251, `;` `,` tab. XLSX — o'z minimal o'quvchimiz (tashqi kutubxonasiz, XXE o'chiq, zip-bomb chegarasi 40 MB). Moslash: SKU → aynan nom → yangi. Fayldagi tannarx mavjudining ustidan yozadi (sotuvchining ongli kiritishi). `.xls` qo'llanmaydi. |
 | LEAKS | «🩸 Foyda yo'qotishlari»: faol mahsulotlar bo'yicha 1 dona foyda (narx, tannarx, Uzum komissiyasi + saqlangan kanal stavkalari). Zarar va minimal marjadan past ro'yxati; stavkalar yo'q bo'lsa — «taxminiy» ogohlantirishi. Sotuv hajmi bo'yicha (davr) foyda — V3 (Uzum `finance/orders`). |
 | WHAT-IF | Natijada «🔮 Agar…»: narx ±5/10%, tannarx +10%, komissiya +2 p.p., chegirma 10/20%, reklama 5% — foyda va farq. Saqlanmaydi. |
+
+## 2026-11-23 — V3 (Uzum moliya, davr hisoboti, pul oqimi) qarorlari
+
+| ID | Qaror |
+|---|---|
+| FIN-SYNC | Uzum sinxroni mahsulotlardan keyin moliyani ham o'qiydi: `GET /v1/finance/orders` (`group=false`, har do'kon alohida, size 1000) va `GET /v1/finance/expenses`. Birinchi marta — 90 kunlik tarix, keyin har safar oxirgi 35 kun qayta o'qiladi (status o'zgarishlari). Kalit: sotuv qatori — (do'kon, buyurtma, qator ID); xarajat — ID. Moliya xatosi mahsulot sinxronini buzmaydi (`finance_error`). V13 migratsiya. |
+| FIN-CLASSIFY | Xarajat toifasi `code` bo'yicha (Kiril С/У = lotin C/Y): saqlash, qaytim saqlash, jarima, reklama, fotostudiya, yechish xizmati; `BALANCE_CORRECTION` — ichki o'tkazma (xarajat emas). Noma'lum kod — nom bo'yicha (штраф, реклам, хранен...), bo'lmasa «boshqa». Summa `abs(paymentPrice)`; `INCOME`, `CANCELED`, `REFUNDED` hisobga olinmaydi. |
+| FIN-PNL | Davr hisoboti (7 / 30 kun, joriy / o'tgan oy, Toshkent vaqti): tushum = Σ narx × soni (faqat `TO_WITHDRAW` va `PARTIALLY_CANCELLED`); Uzum to'lovi = tushum − komissiya − logistika; tannarx — sotuvchi kiritgani, bo'lmasa qatordagi `purchasePrice`; sof foyda = to'lov − tannarx − Uzum xarajatlari − soliq − qadoqlash/boshqa (Uzum kanal stavkalaridan). Logistika ikki marta ayrilmaydi. Tannarxsiz birliklar va soliq yo'qligi — ochiq ogohlantirish. |
+| FIN-CASH | Pul oqimi: `PROCESSING` qatorlari — «yo'ldagi pul» (kutilayotgan to'lov, bekor bo'lishi mumkin). Bekor qilingan qatorlar soni ko'rsatiladi. |
+| FIN-PRODUCTS | Mahsulot kesimida hissa (to'lov − tannarx, Uzum xarajatlari va soliqdan oldin): eng foydali 5 ta va zarar keltirgan 5 ta. |
+| FIN-RETENTION | Sotuv va xarajat qatorlari — tijoriy ma'lumot: to'liq o'chirishda (purge) o'chiriladi; biznes o'chirilsa CASCADE. |

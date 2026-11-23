@@ -83,6 +83,36 @@ public class UzumClient {
         return new ProductPage(list, body.path("totalProductsAmount").asLong(-1));
     }
 
+    /** V3: sotuv qatorlari (group=false — har tovar qatori alohida). */
+    public ProductPage financeOrders(String token, List<Long> shopIds, long fromMs, long toMs, int page, int size) {
+        JsonNode n = get(token, "/v1/finance/orders", ordered("shopIds", join(shopIds), "group", false, "page", page, "size", size,
+                "dateFrom", fromMs, "dateTo", toMs));
+        JsonNode body = n.has("orderItems") ? n : n.path("payload");
+        List<JsonNode> list = new ArrayList<>();
+        body.path("orderItems").forEach(list::add);
+        return new ProductPage(list, body.path("totalElements").asLong(-1));
+    }
+
+    /** V3: sotuvchi xarajatlari (saqlash, jarima, reklama...). */
+    public ProductPage financeExpenses(String token, List<Long> shopIds, long fromMs, long toMs, int page, int size) {
+        JsonNode n = get(token, "/v1/finance/expenses", ordered("shopIds", join(shopIds), "page", page, "size", size,
+                "dateFrom", fromMs, "dateTo", toMs));
+        JsonNode body = n.path("payload").isObject() ? n.path("payload") : n;
+        List<JsonNode> list = new ArrayList<>();
+        body.path("payments").forEach(list::add);
+        return new ProductPage(list, body.path("totalElements").asLong(-1));
+    }
+
+    private static String join(List<Long> ids) {
+        return ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
+    }
+
+    private static Map<String, Object> ordered(Object... kv) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < kv.length; i += 2) m.put((String) kv[i], kv[i + 1]);
+        return m;
+    }
+
     private JsonNode get(String token, String path, Map<String, Object> query) {
         if (token == null || token.isBlank()) throw new UzumException(Failure.INVALID_TOKEN, "empty token");
         for (int attempt = 1; ; attempt++) {

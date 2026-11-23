@@ -111,6 +111,8 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 - Uzum WAF ba'zi xorijiy IP'larni bloklaydi (403 HTML). Botda «Uzum serverimiz so'rovini blokladi» xabari chiqsa — serverni
   O'zbekistondagi hostingga ko'chiring yoki Uzum bilan IP masalasini hal qiling. Logda: `Uzum nightly sync ... WAF_BLOCKED`.
 - Fon sinxroni: har kuni 04:40 (Toshkent). O'chirish: `UZUM_SYNC_ENABLED=false`.
+- V3: sinxron moliyani ham o'qiydi (sotuv qatorlari, xarajatlar) — birinchi marta 90 kun, keyin oxirgi 35 kun.
+  Moliya xatosi: `select business_id, finance_synced_at, finance_error from marketplace_connections;`
 - Ulanishlar holati: `select business_id, status, last_sync_at, last_sync_count, last_error from marketplace_connections;`
   (`token_ciphertext` ni hech qachon eksport qilmang).
 

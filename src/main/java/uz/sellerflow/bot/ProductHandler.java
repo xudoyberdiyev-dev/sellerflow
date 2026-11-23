@@ -66,6 +66,7 @@ public class ProductHandler {
             long missing = marketplace == null ? 0 : marketplace.missingCostCount(ctx.businessId());
             if (missing > 0) kb.row(Kb.cb(String.format(Texts.BTN_MISSING_COST, missing), "mk:cost"));
             kb.row(Kb.cb(Texts.BTN_IMPORT, "mk:menu"), Kb.cb(Texts.BTN_LEAKS, "mk:leak"));
+            kb.row(Kb.cb(Texts.BTN_REPORT, "mk:rep:30"));
             kb.row(Kb.cb(Texts.BTN_ARCHIVE_LIST, "p:l:R:0"));
         }
         ctx.send(title + pageInfo(pg), kb);

@@ -153,5 +153,71 @@ class MarketplaceFlowsIT extends IntegrationTest {
         assertThat(count("select count(*) from marketplace_connections")).isZero();
     }
 
+    @Test
+    void periodReport_fromUzumFinance_netProfit_transit_bestWorst() {
+        long u = onboardedUser();
+        uzum.setProducts(9001, TWO_PRODUCTS);
+        long t = System.currentTimeMillis() - 2L * 24 * 3600 * 1000;
+        uzum.setFinance(9001, """
+                [{"id": 1, "orderId": 100, "productId": 77, "skuId": 1, "skuTitle": "Oq", "sellPrice": 100000, "amount": 2,
+                  "commission": 40000, "logisticDeliveryFee": 10000, "status": "TO_WITHDRAW", "date": %d},
+                 {"id": 2, "orderId": 101, "skuId": 2, "sellPrice": 50000, "amount": 1, "commission": 10000,
+                  "logisticDeliveryFee": 5000, "status": "TO_WITHDRAW", "date": %d},
+                 {"id": 3, "orderId": 102, "skuId": 1, "sellPrice": 100000, "amount": 1, "commission": 20000,
+                  "logisticDeliveryFee": 5000, "status": "PROCESSING", "date": %d},
+                 {"id": 4, "orderId": 103, "skuId": 2, "sellPrice": 50000, "amount": 1, "status": "CANCELED", "date": %d}]
+                """.formatted(t, t, t, t), """
+                [{"id": 10, "code": "С000003", "name": "Хранение", "paymentPrice": -3000, "type": "OUTCOME", "status": "CONFIRMED", "dateService": %d},
+                 {"id": 11, "code": "FBS003", "name": "Штраф", "paymentPrice": 2000, "type": "OUTCOME", "status": "CONFIRMED", "dateService": %d},
+                 {"id": 12, "code": "BALANCE_CORRECTION", "paymentPrice": 50000, "type": "OUTCOME", "dateService": %d},
+                 {"id": 13, "code": "Y000119", "paymentPrice": 4000, "type": "OUTCOME", "status": "CANCELED", "dateService": %d}]
+                """.formatted(t, t, t, t));
+        text(u, Texts.BTN_SETTINGS);
+        click(u, Texts.BTN_IMPORT_UZUM);
+        click(u, Texts.BTN_UZUM_ENTER_KEY);
+        text(u, FakeUzum.VALID);
+        assertThat(lastText(u)).contains("Sotuv qatorlari: 4 · xarajatlar: 4");
+        assertThat(count("select count(*) from marketplace_expenses where expense_id = 10 and category = 'STORAGE' and amount = 3000")).isEqualTo(1);
+        jdbc.update("update products set unit_cost = 60000 where sku = 'FT-W'");
+
+        click(u, Texts.BTN_REPORT);
+        String r = lastText(u);
+        assertThat(r).contains("Davr hisoboti").contains("oxirgi 30 kun")
+                .contains("Buyurtmalar: <b>2</b> · sotilgan: <b>3 dona</b>")
+                .contains("💵 Tushum: <b>250 000</b>").contains("− Uzum komissiyasi: 50 000").contains("− Logistika: 15 000")
+                .contains("= Uzum to‘lovi: <b>185 000</b>").contains("− Tannarx: 168 000")
+                .contains("− Uzum xarajatlari: 5 000").contains("Saqlash: 3 000").contains("Jarimalar: 2 000")
+                .contains("Sof foyda: 12 000 so‘m</b> · marja 4,8%")
+                .contains("Yo‘ldagi pul:</b> 1 dona").contains("75 000")
+                .contains("Bekor qilingan qatorlar: 1")
+                .contains("Futbolka — Oq — 2 dona, 30 000").contains("Futbolka — Qora — 1 dona, -13 000")
+                .contains("Soliq hisobga olinmadi");
+        click(u, "7 kun");
+        assertThat(lastText(u)).contains("oxirgi 7 kun").contains("250 000");
+        click(u, "O‘tgan oy");
+        assertThat(lastText(u)).contains("o‘tgan oy");
+
+        // takroriy sinxron — qatorlar dublikat bo'lmaydi
+        jdbc.update("update marketplace_connections set last_sync_at = now() - interval '1 hour'");
+        click(u, Texts.BTN_IMPORT_UZUM);
+        click(u, Texts.BTN_UZUM_SYNC);
+        assertThat(count("select count(*) from marketplace_sales")).isEqualTo(4);
+    }
+
+    @Test
+    void financeFailure_doesNotBreakProductSync() {
+        long u = onboardedUser();
+        uzum.setProducts(9001, TWO_PRODUCTS);
+        uzum.financeFails = true;
+        text(u, Texts.BTN_SETTINGS);
+        click(u, Texts.BTN_IMPORT_UZUM);
+        click(u, Texts.BTN_UZUM_ENTER_KEY);
+        text(u, FakeUzum.VALID);
+        assertThat(lastText(u)).contains("SKU: 2").contains("Moliya ma’lumotlari (sotuvlar) hozir o‘qilmadi");
+        assertThat(count("select count(*) from products")).isEqualTo(2);
+        click(u, Texts.BTN_IMPORT_UZUM);
+        assertThat(lastText(u)).contains("Moliya ma’lumotlari o‘qilmadi");
+    }
+
     @org.springframework.beans.factory.annotation.Autowired uz.sellerflow.account.AccountPurger purger;
 }

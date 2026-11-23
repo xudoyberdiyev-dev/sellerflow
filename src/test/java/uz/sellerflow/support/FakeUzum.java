@@ -38,6 +38,39 @@ public class FakeUzum extends UzumClient {
         return new ProductPage(slice, all.size());
     }
 
+    public final Map<Long, List<JsonNode>> salesByShop = new ConcurrentHashMap<>();
+    public final Map<Long, List<JsonNode>> expensesByShop = new ConcurrentHashMap<>();
+    public volatile boolean financeFails;
+
+    @Override
+    public ProductPage financeOrders(String token, List<Long> shopIds, long fromMs, long toMs, int page, int size) {
+        if (financeFails) throw new UzumException(Failure.SERVER, "HTTP 500");
+        return slice(salesByShop.getOrDefault(shopIds.get(0), List.of()), page, size);
+    }
+
+    @Override
+    public ProductPage financeExpenses(String token, List<Long> shopIds, long fromMs, long toMs, int page, int size) {
+        if (financeFails) throw new UzumException(Failure.SERVER, "HTTP 500");
+        return slice(expensesByShop.getOrDefault(shopIds.get(0), List.of()), page, size);
+    }
+
+    private static ProductPage slice(List<JsonNode> all, int page, int size) {
+        int from = page * size;
+        return new ProductPage(from >= all.size() ? List.of() : new ArrayList<>(all.subList(from, Math.min(all.size(), from + size))), all.size());
+    }
+
+    public void setFinance(long shopId, String salesJson, String expensesJson) {
+        try {
+            List<JsonNode> s = new ArrayList<>(), e = new ArrayList<>();
+            m.readTree(salesJson).forEach(s::add);
+            m.readTree(expensesJson).forEach(e::add);
+            salesByShop.put(shopId, s);
+            expensesByShop.put(shopId, e);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     public void setProducts(long shopId, String json) {
         try {
             List<JsonNode> l = new ArrayList<>();
@@ -51,5 +84,8 @@ public class FakeUzum extends UzumClient {
     public void reset() {
         productsByShop.clear();
         tokensSeen.clear();
+        salesByShop.clear();
+        expensesByShop.clear();
+        financeFails = false;
     }
 }

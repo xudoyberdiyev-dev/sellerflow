@@ -317,6 +317,17 @@ public final class Texts {
     public static final String LEAKS_PARTIAL = "<i>⚠️ Ba’zi xarajatlar kanal stavkalarida yo‘q — natija taxminiy (haqiqiy foyda pastroq bo‘lishi mumkin).</i>";
     public static final String LEAKS_PARTIAL_NORATES = "<i>⚠️ Kanal stavkalari saqlanmagan: faqat tannarx va komissiya hisobga olindi — haqiqiy foyda pastroq. "
             + "Bitta hisob natijasida «📌 Stavkalarni eslab qolish» ni bosing — hisobot aniqlashadi.</i>";
+    public static final String BTN_REPORT = "📈 Davr hisoboti";
+    public static final String UZUM_SYNC_FINANCE = "\n🧾 Sotuv qatorlari: %d · xarajatlar: %d";
+    public static final String UZUM_SYNC_FINANCE_FAILED = "\n⚠️ Moliya ma’lumotlari (sotuvlar) hozir o‘qilmadi — keyingi yangilanishda qayta uriniladi.";
+    public static final String REPORT_NEED_UZUM = "📈 Davr hisoboti Uzum’dagi haqiqiy sotuvlar asosida tuziladi. Avval Uzum’ni ulang.";
+    public static final String REPORT_NO_DATA_YET = "📈 Sotuv ma’lumotlari hali kelmagan. «🔄 Hozir yangilash» ni bosing yoki kechasi avtomatik yangilanishini kuting.";
+    public static final String REPORT_HEAD = "📈 <b>Davr hisoboti</b> — %s\n🗓 %s – %s · Uzum\n\n";
+    public static final String REPORT_EMPTY_PERIOD = "Bu davrda yakunlangan sotuv yo‘q.\n";
+    public static final String REPORT_TRANSIT = "\n💸 <b>Yo‘ldagi pul:</b> %d dona hali yetkazilmoqda → kutilayotgan to‘lov ≈ %s so‘m (bekor bo‘lishi mumkin).\n";
+    public static final String REPORT_NO_COST = "\n🟡 %d ta mahsulotda (%d dona) tannarx yo‘q — ular tannarxsiz hisoblandi, haqiqiy foyda <b>pastroq</b>.\n";
+    public static final String REPORT_NO_TAX = "\nℹ️ Soliq hisobga olinmadi: Uzum kanali stavkasida soliq yo‘q. Bitta Uzum hisobida soliqni kiritib, «📌 Stavkalarni eslab qolish» ni bosing.\n";
+    public static final String REPORT_FOOTER = "<i>Faqat yakunlangan (pul yechishga tayyor) sotuvlar. Logistika Uzum to‘lovidan ayrilgan; ichki o‘tkazmalar hisobga olinmaydi.</i>";
     public static final String BTN_LEAKS = "🩸 Foyda yo‘qotishlari";
     public static final String BTN_IMPORT = "📥 Import (Uzum / fayl)";
     public static final String BTN_IMPORT_UZUM = "🟣 Uzum'dan olish";

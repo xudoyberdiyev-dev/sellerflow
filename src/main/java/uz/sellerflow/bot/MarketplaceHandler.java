@@ -41,7 +41,11 @@ public class MarketplaceHandler {
     private final JdbcTemplate jdbc;
     private final TelegramGateway tg;
     private final uz.sellerflow.channel.ChannelRateService rates;
+    private uz.sellerflow.marketplace.PeriodReportService reports;
     private final boolean async;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void setReports(uz.sellerflow.marketplace.PeriodReportService r) { this.reports = r; }
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "uzum-sync");
         t.setDaemon(true);
@@ -89,6 +93,7 @@ public class MarketplaceHandler {
             case "file" -> ctx.send(Texts.IMPORT_FILE_HELP, Kb.create().row(Kb.cb(Texts.BTN_BACK, "mk:menu")));
             case "cost" -> startCost(ctx);
             case "leak" -> showLeaks(ctx);
+            case "rep" -> showReport(ctx, p.length > 2 ? p[2] : "30");
             case "cs" -> skipCost(ctx, p.length > 2 ? p[2] : null);
             case "x" -> {
                 ctx.clearSourceButtons();
@@ -133,7 +138,8 @@ public class MarketplaceHandler {
         }
         if (x.lastError() != null) sb.append("⚠️ Oxirgi xato: ").append(errorText(x.lastError())).append("\n");
         sb.append("\n").append(Texts.UZUM_CONNECTED_NOTE);
-        Kb kb = Kb.create().row(Kb.cb(Texts.BTN_UZUM_SYNC, "mk:uzs"));
+        if (x.financeError() != null) sb.append("⚠️ Moliya ma’lumotlari o‘qilmadi: ").append(errorText(x.financeError())).append("\n");
+        Kb kb = Kb.create().row(Kb.cb(Texts.BTN_UZUM_SYNC, "mk:uzs"), Kb.cb(Texts.BTN_REPORT, "mk:rep:30"));
         long missing = missingCostCount(ctx.businessId());
         if (missing > 0) kb.row(Kb.cb(String.format(Texts.BTN_MISSING_COST, missing), "mk:cost"));
         kb.row(Kb.cb(Texts.BTN_UZUM_NEW_KEY, "mk:uzk"), Kb.cb(Texts.BTN_UZUM_DISCONNECT, "mk:uzd"))
@@ -213,8 +219,10 @@ public class MarketplaceHandler {
                 var x = r.get();
                 long missing = missingCostCount(businessId);
                 msg = String.format(Texts.UZUM_SYNC_DONE, x.shops(), x.skus(), x.created(), x.updated())
+                        + (x.sales() >= 0 ? String.format(Texts.UZUM_SYNC_FINANCE, x.sales(), x.expenses()) : Texts.UZUM_SYNC_FINANCE_FAILED)
                         + (missing > 0 ? String.format(Texts.UZUM_SYNC_MISSING_COST, missing) : "");
                 if (missing > 0) kb.row(Kb.cb(String.format(Texts.BTN_MISSING_COST, missing), "mk:cost"));
+                if (x.sales() > 0) kb.row(Kb.cb(Texts.BTN_REPORT, "mk:rep:30"));
             }
         } catch (UzumException e) {
             msg = "⚠️ " + errorText(e.failure().name());
@@ -236,6 +244,106 @@ public class MarketplaceHandler {
             case "WAF_BLOCKED" -> Texts.UZUM_ERR_WAF;
             case "QUOTA_EXHAUSTED" -> Texts.UZUM_ERR_QUOTA;
             default -> Texts.UZUM_ERR_UNAVAILABLE;
+        };
+    }
+
+    // ================================================================= davr hisoboti (V3)
+
+    private static final ZoneId TZ = ZoneId.of("Asia/Tashkent");
+    private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd.MM.yyyy").withZone(TZ);
+
+    void showReport(Ctx ctx, String period) {
+        long biz = ctx.businessId();
+        if (!reports.hasData(biz)) {
+            ctx.send(uzum.connection(biz).isPresent() ? Texts.REPORT_NO_DATA_YET : Texts.REPORT_NEED_UZUM,
+                    Kb.create().row(Kb.cb(Texts.BTN_IMPORT_UZUM, "mk:uz")));
+            return;
+        }
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now(TZ);
+        java.time.ZonedDateTime today = now.toLocalDate().atStartOfDay(TZ);
+        Instant from, to = now.toInstant();
+        String label;
+        switch (period) {
+            case "7" -> { from = today.minusDays(6).toInstant(); label = "oxirgi 7 kun"; }
+            case "m" -> { from = today.withDayOfMonth(1).toInstant(); label = "joriy oy"; }
+            case "pm" -> {
+                var start = today.withDayOfMonth(1).minusMonths(1);
+                from = start.toInstant();
+                to = today.withDayOfMonth(1).toInstant();
+                label = "o‘tgan oy";
+            }
+            default -> { period = "30"; from = today.minusDays(29).toInstant(); label = "oxirgi 30 kun"; }
+        }
+        var r = reports.report(biz, from, to);
+        StringBuilder sb = new StringBuilder(String.format(Texts.REPORT_HEAD, label, D.format(from), D.format(to.minusSeconds(1))));
+        if (r.empty()) {
+            sb.append(Texts.REPORT_EMPTY_PERIOD);
+        } else {
+            sb.append("🧾 Buyurtmalar: <b>").append(r.orders()).append("</b> · sotilgan: <b>").append(r.units()).append(" dona</b>\n\n");
+            line(sb, "💵 Tushum", r.revenue(), true);
+            line(sb, "− Uzum komissiyasi", r.commission(), false);
+            line(sb, "− Logistika", r.logistics(), false);
+            line(sb, "= Uzum to‘lovi", r.payout(), true);
+            line(sb, "− Tannarx", r.cogs(), false);
+            if (r.operatingTotal().signum() > 0) {
+                line(sb, "− Uzum xarajatlari", r.operatingTotal(), false);
+                for (var e : r.operating().entrySet()) {
+                    if (e.getValue().signum() == 0) continue;
+                    sb.append("     · ").append(categoryLabel(e.getKey())).append(": ").append(Money.format(e.getValue())).append("\n");
+                }
+            }
+            if (r.taxKnown()) line(sb, "− Soliq", r.tax(), false);
+            if (r.packaging().signum() > 0) line(sb, "− Qadoqlash va boshqa", r.packaging(), false);
+            sb.append("\n").append(r.netProfit().signum() >= 0 ? "✅" : "🔻").append(" <b>Sof foyda: ")
+                    .append(Money.format(r.netProfit())).append(" so‘m</b> · marja ").append(Money.formatPercent(r.marginPct())).append("%\n");
+            if (r.inTransitUnits() > 0) {
+                sb.append(String.format(Texts.REPORT_TRANSIT, r.inTransitUnits(), Money.format(r.inTransitPayout())));
+            }
+            if (r.canceledLines() > 0) sb.append("✖️ Bekor qilingan qatorlar: ").append(r.canceledLines()).append("\n");
+            if (!r.best().isEmpty()) {
+                sb.append("\n🏆 <b>Eng ko‘p foyda keltirgan</b> (Uzum xarajatlari va soliqdan oldin):\n");
+                for (var l : r.best()) productLine(sb, l);
+            }
+            if (!r.worst().isEmpty()) {
+                sb.append("\n🔻 <b>Zarar keltirgan</b>:\n");
+                for (var l : r.worst()) productLine(sb, l);
+            }
+            if (r.unitsWithoutCost() > 0) {
+                sb.append(String.format(Texts.REPORT_NO_COST, r.productsWithoutCost(), r.unitsWithoutCost()));
+            }
+            if (!r.taxKnown()) sb.append(Texts.REPORT_NO_TAX);
+        }
+        sb.append("\n").append(Texts.REPORT_FOOTER).append("\n").append(Texts.DISCLAIMER);
+        Kb kb = Kb.create();
+        List<Tg.InlineButton> ps = new java.util.ArrayList<>();
+        for (String[] pp : new String[][]{{"7", "7 kun"}, {"30", "30 kun"}, {"m", "Shu oy"}, {"pm", "O‘tgan oy"}}) {
+            ps.add(Kb.cb((pp[0].equals(period) ? "✓ " : "") + pp[1], "mk:rep:" + pp[0]));
+        }
+        kb.row(ps.toArray(new Tg.InlineButton[0]));
+        long missing = missingCostCount(biz);
+        if (missing > 0) kb.row(Kb.cb(String.format(Texts.BTN_MISSING_COST, missing), "mk:cost"));
+        kb.row(Kb.cb(Texts.BTN_IMPORT_UZUM, "mk:uz"), Kb.cb(Texts.BTN_PRODUCTS_LIST, "p:l:A:0"));
+        ctx.send(sb.toString(), kb);
+    }
+
+    private static void line(StringBuilder sb, String label, BigDecimal v, boolean bold) {
+        sb.append(label).append(": ").append(bold ? "<b>" : "").append(Money.format(v)).append(bold ? "</b>" : "").append("\n");
+    }
+
+    private static void productLine(StringBuilder sb, uz.sellerflow.marketplace.PeriodReportService.ProductLine l) {
+        sb.append("• ").append(Ctx.esc(uz.sellerflow.common.TextUtil.truncate(l.title(), 38, "…"))).append(" — ")
+                .append(l.units()).append(" dona, ").append(Money.format(l.contribution())).append(" so‘m\n");
+    }
+
+    private static String categoryLabel(uz.sellerflow.marketplace.PeriodReportService.Category c) {
+        return switch (c) {
+            case STORAGE -> "Saqlash";
+            case RETURN_STORAGE -> "Qaytim saqlash";
+            case FINE -> "Jarimalar";
+            case ADS -> "Reklama";
+            case PHOTO -> "Fotostudiya";
+            case WITHDRAW_FEE -> "Pul yechish xizmati";
+            case OTHER -> "Boshqa";
         };
     }
 

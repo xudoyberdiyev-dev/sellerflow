@@ -40,9 +40,10 @@ public class UzumService {
     private static final Set<String> SKIP_STATUSES = Set.of("ARCHIVED", "DELETED", "PERM_BANNED");
 
     public record Connection(String tokenHint, List<Long> shopIds, String status, Instant lastSyncAt, Integer lastSyncCount,
-                             String lastError, Instant syncStartedAt) {}
+                             String lastError, Instant syncStartedAt, String financeError) {}
 
-    public record SyncResult(int skus, int created, int updated, int skipped, int shops) {}
+    /** sales = -1 — moliya o'qilmadi (xato; mahsulotlar baribir yangilandi). */
+    public record SyncResult(int skus, int created, int updated, int skipped, int shops, int sales, int expenses) {}
 
     public enum ConnectError { DISABLED, INVALID_TOKEN, NO_SHOPS, WAF, QUOTA, UNAVAILABLE }
 
@@ -61,9 +62,11 @@ public class UzumService {
     private final ProductImportService importer;
     private final AuditService audit;
     private final boolean syncEnabled;
+    private final UzumFinanceSync finance;
 
     public UzumService(JdbcTemplate jdbc, SecretBox box, UzumClient client, ProductImportService importer, AuditService audit,
-                       @Value("${sellerflow.uzum.sync-enabled:true}") boolean syncEnabled) {
+                       UzumFinanceSync finance, @Value("${sellerflow.uzum.sync-enabled:true}") boolean syncEnabled) {
+        this.finance = finance;
         this.jdbc = jdbc;
         this.box = box;
         this.client = client;
@@ -117,10 +120,10 @@ public class UzumService {
 
     public Optional<Connection> connection(long businessId) {
         return jdbc.query("""
-                select token_hint, shop_ids, status, last_sync_at, last_sync_count, last_error, sync_started_at
+                select token_hint, shop_ids, status, last_sync_at, last_sync_count, last_error, sync_started_at, finance_error
                 from marketplace_connections where business_id = ? and marketplace = ?""", (rs, i) -> new Connection(
                 rs.getString(1), parseIds(rs.getString(2)), rs.getString(3),
-                ts(rs.getTimestamp(4)), (Integer) rs.getObject(5), rs.getString(6), ts(rs.getTimestamp(7))), businessId, MP)
+                ts(rs.getTimestamp(4)), (Integer) rs.getObject(5), rs.getString(6), ts(rs.getTimestamp(7)), rs.getString(8)), businessId, MP)
                 .stream().findFirst();
     }
 
@@ -162,11 +165,22 @@ public class UzumService {
                 }
             }
             var r = importer.upsert(businessId, ProductImportService.Source.UZUM, rows);
+            int sales = -1, expenses = -1;
+            try {
+                var f = finance.sync(businessId, token, shopIds);
+                sales = f.sales();
+                expenses = f.expenses();
+            } catch (UzumException e) {
+                if (e.failure() == Failure.INVALID_TOKEN || e.failure() == Failure.QUOTA_EXHAUSTED) throw e;
+                jdbc.update("update marketplace_connections set finance_error = ? where business_id = ? and marketplace = ?",
+                        e.failure().name(), businessId, MP);
+                log.warn("Uzum finance sync business={} failed: {}", businessId, e.failure());
+            }
             jdbc.update("""
                     update marketplace_connections set sync_started_at = null, last_sync_at = now(), last_sync_count = ?,
                       last_error = null, status = 'ACTIVE', updated_at = now() where business_id = ? and marketplace = ?""",
                     rows.size(), businessId, MP);
-            return Optional.of(new SyncResult(rows.size(), r.created(), r.updated(), r.skipped(), shopIds.size()));
+            return Optional.of(new SyncResult(rows.size(), r.created(), r.updated(), r.skipped(), shopIds.size(), sales, expenses));
         } catch (UzumException e) {
             String status = e.failure() == Failure.INVALID_TOKEN ? "INVALID" : e.failure() == Failure.QUOTA_EXHAUSTED ? "QUOTA" : "ACTIVE";
             jdbc.update("""

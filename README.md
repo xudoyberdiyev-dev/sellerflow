@@ -1,8 +1,8 @@
-# SellerFlow — V2 Closed Beta
+# SellerFlow — V3 Closed Beta
 
 Sotuvchilar uchun Telegram bot. U bir dona mahsulotdan **haqiqatda qancha foyda qolishini** va maqsadli foyda yoki marja uchun **nechaga sotish kerakligini** hisoblaydi.
 
-> Holat: **V1.0+ Closed Beta** (engine 1.1.0; Qo‘shimcha modullar TZ — kanal stavkalari, chegirma/qaytarish, narx variantlari, minimal marja, CSV eksport) — faqat Free tarif, to‘lov yo‘q. V2: Uzum Seller API (faqat o‘qish) va Excel/CSV import; boshqa marketplace'lar — keyingi versiyalarda.
+> Holat: **V1.0+ Closed Beta** (engine 1.1.0; Qo‘shimcha modullar TZ — kanal stavkalari, chegirma/qaytarish, narx variantlari, minimal marja, CSV eksport) — faqat Free tarif, to‘lov yo‘q. V2–V3: Uzum Seller API (faqat o‘qish: mahsulotlar, sotuvlar, xarajatlar), davr hisoboti va Excel/CSV import; boshqa marketplace'lar — keyingi versiyalarda.
 > Asos: `SellerFlow_MASTER` v1.1 (PRD-01, PRD-02.01–02.10) va 05.11.2026 dagi qarorlar — [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## Nimalar tayyor
@@ -14,6 +14,7 @@ Sotuvchilar uchun Telegram bot. U bir dona mahsulotdan **haqiqatda qancha foyda 
 | 🏷 Narxni aniqlash | 3 usul: maqsadli foyda, maqsadli marja, zararsizlik. Narx 1 / 100 / 1 000 so‘m qadamda yuqoriga yaxlitlanadi (standart 1 000) va natija qayta tekshiriladi. «Yechim yo‘q» va «yagona narx yo‘q» holatlari alohida ko‘rsatiladi. Chegirma bo‘lsa, tavsiya narxi chegirmadan keyin ham maqsadni saqlaydi. |
 | 📌 Kanal stavkalari va variantlar | Natijadan kanal stavkalarini eslab qolish — keyingi hisobda shu kanal uchun xarajat qadamlari o‘tkazib yuboriladi. «📊 Narx variantlari»: zararsizlik va 10–40% marja narxlari. Minimal marjadan past natijada ogohlantirish. |
 | 🟣 Uzum va import (V2) | Uzum API kaliti bilan ulanish (kalit xabari o‘chiriladi, AES-256-GCM shifrlanadi): mahsulotlar, SKU, narx, komissiya, qoldiq, sotilgan/qaytgan soni avtomatik keladi va har kuni yangilanadi. Excel/CSV fayldan import. «🟡 Tannarxni kiritish» — ketma-ket tez kiritish. «🩸 Foyda yo‘qotishlari» — zarar va past marjali mahsulotlar. «🔮 Agar…» simulyatori. |
+| 📈 Davr hisoboti (V3) | Uzum’dagi haqiqiy sotuvlar va xarajatlardan: tushum, komissiya, logistika, tannarx, saqlash/jarima/reklama, soliq, **sof foyda** va marja (7 / 30 kun, joriy / o‘tgan oy). Yo‘ldagi pul (kutilayotgan to‘lov), eng foydali va zararli mahsulotlar. |
 | 📦 Mahsulotlarim | Ro‘yxat (10 ta/sahifa), qidiruv (nom/SKU), yaratish (nom + tannarx majburiy), maydonlarni alohida tahrirlash (optimistic lock), arxivlash va tiklash, mahsulotdan foyda/narx kalkulyatoriga o‘tish. SKU biznes ichida noyob. |
 | 📊 Hisoblashlar tarixi | Foyda va narx natijalari bitta ro‘yxatda. Filtrlar: tur, Bugun / 7 kun / 30 kun / sana oralig‘i (Asia/Tashkent), hisoblash paytidagi nom bo‘yicha qidiruv. O‘zgarmas snapshot, arxivlash/tiklash, «🔁 Qayta hisoblash» (eski yoki hozirgi tannarx bilan yangi qoralama). |
 | ⚙️ Sozlamalar | Biznes nomi va ism (tahrirlash/tozalash), asosiy kanalni tasdiq bilan almashtirish, shartlar versiyasi, kanal stavkalari ro‘yxati, minimal marja, **ma’lumotlarni CSV qilib yuklab olish** (mahsulotlar va hisoblashlar, 10 daqiqada bir marta), ikki bosqichli akkaunt o‘chirish so‘rovi (30 kunlik kutish davri). |
