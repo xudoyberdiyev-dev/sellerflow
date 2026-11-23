@@ -127,6 +127,19 @@ public class AccountService {
         return new AccountContext(user, b);
     }
 
+    /** V1+: minimal marja (0 ≤ m < 100) yoki null — o'chirish. */
+    @Transactional
+    public Business updateMinMargin(long businessId, java.math.BigDecimal value) {
+        if (value != null && (value.signum() < 0 || value.compareTo(new java.math.BigDecimal("100")) >= 0)) {
+            throw new Errors.Validation("MIN_MARGIN_RANGE");
+        }
+        Business b = businesses.findById(businessId).orElseThrow(() -> new Errors.NotFound("business"));
+        b.setMinMarginPct(value == null ? null : value.setScale(2, java.math.RoundingMode.HALF_UP));
+        audit.record(Actor.USER, b.getOwnerUserId(), businessId, "PROFILE_MIN_MARGIN_CHANGED", "BUSINESS", businessId,
+                value == null ? "cleared" : value.toPlainString());
+        return b;
+    }
+
     @Transactional
     public Business updateBusinessName(long businessId, String value) {
         Business b = businesses.findById(businessId).orElseThrow(() -> new Errors.NotFound("business"));

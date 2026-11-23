@@ -21,7 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
         "sellerflow.telegram.bot-token=",
         "sellerflow.admin.bootstrap-email=owner@sellerflow.test",
         "sellerflow.admin.bootstrap-password=correct-horse-battery-staple",
-        "sellerflow.rate-limit.max-updates=1000"
+        "sellerflow.rate-limit.max-updates=1000",
+        // V2: test shifrlash kaliti (32 nol bayt) — faqat testlar uchun
+        "sellerflow.secrets.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "sellerflow.uzum.async=false"
 })
 @Import(IntegrationTest.Config.class)
 // M-13: metrikalar eksporti (Prometheus) testlarda ham yoqilgan — production bilan bir xil kontekst
@@ -43,11 +46,16 @@ public abstract class IntegrationTest {
         @Bean
         @Primary
         public FakeTelegram fakeTelegram() { return new FakeTelegram(); }
+
+        @Bean
+        @Primary
+        public FakeUzum fakeUzum() { return new FakeUzum(); }
     }
 
     @Autowired protected BotDispatcher dispatcher;
     @Autowired protected FakeTelegram tg;
     @Autowired protected JdbcTemplate jdbc;
+    @Autowired protected FakeUzum uzum;
 
     @BeforeEach
     void cleanDb() {
@@ -58,6 +66,7 @@ public abstract class IntegrationTest {
         jdbc.execute("truncate table audit_events, calculation_history, products, telegram_flows, consents, businesses, users, processed_updates restart identity cascade");
         jdbc.update("update support_settings set enabled = false, contact_label = null, contact_url = null");
         tg.clear();
+        uzum.reset();
     }
 
     protected static long newUserId() { return USER_IDS.incrementAndGet(); }
@@ -86,6 +95,16 @@ public abstract class IntegrationTest {
     }
 
     protected String lastText(long userId) { return tg.last(userId).text(); }
+
+    /** V2: foydalanuvchi fayl yuboradi (FakeTelegram.files ga oldindan qo'yiladi). */
+    protected void document(long userId, String fileName, byte[] content) {
+        String fileId = "f" + UPDATE_IDS.incrementAndGet();
+        tg.files.put(fileId, content);
+        Tg.User from = new Tg.User(userId, false, "Test", null, "uz");
+        Tg.Message m = new Tg.Message(UPDATE_IDS.incrementAndGet(), from, new Tg.Chat(userId, "private"), null,
+                new Tg.Document(fileId, fileName, "text/csv", (long) content.length), null);
+        dispatcher.handle(new Tg.Update(UPDATE_IDS.incrementAndGet(), m, null));
+    }
 
     /** To'liq onboarding: /start -> rozilik -> Uzum -> nomlarsiz -> faollashtirish. */
     protected long onboardedUser() {

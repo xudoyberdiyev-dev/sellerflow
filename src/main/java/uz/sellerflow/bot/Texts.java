@@ -136,7 +136,8 @@ public final class Texts {
     public static final String EXTRAS =
             "➕ <b>Qo‘shimcha xarajatlar</b> (ixtiyoriy)\n\n%s\n\n"
                     + "Kiritmagan xarajatlaringiz 0 deb olinmaydi — natija «taxminiy» bo‘ladi. "
-                    + "Agar ular haqiqatan yo‘q bo‘lsa, «Qolganlari yo‘q (0)» ni bosing.";
+                    + "Agar ular haqiqatan yo‘q bo‘lsa, «Qolganlari yo‘q (0)» ni bosing.\n"
+                    + "🏷 <i>Chegirma xarajat emas: u sotish narxini kamaytiradi, foiz xarajatlar va marja chegirmadan keyingi narxdan hisoblanadi.</i>";
     public static final String BTN_EXTRAS_ZERO = "0️⃣ Qolganlari yo‘q (0)";
     public static final String BTN_NEXT = "➡️ Davom etish";
     public static final String ASK_EXTRA = "<b>%s</b> xarajati qanday?";
@@ -189,7 +190,8 @@ public final class Texts {
     public static final String PRODUCTS_TITLE = "📦 <b>Mahsulotlarim</b> — faol: %d ta";
     public static final String PRODUCTS_ARCHIVE_TITLE = "🗄 <b>Arxivdagi mahsulotlar</b>";
     public static final String PRODUCTS_EMPTY =
-            "📦 <b>Mahsulotlarim</b>\n\nKatalogingiz hozircha bo‘sh. Mahsulot qo‘shsangiz, uning tannarxini har safar qayta yozishingiz shart bo‘lmaydi.";
+            "📦 <b>Mahsulotlarim</b>\n\nKatalogingiz hozircha bo‘sh. Mahsulot qo‘shsangiz, uning tannarxini har safar qayta yozishingiz shart bo‘lmaydi.\n\n"
+                    + "📥 Uzum'dan yoki Excel fayldan hammasini birdaniga olib kelishingiz mumkin.";
     public static final String PRODUCTS_SEARCH_EMPTY = "🔍 «%s» bo‘yicha mahsulot topilmadi.";
     public static final String PRODUCTS_SEARCH_TITLE = "🔍 «%s» bo‘yicha natijalar:";
     public static final String ASK_PRODUCT_SEARCH = "🔍 Qidirish uchun mahsulot nomi yoki SKU qismini yozing.";
@@ -275,6 +277,111 @@ public final class Texts {
     public static final String DELETE_STEP2 = "❗ <b>Yakuniy tasdiq.</b> Akkauntni o‘chirish so‘rovini yuboraymi?";
     public static final String BTN_DELETE_CONTINUE = "Davom etish";
     public static final String BTN_DELETE_FINAL = "Ha, so‘rov yuborilsin";
+    // V1+: kanal stavkalari
+    public static final String BTN_SAVE_RATES = "📌 Stavkalarni «%s» uchun eslab qolish";
+    public static final String CHANNEL_RATES_APPLIED =
+            "📌 «%s» kanali uchun saqlangan stavkalar qo‘llandi. Tekshirish sahifasida o‘zgartirishingiz mumkin.";
+    public static final String CHANNEL_RATES_SAVED =
+            "✅ «%s» kanali uchun %d ta xarajat stavkasi saqlandi. Keyingi hisoblarda avtomatik qo‘llanadi (chegirma saqlanmaydi).";
+    public static final String BTN_S_RATES = "📌 Kanal stavkalari";
+    public static final String BTN_S_MIN_MARGIN = "📉 Minimal marja";
+    public static final String BTN_S_EXPORT = "📤 Ma’lumotlarni yuklab olish";
+    public static final String RATES_TITLE = "📌 <b>Kanal stavkalari</b>\nHisob boshlanganda shu kanal tanlansa, stavkalar avtomatik qo‘llanadi.\n";
+    public static final String RATES_NONE = "📌 Hali saqlangan kanal stavkasi yo‘q.\n\n"
+            + "Hisob natijasida «📌 Stavkalarni … uchun eslab qolish» tugmasini bosing — keyingi safar komissiya, logistika va "
+            + "boshqa xarajatlar qayta so‘ralmaydi.";
+    public static final String RATES_DELETED = "🗑 «%s» kanali stavkalari o‘chirildi.";
+    public static final String ASK_S_MIN_MARGIN = "📉 <b>Minimal marja</b> (hozir: %s)\n\n"
+            + "Natijadagi marja shundan past bo‘lsa, bot ogohlantiradi. Foizni kiriting (masalan, 15) yoki «Tozalash» ni bosing.";
+    public static final String ERR_MIN_MARGIN = "⚠️ 0 dan 99,99 gacha foiz kiriting (masalan, 15).";
+    public static final String MIN_MARGIN_WARNING =
+            "⚠️ <b>Diqqat:</b> marja %s%% — siz belgilagan minimal %s%% dan past.";
+    public static final String BTN_WHATIF = "🔮 Agar…";
+    public static final String WHATIF_HEAD = "🔮 <b>Agar… simulyatori</b> (1 dona)\n"
+            + "Asos: narx %s so‘m → foyda <b>%s</b> · marja %s%%\n\n"
+            + "Ssenariy: foyda (farq) · marja\n";
+    public static final String BTN_VARIANTS = "📊 Narx variantlari";
+    public static final String BTN_BACK_TO_RESULT = "↩️ Natijaga qaytish";
+    public static final String VARIANTS_TITLE = "📊 <b>Narx variantlari</b>\n"
+            + "Joriy tannarx va xarajatlar bilan (%s so‘m qadamda yaxlitlangan):\n\n";
+    public static final String EXPORT_PRODUCTS_CAPTION = "📦 Mahsulotlar: %d ta";
+    public static final String EXPORT_HISTORY_CAPTION = "🧮 Saqlangan hisoblashlar: %d ta";
+    public static final String EXPORT_DONE = "📤 Fayllar yuborildi. Ularni Excel yoki Google Sheets'da ochishingiz mumkin.\n"
+            + "<i>Fayllarda tijoriy ma’lumotlaringiz bor — ehtiyot bo‘lib ulashing.</i>";
+    public static final String EXPORT_COOLDOWN = "⏳ Yuklab olish 10 daqiqada bir marta mumkin. Taxminan %d daqiqadan keyin qayta urinib ko‘ring.";
+    // V2: import va Uzum
+    public static final String LEAKS_HEAD = "🩸 <b>Foyda yo‘qotishlari</b> (1 dona bo‘yicha)\n\nTahlil qilindi: %d ta mahsulot · 🔻 zarar: <b>%d</b>\n";
+    public static final String LEAKS_LOW = "⚠️ Minimal marja (%s%%) dan past: <b>%d</b>\n";
+    public static final String LEAKS_NODATA = "🟡 Tannarxi yoki narxi yo‘q (hisoblanmadi): %d\n";
+    public static final String LEAKS_EMPTY = "🩸 Tahlil uchun mahsulot yo‘q: tannarx va narxi bor faol mahsulotlar kerak (hozir %d tasida ma’lumot yetishmaydi).";
+    public static final String LEAKS_PARTIAL = "<i>⚠️ Ba’zi xarajatlar kanal stavkalarida yo‘q — natija taxminiy (haqiqiy foyda pastroq bo‘lishi mumkin).</i>";
+    public static final String LEAKS_PARTIAL_NORATES = "<i>⚠️ Kanal stavkalari saqlanmagan: faqat tannarx va komissiya hisobga olindi — haqiqiy foyda pastroq. "
+            + "Bitta hisob natijasida «📌 Stavkalarni eslab qolish» ni bosing — hisobot aniqlashadi.</i>";
+    public static final String BTN_LEAKS = "🩸 Foyda yo‘qotishlari";
+    public static final String BTN_IMPORT = "📥 Import (Uzum / fayl)";
+    public static final String BTN_IMPORT_UZUM = "🟣 Uzum'dan olish";
+    public static final String BTN_IMPORT_FILE = "📄 Fayldan import (Excel/CSV)";
+    public static final String BTN_MISSING_COST = "🟡 Tannarxni kiritish (%d ta)";
+    public static final String BTN_PRODUCTS_LIST = "📦 Mahsulotlarim";
+    public static final String BTN_UZUM_ENTER_KEY = "🔑 Kalitni kiritish";
+    public static final String BTN_UZUM_NEW_KEY = "🔑 Yangi kalit";
+    public static final String BTN_UZUM_SYNC = "🔄 Hozir yangilash";
+    public static final String BTN_UZUM_DISCONNECT = "🔌 Uzish";
+    public static final String BTN_UZUM_DISCONNECT_YES = "🔌 Ha, uzish";
+    public static final String BTN_COST_SKIP = "⏭ O‘tkazib yuborish";
+    public static final String BTN_COST_STOP = "⏹ To‘xtatish";
+    public static final String IMPORT_MENU = "📥 <b>Mahsulotlarni import qilish</b>\n\n"
+            + "🟣 <b>Uzum</b> — kalit bilan ulanasiz, mahsulotlar, narxlar, komissiya va qoldiq avtomatik keladi va har kuni yangilanadi.\n"
+            + "📄 <b>Fayl</b> — Excel (.xlsx) yoki CSV faylni botga yuborasiz.\n\n"
+            + "Tannarxni Uzum bilmaydi — uni keyin ketma-ket tez kiritib chiqasiz.";
+    public static final String UZUM_DISABLED = "⚙️ Uzum ulanishi serverda hali yoqilmagan (administrator SELLERFLOW_SECRETS_KEY ni sozlashi kerak).";
+    public static final String UZUM_HOWTO = "🟣 <b>Uzum'ni ulash</b>\n\n"
+            + "1. seller.uzum.uz ga kiring → <b>Настройки → API-ключи</b>.\n"
+            + "2. «Создать ключ» — yangi kalit yarating (faqat o‘qish huquqi yetarli).\n"
+            + "3. Kalitni nusxalab, shu yerga «🔑 Kalitni kiritish» orqali yuboring.\n\n"
+            + "🔒 Kalit shifrlangan holda saqlanadi, xabaringiz darhol o‘chiriladi. Bot faqat ma’lumotlarni <b>o‘qiydi</b> "
+            + "— narx yoki buyurtmalarni o‘zgartirmaydi. Istalgan payt uzib qo‘yishingiz yoki kalitni Uzum kabinetida o‘chirishingiz mumkin.";
+    public static final String UZUM_ASK_KEY = "🔑 Uzum API kalitini yuboring (bitta xabar, faqat kalitning o‘zi).\n\n"
+            + "<i>Xabaringiz tekshiruvdan oldin o‘chiriladi.</i>";
+    public static final String UZUM_CHECKING = "🔒 Xabar o‘chirildi. Kalit tekshirilmoqda…";
+    public static final String UZUM_CONNECTED = "✅ <b>Uzum ulandi.</b> Do‘konlar: %d ta%s";
+    public static final String UZUM_CONNECTED_NOTE = "<i>Mahsulotlar har kuni kechasi avtomatik yangilanadi. Tannarx va o‘zingiz kiritgan nomlar o‘zgarmaydi.</i>";
+    public static final String UZUM_ERR_TOKEN = "❌ Kalit noto‘g‘ri yoki bekor qilingan. Uzum kabinetida kalitni tekshirib, qaytadan yuboring.";
+    public static final String UZUM_ERR_NO_SHOPS = "❌ Bu kalit bilan birorta ham do‘kon topilmadi. Kalit do‘koningizga ruxsat berganini tekshiring.";
+    public static final String UZUM_ERR_WAF = "⚠️ Uzum serverimiz so‘rovini blokladi (bu kalit xatosi emas). Administratorga xabar bering — server O‘zbekistondagi IP orqali ishlashi kerak bo‘lishi mumkin.";
+    public static final String UZUM_ERR_QUOTA = "⏳ Uzum'ning kunlik so‘rov limiti tugagan. Ertaga avtomatik davom etadi.";
+    public static final String UZUM_ERR_UNAVAILABLE = "⚠️ Uzum hozir javob bermayapti. Birozdan keyin qayta urinib ko‘ring.";
+    public static final String UZUM_DISCONNECT_CONFIRM = "🔌 Uzum ulanishini uzasizmi? Kalit serverdan o‘chiriladi. Import qilingan mahsulotlar qoladi.";
+    public static final String UZUM_DISCONNECTED = "🔌 Uzum uzildi, kalit o‘chirildi. Xavfsizlik uchun kalitni Uzum kabinetida ham o‘chirib qo‘yishingiz mumkin.";
+    public static final String UZUM_SYNC_STARTED = "🔄 Uzum'dan mahsulotlar olinmoqda… Tugagach xabar beraman (odatda 1 daqiqagacha).";
+    public static final String UZUM_SYNC_RUNNING = "⏳ Yangilash allaqachon ketyapti — tugashini kuting.";
+    public static final String UZUM_SYNC_COOLDOWN = "⏳ Qo‘lda yangilash 10 daqiqada bir marta. Taxminan %d daqiqadan keyin urinib ko‘ring.";
+    public static final String UZUM_SYNC_DONE = "✅ <b>Uzum'dan yangilandi.</b>\n🏪 Do‘konlar: %d · SKU: %d\n➕ Yangi: %d · 🔄 Yangilangan: %d";
+    public static final String UZUM_SYNC_MISSING_COST = "\n\n🟡 %d ta mahsulotda tannarx yo‘q — foydani hisoblash uchun kiriting.";
+    public static final String IMPORT_FILE_HELP = "📄 <b>Fayldan import</b>\n\n"
+            + "Excel (.xlsx) yoki CSV faylni shu chatga yuboring (5 MB gacha, 5 000 qatorgacha).\n\n"
+            + "Birinchi qatorda ustun nomlari bo‘lsin. Bot quyidagilarni o‘zi taniydi (o‘zbek/rus):\n"
+            + "• <b>Nomi</b> (Наименование) — majburiy\n"
+            + "• <b>Tannarx</b> (Себестоимость / Закупочная цена)\n"
+            + "• <b>Sotish narxi</b> (Цена)\n"
+            + "• <b>SKU / Artikul</b> (Артикул), <b>Shtrix-kod</b>\n\n"
+            + "Bir xil SKU li mahsulot bo‘lsa — yangilanadi, aks holda yangisi qo‘shiladi. Uzum kabinetidan yuklab olingan fayl ham bo‘ladi.";
+    public static final String IMPORT_DONE = "✅ <b>Import tugadi.</b>\nQatorlar: %d · ➕ yangi: %d · 🔄 yangilangan: %d · ⏭ o‘tkazilgan: %d\n\nTanilgan ustunlar:%s";
+    public static final String IMPORT_ERR_SIZE = "❌ Fayl juda katta (5 MB gacha).";
+    public static final String IMPORT_ERR_TYPE = "❌ Faqat .xlsx yoki .csv fayl qabul qilinadi.";
+    public static final String IMPORT_ERR_XLS = "❌ Eski .xls format qo‘llanmaydi. Excel'da «Сохранить как» → .xlsx qilib qayta yuboring.";
+    public static final String IMPORT_ERR_HEADER = "❌ Ustun nomlari topilmadi. Birinchi qatorda kamida «Nomi» va «Tannarx» yoki «Narx» ustunlari bo‘lsin.";
+    public static final String IMPORT_ERR_ROWS = "❌ Faylda %d qatordan ko‘p. Bo‘lib yuboring.";
+    public static final String IMPORT_ERR_READ = "❌ Faylni o‘qib bo‘lmadi. U buzilmaganini tekshiring yoki CSV qilib yuboring.";
+    public static final String IMPORT_ERR_DOWNLOAD = "⚠️ Faylni yuklab bo‘lmadi. Qayta yuboring.";
+    public static final String COST_ASK_HEAD = "🟡 <b>Tannarx kiritish</b> · qoldi: %d ta\n\n";
+    public static final String COST_ASK = "Bir dona tannarxini yozing (masalan, 45000):";
+    public static final String COST_SAVED = "✅ Saqlandi: %s so‘m";
+    public static final String COST_ALL_DONE = "🎉 Barcha mahsulotlarda tannarx bor. Endi foydani hisoblashingiz mumkin.";
+    public static final String COST_SKIPPED_LEFT = "ℹ️ Ro‘yxat oxiriga yetdik. O‘tkazib yuborilgan %d ta mahsulotda tannarx hali yo‘q.";
+    public static final String CHANNEL_RATES_EMPTY = "ℹ️ Saqlanadigan xarajat yo‘q — avval xarajatlarni kiriting.";
+    public static final String ERR_DISCOUNT_TOO_LARGE =
+            "⚠️ Chegirma sotish narxidan katta yoki unga teng — natijani hisoblab bo‘lmaydi. Chegirma yoki narxni o‘zgartiring.";
     public static final String ERR_NAME_IS_COMMAND = "Nom «/» bilan boshlanmasin — buyruqlar nom sifatida saqlanmaydi. Boshqa nom yozing.";
     public static final String DELETION_CANCELLED_BY_ADMIN =
             "ℹ️ Akkauntingizni o‘chirish so‘rovi administrator tomonidan bekor qilindi.\nSabab: %s\n\n"

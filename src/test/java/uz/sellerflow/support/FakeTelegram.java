@@ -39,6 +39,35 @@ public class FakeTelegram implements TelegramGateway {
         sent.add(new Sent(chatId, html, markup));
     }
 
+    public record Doc(long chatId, String fileName, byte[] content, String caption) {}
+
+    private final List<Doc> docs = Collections.synchronizedList(new ArrayList<>());
+
+    @Override
+    public void sendDocument(long chatId, String fileName, byte[] content, String caption) {
+        docs.add(new Doc(chatId, fileName, content, caption));
+    }
+
+    public final List<Long> deleted = Collections.synchronizedList(new ArrayList<>());
+    public final java.util.Map<String, byte[]> files = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Override
+    public void deleteMessage(long chatId, long messageId) { deleted.add(messageId); }
+
+    @Override
+    public byte[] downloadFile(String fileId, long maxBytes) {
+        byte[] b = files.get(fileId);
+        if (b == null) throw new IllegalStateException("no file");
+        if (b.length > maxBytes) throw new IllegalArgumentException("FILE_TOO_LARGE");
+        return b;
+    }
+
+    public List<Doc> docsFor(long chatId) {
+        synchronized (docs) {
+            return docs.stream().filter(d -> d.chatId() == chatId).toList();
+        }
+    }
+
     @Override
     public void clearInlineKeyboard(long chatId, long messageId) {}
 
@@ -71,5 +100,5 @@ public class FakeTelegram implements TelegramGateway {
         return Optional.empty();
     }
 
-    public void clear() { sent.clear(); failNext = null; }
+    public void clear() { sent.clear(); docs.clear(); deleted.clear(); files.clear(); failNext = null; }
 }

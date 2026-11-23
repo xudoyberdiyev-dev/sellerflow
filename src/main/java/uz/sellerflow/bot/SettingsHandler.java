@@ -37,6 +37,15 @@ public class SettingsHandler {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setGrants(uz.sellerflow.access.AccessGrantService grants) { this.grants = grants; }
 
+    private uz.sellerflow.channel.ChannelRateService rates;
+    private uz.sellerflow.export.DataExportService exporter;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setExporter(uz.sellerflow.export.DataExportService exporter) { this.exporter = exporter; }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRates(uz.sellerflow.channel.ChannelRateService rates) { this.rates = rates; }
+
     public SettingsHandler(AccountService accounts, PlanService plans, OnboardingHandler onboarding) {
         this.accounts = accounts;
         this.plans = plans;
@@ -58,6 +67,8 @@ public class SettingsHandler {
                 .row(Kb.cb(Texts.BTN_S_BNAME, "s:bn"), Kb.cb(Texts.BTN_S_DNAME, "s:dn"))
                 .row(Kb.cb(Texts.BTN_S_CHANNEL, "s:ch"), Kb.cb(Texts.BTN_S_TERMS, "s:terms"))
                 .row(Kb.cb(Texts.BTN_TARIFFS_INLINE, "t:show"), Kb.cb("❓ Yordam", "f:list"))
+                .row(Kb.cb(Texts.BTN_S_RATES, "s:cr"), Kb.cb(Texts.BTN_S_MIN_MARGIN, "s:mm"))
+                .row(Kb.cb(Texts.BTN_IMPORT_UZUM, "mk:uz"), Kb.cb(Texts.BTN_S_EXPORT, "s:exp"))
                 .row(Kb.cb(Texts.BTN_S_ACCESS, "s:acc"))
                 .row(Kb.cb(Texts.BTN_S_DELETE, "s:del1")));
     }
@@ -72,6 +83,7 @@ public class SettingsHandler {
             case "c" -> showCenter(ctx);
             case "bn" -> dispatcher.requestStart(ctx, "SEDIT:BN");
             case "dn" -> dispatcher.requestStart(ctx, "SEDIT:DN");
+            case "mm" -> dispatcher.requestStart(ctx, "SEDIT:MM");
             case "ch" -> {
                 List<Tg.InlineButton> bs = new ArrayList<>();
                 for (SalesChannel c : SalesChannel.values()) bs.add(Kb.cb(c.label(), "s:chs:" + c.name()));
@@ -102,6 +114,20 @@ public class SettingsHandler {
                         Ctx.esc(onboarding.termsText())), Kb.create().row(Kb.cb(Texts.BTN_BACK, "s:c")));
             }
             case "acc" -> showAccess(ctx);
+            case "cr" -> showRates(ctx);
+            case "exp" -> exportData(ctx);
+            case "crd" -> {
+                ctx.clearSourceButtons();
+                if (rates != null && p.length > 2) {
+                    try {
+                        SalesChannel c = SalesChannel.valueOf(p[2]);
+                        if (rates.delete(ctx.businessId(), c)) ctx.send(String.format(Texts.RATES_DELETED, c.label()));
+                    } catch (IllegalArgumentException ignored) {
+                        // eski/buzilgan tugma
+                    }
+                }
+                showRates(ctx);
+            }
             case "del1" -> ctx.send(String.format(Texts.DELETE_STEP1,
                     accounts.purgeEnabled() ? Texts.DELETE_DATA_PURGED : Texts.DELETE_DATA_RETAINED), Kb.create()
                     .row(Kb.cb(Texts.BTN_DELETE_CONTINUE, "s:del2"), Kb.cb(Texts.BTN_CANCEL, "s:c")));
@@ -129,6 +155,52 @@ public class SettingsHandler {
             }
             default -> ctx.send(Texts.STALE);
         }
+    }
+
+    /** V1+ (TZ 5-modul): mahsulotlar va hisoblashlar CSV fayl bo'lib yuboriladi (10 daqiqada bir marta). */
+    private void exportData(Ctx ctx) {
+        if (exporter == null) {
+            ctx.send(Texts.STALE);
+            return;
+        }
+        var next = exporter.nextAllowedAt(ctx.businessId());
+        if (next.isPresent()) {
+            long min = Math.max(1, (java.time.Duration.between(java.time.Instant.now(), next.get()).toSeconds() + 59) / 60);
+            ctx.send(String.format(Texts.EXPORT_COOLDOWN, min), Kb.create().row(Kb.cb(Texts.BTN_BACK, "s:c")));
+            return;
+        }
+        var e = exporter.export(ctx.businessId());
+        String date = java.time.LocalDate.now(ZoneId.of("Asia/Tashkent")).toString();
+        ctx.sendDocument("sellerflow-mahsulotlar-" + date + ".csv", e.products(),
+                String.format(Texts.EXPORT_PRODUCTS_CAPTION, e.productRows()));
+        ctx.sendDocument("sellerflow-hisoblashlar-" + date + ".csv", e.history(),
+                String.format(Texts.EXPORT_HISTORY_CAPTION, e.historyRows()));
+        ctx.send(Texts.EXPORT_DONE, Kb.create().row(Kb.cb(Texts.BTN_BACK, "s:c")));
+    }
+
+    /** V1+: kanallar bo'yicha saqlangan stavkalar ro'yxati, o'chirish tugmasi bilan. */
+    private void showRates(Ctx ctx) {
+        var list = rates == null ? List.<uz.sellerflow.channel.ChannelRateService.ChannelRates>of() : rates.list(ctx.businessId());
+        if (list.isEmpty()) {
+            ctx.send(Texts.RATES_NONE, Kb.create().row(Kb.cb(Texts.BTN_BACK, "s:c")));
+            return;
+        }
+        StringBuilder sb = new StringBuilder(Texts.RATES_TITLE);
+        Kb kb = Kb.create();
+        for (var r : list) {
+            sb.append("\n🛒 <b>").append(r.channel().label()).append("</b>\n");
+            r.expenses().fields().forEachRemaining(en -> {
+                try {
+                    var c = uz.sellerflow.calculation.CalcTypes.ExpenseCategory.byCode(en.getKey());
+                    sb.append("• ").append(CalcModel.label(c)).append(": ")
+                            .append(CalcModel.describe(CalcModel.fromNode(c, en.getValue()))).append("\n");
+                } catch (RuntimeException ignored) {
+                    // noma'lum kod
+                }
+            });
+            kb.row(Kb.cb("🗑 " + r.channel().label(), "s:crd:" + r.channel().name()));
+        }
+        ctx.send(sb.toString(), kb.row(Kb.cb(Texts.BTN_BACK, "s:c")));
     }
 
     /** Sotuvchining faol va kutilayotgan admin kirish ruxsatlari (bekor qilish tugmasi bilan). */
@@ -167,7 +239,11 @@ public class SettingsHandler {
     public void render(Ctx ctx) {
         Session s = ctx.session;
         int rev = s.revision();
-        String prompt = "BN".equals(s.str("field")) ? Texts.ASK_S_BNAME : Texts.ASK_S_DNAME;
+        String field = s.str("field");
+        String prompt = "BN".equals(field) ? Texts.ASK_S_BNAME
+                : "MM".equals(field) ? String.format(Texts.ASK_S_MIN_MARGIN, ctx.business().getMinMarginPct() == null ? "o‘rnatilmagan"
+                : uz.sellerflow.calculation.Money.formatPercent(ctx.business().getMinMarginPct()) + "%")
+                : Texts.ASK_S_DNAME;
         ctx.send(prompt, Kb.create().row(
                 Kb.cb(Texts.BTN_CLEAR, "se:" + rev + ":" + SE + ":clear"),
                 Kb.cb(Texts.BTN_CANCEL, "se:" + rev + ":" + SE + ":cancel")));
@@ -187,7 +263,18 @@ public class SettingsHandler {
             ctx.send(Texts.ERR_TEXT_EMPTY);
             return;
         }
-        if ("BN".equals(s.str("field"))) accounts.updateBusinessName(ctx.businessId(), value);
+        if ("MM".equals(s.str("field"))) {
+            java.math.BigDecimal m = null;
+            if (value != null) {
+                var parsed = uz.sellerflow.calculation.Money.parsePercent(value);
+                if (parsed.isEmpty() || parsed.get().compareTo(new java.math.BigDecimal("100")) >= 0) {
+                    ctx.send(Texts.ERR_MIN_MARGIN);
+                    return;
+                }
+                m = parsed.get();
+            }
+            accounts.updateMinMargin(ctx.businessId(), m);
+        } else if ("BN".equals(s.str("field"))) accounts.updateBusinessName(ctx.businessId(), value);
         else accounts.updateDisplayName(ctx.businessId(), value);
         s.clear();
         refresh(ctx);

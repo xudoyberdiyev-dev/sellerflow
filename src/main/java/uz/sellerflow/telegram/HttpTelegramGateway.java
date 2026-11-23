@@ -49,6 +49,8 @@ public class HttpTelegramGateway implements TelegramGateway {
     private final RestClient client;
     /** LOW (N-12): chiquvchi chaqiruvlar uchun qisqa timeout — sekin Telegram worker'ni 45 s × 3 ushlab turmaydi. */
     private final RestClient sendClient;
+    /** V2: fayllarni yuklab olish ({@code /file/bot<token>/...}). */
+    private final RestClient fileClient;
     static final int SEND_READ_TIMEOUT_MS = 15_000;
     private final ObjectMapper mapper;
     private final MeterRegistry meters;
@@ -76,6 +78,13 @@ public class HttpTelegramGateway implements TelegramGateway {
                 .baseUrl(props.telegram().apiBaseUrl() + "/bot" + props.telegram().botToken())
                 .requestFactory(new BufferingClientHttpRequestFactory(sf))
                 .build();
+        SimpleClientHttpRequestFactory ff = new SimpleClientHttpRequestFactory();
+        ff.setConnectTimeout(10_000);
+        ff.setReadTimeout(30_000);
+        this.fileClient = RestClient.builder()
+                .baseUrl(props.telegram().apiBaseUrl() + "/file/bot" + props.telegram().botToken())
+                .requestFactory(ff)
+                .build();
     }
 
     @Override
@@ -95,6 +104,49 @@ public class HttpTelegramGateway implements TelegramGateway {
         body.put("disable_web_page_preview", true);
         if (markup != null) body.put("reply_markup", markup);
         post("sendMessage", body);
+    }
+
+    @Override
+    public void sendDocument(long chatId, String fileName, byte[] content, String caption) {
+        org.springframework.util.LinkedMultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
+        body.add("chat_id", String.valueOf(chatId));
+        if (caption != null) {
+            body.add("caption", caption);
+            body.add("parse_mode", "HTML");
+        }
+        body.add("document", new org.springframework.core.io.ByteArrayResource(content) {
+            @Override
+            public String getFilename() { return fileName; }
+        });
+        post("sendDocument", body, MediaType.MULTIPART_FORM_DATA);
+    }
+
+    @Override
+    public void deleteMessage(long chatId, long messageId) {
+        post("deleteMessage", Map.of("chat_id", chatId, "message_id", messageId));
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record TgFile(@com.fasterxml.jackson.annotation.JsonProperty("file_path") String filePath,
+                  @com.fasterxml.jackson.annotation.JsonProperty("file_size") Long fileSize) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record FileResponse(boolean ok, TgFile result, String description) {}
+
+    @Override
+    public byte[] downloadFile(String fileId, long maxBytes) {
+        FileResponse r = sendClient.post().uri("/getFile").contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("file_id", fileId)).retrieve().body(FileResponse.class);
+        if (r == null || !r.ok() || r.result() == null || r.result().filePath() == null) {
+            throw new IllegalStateException("getFile failed");
+        }
+        if (r.result().fileSize() != null && r.result().fileSize() > maxBytes) throw new IllegalArgumentException("FILE_TOO_LARGE");
+        String path = r.result().filePath();
+        if (path.contains("..")) throw new IllegalStateException("bad file path");
+        byte[] data = fileClient.get().uri("/" + path).retrieve().body(byte[].class);
+        if (data == null) throw new IllegalStateException("empty file");
+        if (data.length > maxBytes) throw new IllegalArgumentException("FILE_TOO_LARGE");
+        return data;
     }
 
     @Override
@@ -145,10 +197,14 @@ public class HttpTelegramGateway implements TelegramGateway {
      * Metrikalar: {@code telegram.api.calls{method,outcome}}, {@code telegram.api.latency{method}}.
      */
     private void post(String method, Object body) {
+        post(method, body, MediaType.APPLICATION_JSON);
+    }
+
+    private void post(String method, Object body, MediaType type) {
         for (int attempt = 1; ; attempt++) {
             long started = System.nanoTime();
             try {
-                sendClient.post().uri("/" + method).contentType(MediaType.APPLICATION_JSON).body(body)
+                sendClient.post().uri("/" + method).contentType(type).body(body)
                         .retrieve().toBodilessEntity();
                 record(method, "ok", started);
                 return;
@@ -172,7 +228,7 @@ public class HttpTelegramGateway implements TelegramGateway {
             } catch (RestClientException e) {
                 // LOW: so'rov yetib borib, javobni kutishda timeout bo'lgan bo'lsa — sendMessage qayta yuborilmaydi
                 // (aks holda foydalanuvchi bir xil xabarni ikki marta oladi). Ulanish xatolari — qayta urinadi.
-                boolean delivered = isReadTimeout(e) && "sendMessage".equals(method);
+                boolean delivered = isReadTimeout(e) && ("sendMessage".equals(method) || "sendDocument".equals(method));
                 boolean retry = attempt < MAX_ATTEMPTS && !delivered;
                 record(method, retry ? "retry" : "error", started);
                 if (!retry) {

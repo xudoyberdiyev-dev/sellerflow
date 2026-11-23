@@ -710,12 +710,7 @@ public class AdminController {
      * oldiga ' qo'shiladi.
      */
     static String csvCell(String v) {
-        String s = v == null ? "" : v;
-        String t = s.stripLeading();
-        if (!s.isEmpty() && ("=+-@\t\r".indexOf(s.charAt(0)) >= 0 || (!t.isEmpty() && "=+-@".indexOf(t.charAt(0)) >= 0))) {
-            s = "'" + s;
-        }
-        return "\"" + s.replace("\"", "\"\"") + "\"";
+        return uz.sellerflow.common.Csv.cell(v);
     }
 
     // ================================================================= admins (SUPERADMIN)

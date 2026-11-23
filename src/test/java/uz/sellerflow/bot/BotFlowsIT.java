@@ -66,7 +66,30 @@ class BotFlowsIT extends IntegrationTest {
         click(u, "Soliq"); click(u, "Summa"); text(u, "4000");
         click(u, "Xizmat"); click(u, "Yo‘q (0)");
         click(u, "Boshqa"); click(u, "Summa"); text(u, "1000");
+        click(u, "Qaytarish"); click(u, "Yo‘q (0)");
+        click(u, "Chegirma"); click(u, "Yo‘q (0)");
         click(u, "Davom etish");
+    }
+
+    /** Engine 1.1.0: chegirma 10% — samarali narx 180 000, komissiya undan; chegirma narxdan katta bo'lsa xabar. */
+    @Test
+    void profit_withDiscount_showsEffectivePrice() {
+        long u = onboardedUser();
+        text(u, Texts.BTN_PROFIT);
+        text(u, "120000");
+        text(u, "200000");
+        click(u, "Foiz"); text(u, "10");
+        click(u, "Summa"); text(u, "5000");
+        click(u, "Chegirma"); click(u, "Foiz"); text(u, "10");
+        click(u, Texts.BTN_EXTRAS_ZERO);
+        click(u, "Hisoblash");
+        String r = lastText(u);
+        assertThat(r).contains("Chegirma (10%): 20 000").contains("Samarali narx (tushum): <b>180 000")
+                .contains("Komissiya (10%): 18 000").contains("37 000").contains("Barcha xarajatlar kiritilgan");
+        callback(u, tg.findButton(u, "Saqlash").orElseThrow().callbackData());
+        assertThat(count("select count(*) from calculation_history where output_snapshot->>'effectivePrice' = '180000.00'"))
+                .isEqualTo(1);
+        assertThat(count("select count(*) from calculation_history where calculation_version = '1.1.0'")).isEqualTo(1);
     }
 
     @Test
@@ -487,5 +510,89 @@ class BotFlowsIT extends IntegrationTest {
         assertThat(lastText(u)).contains("cheklangan");
         text(u, "/help");
         assertThat(lastText(u)).contains("Yordam");
+    }
+
+    // ================================================================ V1+: kanal stavkalari, variantlar, minimal marja, eksport
+
+    @Test
+    void channelRates_savedFromResult_prefillAndSkipExpenseSteps_thenDeleteInSettings() {
+        long u = onboardedUser();
+        fullProfitInput(u);
+        click(u, "Hisoblash");
+        click(u, "Stavkalarni «Uzum");
+        assertThat(lastText(u)).contains("Foyda hisobi");
+        assertThat(tg.forChat(u).stream().anyMatch(m -> m.text().contains("ta xarajat stavkasi saqlandi"))).isTrue();
+        assertThat(count("select count(*) from business_channels b join businesses x on x.id = b.business_id "
+                + "join users us on us.id = x.owner_user_id where us.telegram_user_id = ? and b.channel = 'UZUM'", u)).isEqualTo(1);
+        assertThat(count("select count(*) from business_channels where jsonb_exists(expenses, 'D')")).isZero();
+        click(u, Texts.BTN_MAIN);
+
+        // yangi hisob: tannarx + narx dan keyin to'g'ridan-to'g'ri tekshirish sahifasi
+        text(u, Texts.BTN_PROFIT);
+        if (tg.findButton(u, Texts.BTN_RESTART).isPresent()) click(u, Texts.BTN_RESTART);
+        if (tg.findButton(u, Texts.BTN_SWITCH_YES).isPresent()) click(u, Texts.BTN_SWITCH_YES);
+        assertThat(tg.forChat(u).stream().anyMatch(m -> m.text().contains("saqlangan stavkalar qo‘llandi"))).isTrue();
+        text(u, "120000");
+        text(u, "200000");
+        String review = lastText(u);
+        assertThat(review).contains("Ma’lumotlarni tekshiring").contains("10% (narxdan)").contains("5 000 so‘m");
+        click(u, "Hisoblash");
+        assertThat(lastText(u)).contains("40 000");
+
+        text(u, Texts.BTN_SETTINGS);
+        click(u, Texts.BTN_S_RATES);
+        assertThat(lastText(u)).contains("Uzum").contains("Komissiya");
+        click(u, "🗑 ");
+        assertThat(lastText(u)).contains("Hali saqlangan kanal stavkasi yo‘q");
+        assertThat(count("select count(*) from business_channels b join businesses x on x.id = b.business_id "
+                + "join users us on us.id = x.owner_user_id where us.telegram_user_id = ?", u)).isZero();
+    }
+
+    @Test
+    void priceVariants_and_minMarginWarning() {
+        long u = onboardedUser();
+        text(u, Texts.BTN_SETTINGS);
+        click(u, Texts.BTN_S_MIN_MARGIN);
+        text(u, "150");
+        assertThat(lastText(u)).contains("0 dan 99,99");
+        text(u, "25");
+        assertThat(count("select count(*) from businesses x join users us on us.id = x.owner_user_id "
+                + "where us.telegram_user_id = ? and x.min_margin_pct = 25", u)).isEqualTo(1);
+
+        fullProfitInput(u);
+        click(u, "Hisoblash");
+        assertThat(lastText(u)).contains("marja 20% — siz belgilagan minimal 25% dan past");
+        click(u, Texts.BTN_VARIANTS);
+        String v = lastText(u);
+        // xarajatlar: fix 40 000 (5000+3000+7000+4000+1000+120000=140000), komissiya 10%
+        assertThat(v).contains("Narx variantlari").contains("Zararsizlik: <b>156 000")
+                .contains("Marja 10%").contains("Marja 25% (minimal)").contains("Marja 40%");
+        click(u, Texts.BTN_BACK_TO_RESULT);
+        assertThat(lastText(u)).contains("Foyda hisobi");
+    }
+
+    @Test
+    void exportCsv_sendsTwoFiles_safeCells_andCooldown() {
+        long u = onboardedUser();
+        fullProfitInput(u);
+        click(u, "Hisoblash");
+        callback(u, tg.findButton(u, "Saqlash").orElseThrow().callbackData());
+        jdbc.update("update calculation_history set product_name_snapshot = '=HYPERLINK(1)' where business_id = "
+                + "(select x.id from businesses x join users us on us.id = x.owner_user_id where us.telegram_user_id = ?)", u);
+
+        text(u, Texts.BTN_SETTINGS);
+        click(u, Texts.BTN_S_EXPORT);
+        var docs = tg.docsFor(u);
+        assertThat(docs).hasSize(2);
+        assertThat(docs.get(0).fileName()).startsWith("sellerflow-mahsulotlar-").endsWith(".csv");
+        String hist = new String(docs.get(1).content(), java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(hist).startsWith("\uFEFFid,").contains("\"'=HYPERLINK(1)\"").contains("40000.00").contains("\"1.1.0\"");
+        assertThat(count("select count(*) from audit_events where action = 'USER_DATA_EXPORTED' and business_id = "
+                + "(select x.id from businesses x join users us on us.id = x.owner_user_id where us.telegram_user_id = ?)", u)).isEqualTo(1);
+
+        click(u, Texts.BTN_BACK);
+        click(u, Texts.BTN_S_EXPORT);
+        assertThat(lastText(u)).contains("10 daqiqada bir marta");
+        assertThat(tg.docsFor(u)).hasSize(2);
     }
 }

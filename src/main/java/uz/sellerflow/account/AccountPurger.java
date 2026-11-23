@@ -28,6 +28,8 @@ public class AccountPurger {
         if (businessId != null) {
             jdbc.update("delete from calculation_history where business_id = ?", businessId);
             jdbc.update("delete from products where business_id = ?", businessId);
+            jdbc.update("delete from business_channels where business_id = ?", businessId);
+            jdbc.update("update businesses set min_margin_pct = null where id = ?", businessId);
             jdbc.update("update businesses set business_name = null, display_name = null, updated_at = now() where id = ?", businessId);
             jdbc.update("update access_grants set status = 'REVOKED', revoked_at = now(), revoked_by = 'SYSTEM', version = version + 1 "
                     + "where business_id = ? and status in ('REQUESTED','APPROVED')", businessId);
@@ -44,5 +46,7 @@ public class AccountPurger {
         jdbc.update("delete from telegram_flows where user_id = ?", userId);
         jdbc.update("delete from user_activity_days where user_id = ?", userId);
         jdbc.update("update users set last_seen_at = null where id = ?", userId);
+        // V2: yopilgan akkauntning marketplace kalitlari darhol o'chiriladi (sir saqlanib qolmasin)
+        jdbc.update("delete from marketplace_connections where business_id in (select id from businesses where owner_user_id = ?)", userId);
     }
 }

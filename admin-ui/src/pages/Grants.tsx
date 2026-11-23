@@ -20,7 +20,7 @@ interface PageInfo { page: number; size: number; total: number; totalPages: numb
 interface GrantData {
   grant: Grant
   productPage: PageInfo; historyPage: PageInfo
-  products: { id: number; name: string; unitCost: number | string; plannedSalePrice: number | string | null; sku: string | null }[]
+  products: { id: number; name: string; unitCost: number | string | null; plannedSalePrice: number | string | null; sku: string | null }[]
   history: { id: number; type: string; productName: string | null; channel: string; accuracy: string; savedAt: string; output: Record<string, unknown> | null }[]
 }
 

@@ -18,6 +18,10 @@ public final class Session {
     public static final String PRODUCT_CREATE = "PRODUCT_CREATE";
     public static final String PRODUCT_EDIT = "PRODUCT_EDIT";
     public static final String SETTINGS_EDIT = "SETTINGS_EDIT";
+    /** V2: Uzum kalitini kiritish (kalit sessiyaga yozilmaydi). */
+    public static final String MK_TOKEN = "MK_TOKEN";
+    /** V2: tannarxi yo'q mahsulotlarga ketma-ket tannarx kiritish. */
+    public static final String MK_COST = "MK_COST";
 
     private final long userId;
     private String flowType;

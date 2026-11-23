@@ -37,7 +37,14 @@ public final class CalcTypes {
         ADS("A", true),
         TAX("T", true),
         SERVICE_FEE("E", true),
-        OTHER("O", false);
+        OTHER("O", false),
+        /** V1+ (TZ 3.1): qaytarishlar bilan bog'liq xarajat 1 dona uchun (summa yoki narxdan %). */
+        RETURNS("R", true),
+        /**
+         * V1+ (TZ 3.2): chegirma — xarajat emas, tushumni kamaytiradi. Samarali narx = sotish narxi − chegirma;
+         * boshqa foizli xarajatlar va marja samarali narxdan hisoblanadi (engine 1.1.0).
+         */
+        DISCOUNT("D", true);
 
         private final String code;
         private final boolean allowsPercent;

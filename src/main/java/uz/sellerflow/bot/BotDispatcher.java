@@ -103,6 +103,11 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
         if (!allowed(chatId, m.from().id())) return;
         String text = m.text() == null ? "" : m.text().strip();
         Ctx ctx = context(chatId, m.from().id(), null);
+        ctx.incomingMessageId = m.messageId();
+        if (m.document() != null && marketplace != null) {
+            process(ctx, () -> onDocument(ctx, m.document()));
+            return;
+        }
         process(ctx, () -> onText(ctx, text));
     }
 
@@ -184,6 +189,23 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             case "PLANNED_PRICE_NOT_POSITIVE" -> Texts.ERR_PRICE_POSITIVE;
             default -> Texts.GENERIC_ERROR;
         };
+    }
+
+    // =================================================================== V2: import va Uzum
+
+    private MarketplaceHandler marketplace;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setMarketplace(MarketplaceHandler m) { this.marketplace = m; }
+
+    /** Fayl (import). Cheklovlar matn bilan bir xil: faqat faol, rozilik bergan biznes. */
+    private void onDocument(Ctx ctx, Tg.Document doc) {
+        if (ctx.business() == null || ctx.account.user().getStatus() != AccountStatus.ACTIVE
+                || !accounts.hasCurrentConsent(ctx.userId())) {
+            onText(ctx, "");
+            return;
+        }
+        marketplace.onDocument(ctx, doc);
     }
 
     // =================================================================== text
@@ -273,8 +295,14 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
         }
 
         Session s = ctx.session;
+        // V2: kalit kutilayotgan bo'lsa (hatto to'xtatilgan bo'lsa ham) — xabar albatta o'chiriladi, chatda qolmaydi
+        if (marketplace != null && s.isFlow(Session.MK_TOKEN)) {
+            marketplace.onText(ctx, text);
+            return;
+        }
         if (s.hasFlow() && !s.isPaused()) {
             switch (s.flowType()) {
+                case Session.MK_COST -> { if (marketplace != null) marketplace.onText(ctx, text); }
                 case Session.PROFIT, Session.PRICE -> calc.onText(ctx, text);
                 case Session.PRODUCT_CREATE, Session.PRODUCT_EDIT -> products.onText(ctx, text);
                 case Session.SETTINGS_EDIT -> settings.onText(ctx, text);
@@ -377,6 +405,7 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             case "p", "pw" -> products.onCallback(ctx, p);
             case "h" -> history.onCallback(ctx, p);
             case "s", "se" -> settings.onCallback(ctx, p);
+            case "mk" -> { if (marketplace != null) marketplace.onCallback(ctx, p); else ctx.send(Texts.STALE); }
             case "f", "t" -> info.onCallback(ctx, p);
             case "sw" -> onSwitch(ctx, p);
             case "rs" -> onResume(ctx, p);
@@ -474,6 +503,7 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             case Session.PROFIT, Session.PRICE -> calc.render(ctx);
             case Session.PRODUCT_CREATE, Session.PRODUCT_EDIT -> products.render(ctx);
             case Session.SETTINGS_EDIT -> settings.render(ctx);
+            case Session.MK_COST, Session.MK_TOKEN -> { s.clear(); if (marketplace != null) marketplace.showMenu(ctx); }
             default -> ctx.sendMenu(Texts.MAIN_MENU);
         }
     }
@@ -501,6 +531,8 @@ public class BotDispatcher implements uz.sellerflow.telegram.UpdateHandler {
             case Session.PRODUCT_CREATE -> "Yangi mahsulot";
             case Session.PRODUCT_EDIT -> "Mahsulotni tahrirlash";
             case Session.SETTINGS_EDIT -> "Sozlamalarni tahrirlash";
+            case Session.MK_COST -> "Tannarx kiritish";
+            case Session.MK_TOKEN -> "Uzum kalitini kiritish";
             default -> flowType;
         };
     }

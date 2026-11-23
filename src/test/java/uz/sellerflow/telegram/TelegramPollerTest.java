@@ -54,7 +54,8 @@ class TelegramPollerTest {
             if (u.updateId() == 11) throw new IllegalStateException("bug"); // dead-letter, offset suriladi
         }, st, 1);
         long o = p.pollOnce(0);
-        assertThat(o).isEqualTo(10); // hali ishlanmoqda — offset tasdiqlanmaydi
+        // Worker tez bo'lsa, update'lar pollOnce qaytguncha tugashi mumkin — offset faqat tugaganlargacha suriladi
+        assertThat(o).isBetween(10L, 13L);
         assertThat(p.awaitIdle(2000)).isTrue();
         assertThat(p.pollOnce(o)).isEqualTo(13);
         assertThat(handled).containsExactly(10L, 11L, 12L);
@@ -75,7 +76,7 @@ class TelegramPollerTest {
             if (u.updateId() == 11 && failures.getAndIncrement() < 3) throw new DataAccessResourceFailureException("connection refused");
             handled.add(u.updateId());
         }, new BotStatus(), 1);
-        assertThat(p.pollOnce(0)).isEqualTo(10);
+        assertThat(p.pollOnce(0)).isBetween(10L, 13L); // tez worker pollOnce qaytguncha tugatishi mumkin
         assertThat(p.awaitIdle(2000)).isTrue();
         assertThat(handled).containsExactly(10L, 11L, 12L); // tartib saqlandi
         assertThat(failures.get()).isEqualTo(4);

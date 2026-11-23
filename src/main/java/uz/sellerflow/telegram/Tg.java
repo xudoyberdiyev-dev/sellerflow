@@ -16,7 +16,28 @@ public final class Tg {
                          @JsonProperty("callback_query") CallbackQuery callbackQuery) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Message(@JsonProperty("message_id") long messageId, User from, Chat chat, String text) {}
+    public record Message(long messageId, User from, Chat chat, String text, Document document, String caption) {
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public Message(@JsonProperty("message_id") long messageId, @JsonProperty("from") User from,
+                       @JsonProperty("chat") Chat chat, @JsonProperty("text") String text,
+                       @JsonProperty("document") Document document, @JsonProperty("caption") String caption) {
+            this.messageId = messageId;
+            this.from = from;
+            this.chat = chat;
+            this.text = text;
+            this.document = document;
+            this.caption = caption;
+        }
+
+        public Message(long messageId, User from, Chat chat, String text) {
+            this(messageId, from, chat, text, null, null);
+        }
+    }
+
+    /** V2: botga yuborilgan fayl (import uchun). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Document(@JsonProperty("file_id") String fileId, @JsonProperty("file_name") String fileName,
+                           @JsonProperty("mime_type") String mimeType, @JsonProperty("file_size") Long fileSize) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Chat(long id, String type) {

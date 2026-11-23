@@ -17,6 +17,8 @@ public final class Ctx {
     final TelegramGateway tg;
     /** Callback bosilgan xabar (bo'lsa) — tugmalarni tozalash uchun. */
     final Long sourceMessageId;
+    /** V2: kiruvchi matnli xabar ID'si (maxfiy kalitni o'chirish uchun). */
+    Long incomingMessageId;
 
     Ctx(long chatId, long telegramUserId, AccountContext account, Session session, TelegramGateway tg,
         Long sourceMessageId) {
@@ -39,6 +41,15 @@ public final class Ctx {
     public void send(String html, Tg.Markup markup) { tg.sendMessage(chatId, html, markup); }
 
     public void send(String html, Tg.Kb kb) { tg.sendMessage(chatId, html, kb == null || kb.isEmpty() ? null : kb.build()); }
+
+    /** V2: foydalanuvchining joriy xabarini o'chirish (bo'lsa). */
+    public void deleteIncoming() {
+        if (incomingMessageId != null) tg.deleteMessage(chatId, incomingMessageId);
+    }
+
+    public void sendDocument(String fileName, byte[] content, String caption) {
+        tg.sendDocument(chatId, fileName, content, caption);
+    }
 
     public void sendMenu(String html) { tg.sendMessage(chatId, html, mainMenu()); }
 

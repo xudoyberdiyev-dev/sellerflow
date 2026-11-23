@@ -38,12 +38,18 @@ public class ProductHandler {
 
     // ================================================================= list / detail
 
+    private MarketplaceHandler marketplace;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setMarketplace(MarketplaceHandler m) { this.marketplace = m; }
+
     public void showList(Ctx ctx, boolean archived, int page) {
         Product.Status st = archived ? Product.Status.ARCHIVED : Product.Status.ACTIVE;
         Page<Product> pg = products.list(ctx.businessId(), st, page);
         if (!archived && pg.getTotalElements() == 0) {
             ctx.send(Texts.PRODUCTS_EMPTY, Kb.create()
                     .row(Kb.cb(Texts.BTN_NEW_PRODUCT, "p:new"))
+                    .row(Kb.cb(Texts.BTN_IMPORT, "mk:menu"))
                     .row(Kb.cb(Texts.BTN_ARCHIVE_LIST, "p:l:R:0")));
             return;
         }
@@ -57,6 +63,9 @@ public class ProductHandler {
             kb.row(Kb.cb(Texts.BTN_ACTIVE_LIST, "p:l:A:0"));
         } else {
             kb.row(Kb.cb(Texts.BTN_NEW_PRODUCT, "p:new"), Kb.cb(Texts.BTN_SEARCH, "p:q"));
+            long missing = marketplace == null ? 0 : marketplace.missingCostCount(ctx.businessId());
+            if (missing > 0) kb.row(Kb.cb(String.format(Texts.BTN_MISSING_COST, missing), "mk:cost"));
+            kb.row(Kb.cb(Texts.BTN_IMPORT, "mk:menu"), Kb.cb(Texts.BTN_LEAKS, "mk:leak"));
             kb.row(Kb.cb(Texts.BTN_ARCHIVE_LIST, "p:l:R:0"));
         }
         ctx.send(title + pageInfo(pg), kb);
@@ -91,15 +100,32 @@ public class ProductHandler {
 
     static String details(Product p) {
         return "📦 <b>" + Ctx.esc(p.getName()) + "</b>\n\n"
-                + "💵 Tannarx: <b>" + Money.format(p.getUnitCost()) + " so‘m</b>\n"
+                + (p.hasCost() ? "💵 Tannarx: <b>" + Money.format(p.getUnitCost()) + " so‘m</b>\n"
+                        : "💵 Tannarx: <b>🟡 kiritilmagan</b>\n")
                 + "🏷 Reja narxi: " + (p.getPlannedSalePrice() == null ? "kiritilmagan" : Money.format(p.getPlannedSalePrice()) + " so‘m") + "\n"
                 + "🔖 SKU: " + (p.getSku() == null ? "—" : Ctx.esc(p.getSku())) + "\n"
-                + "Holat: " + (p.getStatus() == Product.Status.ACTIVE ? "faol" : "arxivda");
+                + "Holat: " + (p.getStatus() == Product.Status.ACTIVE ? "faol" : "arxivda")
+                + uzumInfo(p);
+    }
+
+    /** V2: Uzum'dan kelgan ma'lumot (oxirgi sinxron bo'yicha). */
+    static String uzumInfo(Product p) {
+        if (!p.isFromUzum()) return "";
+        StringBuilder sb = new StringBuilder("\n\n🟣 <b>Uzum</b>");
+        if (p.getCommissionPct() != null) sb.append("\n• Komissiya: ").append(Money.formatPercent(p.getCommissionPct())).append("%");
+        if (p.getStockQty() != null) sb.append("\n• Qoldiq: ").append(p.getStockQty()).append(" dona");
+        if (p.getSoldQty() != null) sb.append("\n• Sotilgan: ").append(p.getSoldQty());
+        if (p.getReturnedQty() != null) sb.append(" · qaytgan: ").append(p.getReturnedQty());
+        if (p.getBarcode() != null) sb.append("\n• Shtrix-kod: ").append(Ctx.esc(p.getBarcode()));
+        if (p.getSyncedAt() != null) sb.append("\n<i>Yangilangan: ")
+                .append(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(java.time.ZoneId.of("Asia/Tashkent"))
+                        .format(p.getSyncedAt())).append("</i>");
+        return sb.toString();
     }
 
     private static String itemLabel(Product p) {
         String name = uz.sellerflow.common.TextUtil.truncate(p.getName(), 40, "…");
-        return name + " — " + Money.format(p.getUnitCost()) + " so‘m";
+        return (p.isFromUzum() ? "🟣 " : "") + name + " — " + (p.hasCost() ? Money.format(p.getUnitCost()) + " so‘m" : "🟡 tannarx?");
     }
 
     static void pager(Kb kb, Page<?> pg, String prefix) {

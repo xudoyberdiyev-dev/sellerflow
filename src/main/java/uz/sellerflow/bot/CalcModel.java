@@ -39,6 +39,8 @@ public final class CalcModel {
             case TAX -> "Soliq (siz kiritgan)";
             case SERVICE_FEE -> "Xizmat / ekvayring to‘lovi";
             case OTHER -> "Boshqa xarajat";
+            case RETURNS -> "Qaytarish xarajati";
+            case DISCOUNT -> "Chegirma";
         };
     }
 
@@ -167,6 +169,10 @@ public final class CalcModel {
     public static String profitOutput(ObjectMapper m, ProfitResult r) {
         ObjectNode n = m.createObjectNode();
         n.put("salePrice", r.salePrice().toPlainString());
+        if (r.discount().signum() > 0) {
+            n.put("discount", r.discount().toPlainString());
+            n.put("effectivePrice", r.effectivePrice().toPlainString());
+        }
         n.put("unitCost", r.unitCost().toPlainString());
         n.put("knownExpensesTotal", r.knownExpensesTotal().toPlainString());
         n.put("profit", r.profit().toPlainString());
@@ -191,6 +197,10 @@ public final class CalcModel {
             n.put("profitAtPrice", r.verification().profit().toPlainString());
             n.put("marginAtPrice", r.verification().marginPct().toPlainString());
             n.put("knownExpensesAtPrice", r.verification().knownExpensesTotal().toPlainString());
+            if (r.verification().discount().signum() > 0) {
+                n.put("discountAtPrice", r.verification().discount().toPlainString());
+                n.put("effectivePrice", r.verification().effectivePrice().toPlainString());
+            }
         }
         n.put("accuracy", r.accuracy().name());
         return n.toString();
@@ -208,7 +218,11 @@ public final class CalcModel {
             if (in.hasNonNull("roundingStep")) s.put("rs", in.path("roundingStep").asText());
             for (ExpenseCategory c : ExpenseCategory.values()) {
                 JsonNode x = ex.get(c.code());
-                if (x == null) continue;
+                if (x == null) {
+                    // 1.1.0 dan oldingi snapshot: qaytarish/chegirma tushunchasi yo'q edi — 0 deb tiklanadi
+                    if (c == ExpenseCategory.RETURNS || c == ExpenseCategory.DISCOUNT) setExpense(s, Expense.zero(c));
+                    continue;
+                }
                 ExpenseStatus st = ExpenseStatus.valueOf(x.path("status").asText("NOT_SET"));
                 if (st == ExpenseStatus.KNOWN) {
                     AmountType t = AmountType.valueOf(x.path("type").asText());

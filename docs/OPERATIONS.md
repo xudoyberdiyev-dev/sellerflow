@@ -104,6 +104,16 @@ IP manzilingiz doimiy bo'lmasa — A) SSH tunnel yoki VPN (WireGuard/Tailscale) 
 - Audit jurnali `AUDIT_RETENTION_DAYS` (standart 365) kundan keyin avtomatik tozalanadi (har kuni 03:45). Rozilik yozuvlari bunga kirmaydi.
 - DB ulanishlar puli: `DB_POOL_SIZE` (standart 10).
 
+## 6a. Uzum integratsiyasi (V2)
+- `.env` ga `SELLERFLOW_SECRETS_KEY` qo'shing: `openssl rand -base64 32`. Bo'sh bo'lsa — botda Uzum ulanishi o'chiq.
+- Bu kalit sotuvchilarning Uzum API kalitlarini shifrlaydi. **Uni parol menejerida saqlang.** Yo'qolsa yoki almashtirilsa — barcha
+  sotuvchilar Uzum'ni qayta ulashi kerak (eski shifrmatnlar ochilmaydi). Backup'da faqat shifrlangan kalitlar bor.
+- Uzum WAF ba'zi xorijiy IP'larni bloklaydi (403 HTML). Botda «Uzum serverimiz so'rovini blokladi» xabari chiqsa — serverni
+  O'zbekistondagi hostingga ko'chiring yoki Uzum bilan IP masalasini hal qiling. Logda: `Uzum nightly sync ... WAF_BLOCKED`.
+- Fon sinxroni: har kuni 04:40 (Toshkent). O'chirish: `UZUM_SYNC_ENABLED=false`.
+- Ulanishlar holati: `select business_id, status, last_sync_at, last_sync_count, last_error from marketplace_connections;`
+  (`token_ciphertext` ni hech qachon eksport qilmang).
+
 ## 7. Xavfsizlik eslatmalari
 - `.env` faylini hech kimga yubormang. Token oshkor bo'lsa, @BotFather → `/revoke` qiling.
 - Admin chiqib ketsa yoki telefonini yo'qotsa: panel → Administratorlar → «O'chirish» yoki «2FA reset».
