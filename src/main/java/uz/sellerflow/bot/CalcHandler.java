@@ -243,7 +243,16 @@ public class CalcHandler {
         int rev = s.revision();
         boolean saved = s.str("rid") != null && s.str("rid").equals(s.str("saved"));
         if (s.isFlow(Session.PROFIT)) {
-            ProfitResult r = CalcModel.computeProfit(s);
+            ProfitResult r;
+            try {
+                r = CalcModel.computeProfit(s);
+            } catch (IllegalArgumentException e) {
+                // 1.1.0: chegirma sotish narxidan katta yoki teng — natija yo'q, tekshirish sahifasiga qaytamiz
+                s.step(R);
+                ctx.send(Texts.ERR_DISCOUNT_TOO_LARGE);
+                render(ctx);
+                return;
+            }
             Kb kb = Kb.create();
             if (!saved) kb.row(btn(rev, RS, Texts.BTN_SAVE, "save"));
             kb.row(btn(rev, RS, Texts.BTN_EDIT, "edit"), Kb.cb(Texts.BTN_MAIN, "m"));
@@ -273,6 +282,7 @@ public class CalcHandler {
         StringBuilder sb = new StringBuilder("💰 <b>Foyda hisobi</b>");
         if (name != null) sb.append(" — ").append(Ctx.esc(name));
         sb.append("\n\n🏷 Sotish narxi: <b>").append(Money.format(r.salePrice())).append(" so‘m</b>\n");
+        appendDiscount(sb, r);
         sb.append("− Tannarx: ").append(Money.format(r.unitCost())).append("\n");
         appendLines(sb, r.lines());
         sb.append("= Jami ma’lum xarajat: <b>").append(Money.format(r.knownExpensesTotal())).append("</b>\n\n");
@@ -300,7 +310,9 @@ public class CalcHandler {
                 sb.append("✅ <b>Tavsiya narxi: ").append(Money.format(r.recommendedPrice())).append(" so‘m</b> (")
                         .append(Money.format(r.roundingStep())).append(" so‘m qadamda yuqoriga yaxlitlangan)\n\n");
                 ProfitResult v = r.verification();
-                sb.append("Shu narxda tekshiruv:\n− Tannarx: ").append(Money.format(v.unitCost())).append("\n");
+                sb.append("Shu narxda tekshiruv:\n");
+                appendDiscount(sb, v);
+                sb.append("− Tannarx: ").append(Money.format(v.unitCost())).append("\n");
                 appendLines(sb, v.lines());
                 sb.append("= Foyda: <b>").append(Money.format(v.profit())).append(" so‘m</b> · Marja: <b>")
                         .append(Money.formatPercent(v.marginPct())).append("%</b>\n\n");
@@ -318,8 +330,21 @@ public class CalcHandler {
         return sb.toString();
     }
 
+    /** Chegirma bo'lsa: chegirma va samarali narx (tushum shundan). */
+    private static void appendDiscount(StringBuilder sb, ProfitResult r) {
+        if (r.discount().signum() <= 0) return;
+        ExpenseLine d = r.lines().stream().filter(l -> l.category() == ExpenseCategory.DISCOUNT).findFirst().orElse(null);
+        sb.append("− Chegirma");
+        if (d != null && d.percent() != null) sb.append(" (").append(Money.formatPercent(d.percent())).append("%)");
+        sb.append(": ").append(Money.format(r.discount())).append("\n");
+        sb.append("= Samarali narx (tushum): <b>").append(Money.format(r.effectivePrice())).append(" so‘m</b>\n");
+    }
+
     private static void appendLines(StringBuilder sb, List<ExpenseLine> lines) {
         for (ExpenseLine l : lines) {
+            if (l.category() == ExpenseCategory.DISCOUNT && l.amount() != null && l.amount().signum() > 0) {
+                continue; // musbat chegirma tushum qismida ko'rsatilgan
+            }
             sb.append("− ").append(CalcModel.label(l.category()));
             if (l.percent() != null) sb.append(" (").append(Money.formatPercent(l.percent())).append("%)");
             sb.append(": ");

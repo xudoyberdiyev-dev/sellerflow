@@ -46,7 +46,9 @@ class CalculationEngineTest {
                 Expense.fixed(ADS, "7000"),
                 Expense.fixed(TAX, "4000"),
                 Expense.zero(SERVICE_FEE),
-                Expense.fixed(OTHER, "1000")));
+                Expense.fixed(OTHER, "1000"),
+                Expense.zero(RETURNS),
+                Expense.zero(DISCOUNT)));
         assertThat(r.knownExpensesTotal()).isEqualByComparingTo("160000");
         assertThat(r.profit()).isEqualByComparingTo("40000");
         assertThat(r.marginPct()).isEqualByComparingTo("20");
@@ -60,7 +62,7 @@ class CalculationEngineTest {
                 Expense.zero(COMMISSION), Expense.zero(LOGISTICS)));
         assertThat(r.profit()).isEqualByComparingTo("40000");
         assertThat(r.accuracy()).isEqualTo(Accuracy.PARTIAL_ESTIMATE);
-        assertThat(r.missing()).containsExactly(PACKAGING, ADS, TAX, SERVICE_FEE, OTHER);
+        assertThat(r.missing()).containsExactly(PACKAGING, ADS, TAX, SERVICE_FEE, OTHER, RETURNS, DISCOUNT);
     }
 
     @Test
@@ -345,5 +347,80 @@ class CalculationEngineTest {
         assertThat(Money.parsePercent("1.000")).isEmpty();
         assertThat(Money.parsePercent("-5")).isEmpty();
         assertThat(Money.parsePercent("abc")).isEmpty();
+    }
+
+    // ---------------------------------------------------------------- 1.1.0: qaytarish va chegirma
+
+    /** Chegirma 10%: samarali narx 180 000; komissiya 10% samarali narxdan; marja samarali narxga nisbatan. */
+    @Test
+    void discountPercent_reducesRevenue_percentFeesOnEffectivePrice() {
+        ProfitResult r = CalculationEngine.profit(bd("200000"), bd("120000"), allZeroExcept(
+                Expense.percent(COMMISSION, "10"), Expense.fixed(LOGISTICS, "5000"), Expense.percent(DISCOUNT, "10")));
+        assertThat(r.discount()).isEqualByComparingTo("20000");
+        assertThat(r.effectivePrice()).isEqualByComparingTo("180000");
+        assertThat(r.knownExpensesTotal()).isEqualByComparingTo("143000"); // 120000 + 18000 + 5000, chegirma kirmaydi
+        assertThat(r.profit()).isEqualByComparingTo("37000");
+        assertThat(r.marginPct()).isEqualByComparingTo("20.56");
+        assertThat(r.accuracy()).isEqualTo(Accuracy.COMPLETE_INPUT);
+    }
+
+    @Test
+    void discountFixed_andTooLargeDiscount() {
+        ProfitResult r = CalculationEngine.profit(bd("100000"), bd("50000"), allZeroExcept(Expense.fixed(DISCOUNT, "15000")));
+        assertThat(r.effectivePrice()).isEqualByComparingTo("85000");
+        assertThat(r.profit()).isEqualByComparingTo("35000");
+        assertThatThrownBy(() -> CalculationEngine.profit(bd("100000"), bd("50000"), allZeroExcept(Expense.fixed(DISCOUNT, "100000"))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("DISCOUNT_TOO_LARGE");
+    }
+
+    /** Qaytarish xarajati — oddiy xarajat (summa yoki samarali narxdan %). */
+    @Test
+    void returns_areAnExpense() {
+        ProfitResult r = CalculationEngine.profit(bd("100000"), bd("50000"), allZeroExcept(Expense.percent(RETURNS, "5")));
+        assertThat(r.knownExpensesTotal()).isEqualByComparingTo("55000");
+        assertThat(r.profit()).isEqualByComparingTo("45000");
+    }
+
+    /** Kiritilmagan chegirma/qaytarish — boshqa xarajatlar kabi «taxminiy». */
+    @Test
+    void notSetDiscountOrReturns_isPartial() {
+        Map<ExpenseCategory, Expense> m = allZeroExcept();
+        m.remove(DISCOUNT);
+        m.remove(RETURNS);
+        ProfitResult r = CalculationEngine.profit(bd("100000"), bd("50000"), m);
+        assertThat(r.accuracy()).isEqualTo(Accuracy.PARTIAL_ESTIMATE);
+        assertThat(r.missing()).containsExactly(RETURNS, DISCOUNT);
+        assertThat(r.effectivePrice()).isEqualByComparingTo("100000");
+    }
+
+    /** Teskari narx chegirma bilan: tavsiya narxida chegirmadan keyin ham maqsadli marja saqlanadi. */
+    @Test
+    void price_withDiscount_targetMarginHoldsAfterDiscount() {
+        var exp = allZeroExcept(Expense.percent(COMMISSION, "10"), Expense.fixed(LOGISTICS, "5000"), Expense.percent(DISCOUNT, "20"));
+        PriceResult p = CalculationEngine.price(PriceGoal.TARGET_MARGIN, bd("100000"), exp, null, bd("20"), bd("1000"));
+        assertThat(p.status()).isEqualTo(PriceStatus.OK);
+        // samarali = 105000 / (1 − 0.1 − 0.2) = 150000; sotish narxi = 150000 / 0.8 = 187500 → 188000
+        assertThat(p.rawPrice()).isEqualByComparingTo("187500.00");
+        assertThat(p.recommendedPrice()).isEqualByComparingTo("188000");
+        assertThat(p.verification().marginPct()).isGreaterThanOrEqualTo(bd("20"));
+        PriceResult below = CalculationEngine.price(PriceGoal.TARGET_MARGIN, bd("100000"), exp, null, bd("20"), bd("1000"));
+        assertThat(CalculationEngine.profit(below.recommendedPrice().subtract(bd("1000")), bd("100000"), exp).marginPct())
+                .isLessThan(bd("20"));
+    }
+
+    @Test
+    void price_breakEven_withFixedDiscount_and100PercentDiscountHasNoSolution() {
+        var exp = allZeroExcept(Expense.fixed(DISCOUNT, "10000"));
+        PriceResult p = CalculationEngine.price(PriceGoal.BREAK_EVEN, bd("50000"), exp, null, null, bd("1"));
+        assertThat(p.recommendedPrice()).isEqualByComparingTo("60000");
+        assertThat(p.verification().profit()).isEqualByComparingTo("0");
+        PriceResult none = CalculationEngine.price(PriceGoal.BREAK_EVEN, bd("50000"), allZeroExcept(Expense.percent(DISCOUNT, "100")),
+                null, null, bd("1"));
+        assertThat(none.status()).isEqualTo(PriceStatus.NO_SOLUTION);
+    }
+
+    @Test
+    void version_is110() {
+        assertThat(CalculationEngine.VERSION).isEqualTo("1.1.0");
     }
 }

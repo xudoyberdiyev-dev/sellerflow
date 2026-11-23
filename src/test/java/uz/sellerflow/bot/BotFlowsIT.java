@@ -66,7 +66,30 @@ class BotFlowsIT extends IntegrationTest {
         click(u, "Soliq"); click(u, "Summa"); text(u, "4000");
         click(u, "Xizmat"); click(u, "Yo‘q (0)");
         click(u, "Boshqa"); click(u, "Summa"); text(u, "1000");
+        click(u, "Qaytarish"); click(u, "Yo‘q (0)");
+        click(u, "Chegirma"); click(u, "Yo‘q (0)");
         click(u, "Davom etish");
+    }
+
+    /** Engine 1.1.0: chegirma 10% — samarali narx 180 000, komissiya undan; chegirma narxdan katta bo'lsa xabar. */
+    @Test
+    void profit_withDiscount_showsEffectivePrice() {
+        long u = onboardedUser();
+        text(u, Texts.BTN_PROFIT);
+        text(u, "120000");
+        text(u, "200000");
+        click(u, "Foiz"); text(u, "10");
+        click(u, "Summa"); text(u, "5000");
+        click(u, "Chegirma"); click(u, "Foiz"); text(u, "10");
+        click(u, Texts.BTN_EXTRAS_ZERO);
+        click(u, "Hisoblash");
+        String r = lastText(u);
+        assertThat(r).contains("Chegirma (10%): 20 000").contains("Samarali narx (tushum): <b>180 000")
+                .contains("Komissiya (10%): 18 000").contains("37 000").contains("Barcha xarajatlar kiritilgan");
+        callback(u, tg.findButton(u, "Saqlash").orElseThrow().callbackData());
+        assertThat(count("select count(*) from calculation_history where output_snapshot->>'effectivePrice' = '180000.00'"))
+                .isEqualTo(1);
+        assertThat(count("select count(*) from calculation_history where calculation_version = '1.1.0'")).isEqualTo(1);
     }
 
     @Test

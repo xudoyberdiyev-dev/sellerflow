@@ -86,3 +86,13 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 | RESTORE-SWAP (N-5) | Tiklash vaqtinchalik bazaga, so'ng bazalar almashtiriladi; eski baza `sellerflow_prev` (`--rollback`). |
 | AUTH-STEPUP | Admin yaratish, boshqa adminning 2FA'sini reset qilish va to'liq o'chirish joriy parol bilan tasdiqlanadi. Bloklangan akkaunt login javobi `INVALID_CREDENTIALS` (email mavjudligi oshkor qilinmaydi). |
 | POLL-QUEUES (N-12) | Poller har worker'ga doimiy navbat bilan ishlaydi; offset faqat eng kichik tugamagan update'gacha suriladi (at-least-once saqlanadi). Vaqtinchalik xato 15 daqiqa qayta urinish, so'ng dead-letter (log). Bir vaqtda faqat bitta nusxa polling qiladi (PostgreSQL advisory lock). |
+
+## 2026-11-23 — V1+ (Qo'shimcha modullar TZ) qarorlari
+
+| ID | Qaror |
+|---|---|
+| ENG-1.1.0 | Hisob engine versiyasi **1.1.0**. Saqlangan eski natijalar o'zgarmaydi (snapshot + `calculation_version`). |
+| EXP-RETURNS | Yangi xarajat toifasi «Qaytarish xarajati» (`R`): 1 dona uchun summa yoki narxdan %. Oddiy xarajat kabi jamiga qo'shiladi. |
+| EXP-DISCOUNT | «Chegirma» (`D`) xarajat emas — **tushumni kamaytiradi**. Samarali narx E = P − chegirma. Chegirma foizi sotish narxi P dan. Boshqa foizli xarajatlar (komissiya, soliq va h.k.) va marja **E dan** hisoblanadi. Chegirma ≥ P bo'lsa natija yo'q (bot xabar beradi). |
+| PRICE-DISCOUNT | Teskari narx: formula avval samarali narxni topadi, so'ng P = (E + chegirma summasi) / (1 − chegirma ulushi); keyin yaxlitlash va tekshiruv. Chegirma ulushi ≥ 100% → `NO_SOLUTION`. |
+| NOTSET-RD | Kiritilmagan qaytarish/chegirma boshqa toifalar kabi «taxminiy» natija beradi; «Qolganlari yo'q (0)» ularni ham 0 qiladi. 1.1.0 dan oldingi tarix yozuvidan tiklashda R va D = 0. |

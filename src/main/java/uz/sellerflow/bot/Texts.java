@@ -136,7 +136,8 @@ public final class Texts {
     public static final String EXTRAS =
             "➕ <b>Qo‘shimcha xarajatlar</b> (ixtiyoriy)\n\n%s\n\n"
                     + "Kiritmagan xarajatlaringiz 0 deb olinmaydi — natija «taxminiy» bo‘ladi. "
-                    + "Agar ular haqiqatan yo‘q bo‘lsa, «Qolganlari yo‘q (0)» ni bosing.";
+                    + "Agar ular haqiqatan yo‘q bo‘lsa, «Qolganlari yo‘q (0)» ni bosing.\n"
+                    + "🏷 <i>Chegirma xarajat emas: u sotish narxini kamaytiradi, foiz xarajatlar va marja chegirmadan keyingi narxdan hisoblanadi.</i>";
     public static final String BTN_EXTRAS_ZERO = "0️⃣ Qolganlari yo‘q (0)";
     public static final String BTN_NEXT = "➡️ Davom etish";
     public static final String ASK_EXTRA = "<b>%s</b> xarajati qanday?";
@@ -275,6 +276,8 @@ public final class Texts {
     public static final String DELETE_STEP2 = "❗ <b>Yakuniy tasdiq.</b> Akkauntni o‘chirish so‘rovini yuboraymi?";
     public static final String BTN_DELETE_CONTINUE = "Davom etish";
     public static final String BTN_DELETE_FINAL = "Ha, so‘rov yuborilsin";
+    public static final String ERR_DISCOUNT_TOO_LARGE =
+            "⚠️ Chegirma sotish narxidan katta yoki unga teng — natijani hisoblab bo‘lmaydi. Chegirma yoki narxni o‘zgartiring.";
     public static final String ERR_NAME_IS_COMMAND = "Nom «/» bilan boshlanmasin — buyruqlar nom sifatida saqlanmaydi. Boshqa nom yozing.";
     public static final String DELETION_CANCELLED_BY_ADMIN =
             "ℹ️ Akkauntingizni o‘chirish so‘rovi administrator tomonidan bekor qilindi.\nSabab: %s\n\n"

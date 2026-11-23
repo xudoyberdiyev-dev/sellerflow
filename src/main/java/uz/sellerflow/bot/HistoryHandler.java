@@ -274,6 +274,10 @@ public class HistoryHandler {
         sb.append("\n\n");
         if (e.getType() == Type.PROFIT) {
             sb.append("🏷 Sotish narxi: <b>").append(fmt(out, "salePrice")).append(" so‘m</b>\n");
+            if (out.hasNonNull("discount")) {
+                sb.append("− Chegirma: ").append(fmt(out, "discount")).append("\n= Samarali narx (tushum): <b>")
+                        .append(fmt(out, "effectivePrice")).append(" so‘m</b>\n");
+            }
             sb.append("− Tannarx: ").append(fmt(out, "unitCost")).append("\n");
             appendExpenses(sb, ex);
             sb.append("= Jami ma’lum xarajat: <b>").append(fmt(out, "knownExpensesTotal")).append("</b>\n\n");
@@ -289,6 +293,10 @@ public class HistoryHandler {
             sb.append("\n📐 Matematik chegara: ").append(fmt(out, "rawPrice")).append(" so‘m\n");
             sb.append("✅ Tavsiya narxi: <b>").append(fmt(out, "recommendedPrice")).append(" so‘m</b> (")
                     .append(fmt(out, "roundingStep")).append(" so‘m qadam)\n");
+            if (out.hasNonNull("discountAtPrice")) {
+                sb.append("Chegirma: ").append(fmt(out, "discountAtPrice")).append(" · samarali narx: ")
+                        .append(fmt(out, "effectivePrice")).append(" so‘m\n");
+            }
             sb.append("Shu narxda foyda: <b>").append(fmt(out, "profitAtPrice")).append(" so‘m</b> · Marja: <b>")
                     .append(Money.formatPercent(new BigDecimal(out.path("marginAtPrice").asText("0")))).append("%</b>\n");
         }
@@ -302,6 +310,7 @@ public class HistoryHandler {
     private static void appendExpenses(StringBuilder sb, JsonNode ex) {
         for (ExpenseCategory c : ExpenseCategory.values()) {
             JsonNode x = ex.path(c.code());
+            if (x.isMissingNode()) continue; // 1.1.0 dan oldingi yozuvlarda R/D bo'lmagan
             String status = x.path("status").asText("NOT_SET");
             sb.append("− ").append(CalcModel.label(c));
             if ("PERCENT_OF_SALE_PRICE".equals(x.path("type").asText())) {
