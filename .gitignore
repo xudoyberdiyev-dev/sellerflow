@@ -9,3 +9,6 @@ admin-ui/node_modules/
 admin-ui/dist/
 src/main/resources/static/admin/
 backups/
+
+# Docker secrets fayllari (docker-compose.secrets.yml) — hech qachon commit qilinmasin
+secrets/

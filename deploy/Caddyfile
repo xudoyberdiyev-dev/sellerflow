@@ -1,0 +1,21 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$ADMIN_DOMAIN} {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+	# Faqat admin panel va uning API'si; qolgani (actuator va h.k.) — 404
+	@admin path /admin /admin/*
+	handle @admin {
+		reverse_proxy app:8080
+	}
+	handle {
+		respond "Not found" 404
+	}
+}

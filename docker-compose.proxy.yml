@@ -1,0 +1,28 @@
+# Ixtiyoriy: admin panelga HTTPS orqali kirish (Caddy, Let's Encrypt sertifikati avtomatik).
+# Talab: domen (masalan admin.example.uz) server IP'siga A-yozuv bilan ulangan, 80 va 443 portlar ochiq.
+# .env: ADMIN_DOMAIN=admin.example.uz  ACME_EMAIL=siz@example.uz
+# Ishga tushirish: docker compose -f docker-compose.yml -f docker-compose.proxy.yml up -d
+# Proxy faqat /admin/ ni o'tkazadi; /actuator tashqariga YOPIQ. SSH tunnel usuli ham ishlashda davom etadi.
+services:
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    mem_limit: 128m
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?ADMIN_DOMAIN .env da berilishi shart}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL .env da berilishi shart}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

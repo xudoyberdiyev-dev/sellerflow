@@ -17,6 +17,45 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Web Superadmin API: auth + 2FA, rollar, sotuvchilar, rozilik asosidagi kirish, audit. */
 class AdminApiIT extends IntegrationTest {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    uz.sellerflow.admin.TotpSecretConverter totpConverter;
+
+    /** Production readiness: TOTP siri bazada shifrlangan; eski ochiq yozuv startda shifrlanadi. */
+    @org.junit.jupiter.api.Test
+    void totpSecret_isEncryptedAtRest_andLegacyPlaintextMigrated(@org.springframework.beans.factory.annotation.Autowired
+                                                               uz.sellerflow.admin.TotpSecretMigrator migrator) throws Exception {
+        login(OWNER, OWNER_PASS); // 2FA ulanganiga ishonch hosil qilamiz
+        String raw = jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, OWNER);
+        assertThat(raw).startsWith("enc:v1:");
+        String plain = totpConverter.convertToEntityAttribute(raw);
+        assertThat(plain).matches("[A-Z2-7]{16,}");
+        jdbc.update("update admins set totp_secret = ? where lower(email) = lower(?)", plain, OWNER);
+        migrator.migrate();
+        String again = jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, OWNER);
+        assertThat(again).startsWith("enc:v1:").isNotEqualTo(raw);
+        assertThat(totpConverter.convertToEntityAttribute(again)).isEqualTo(plain);
+        assertThat(again).doesNotContain(plain);
+    }
+
+    /** Kalit almashsa: login 500 emas, xavfsiz rad etiladi; 2FA qayta sozlashga o'tmaydi; shifrmatn saqlanadi. */
+    @org.junit.jupiter.api.Test
+    void wrongSecretsKey_loginSafelyRejected_ciphertextPreserved() throws Exception {
+        login(OWNER, OWNER_PASS);
+        String good = jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, OWNER);
+        var other = new uz.sellerflow.common.SecretBox(java.util.Base64.getEncoder().encodeToString(new byte[]{
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}));
+        String foreign = "enc:v1:" + java.util.Base64.getEncoder().encodeToString(other.encrypt("JBSWY3DPEHPK3PXP", "admin-totp"));
+        jdbc.update("update admins set totp_secret = ?, totp_last_step = null where lower(email) = lower(?)", foreign, OWNER);
+        ResponseEntity<String> r = call(HttpMethod.POST, "/auth/login", null,
+                "{\"email\":\"" + OWNER + "\",\"password\":\"" + OWNER_PASS + "\",\"code\":\"" + Totp.code("JBSWY3DPEHPK3PXP", Instant.now().getEpochSecond() / 30) + "\"}");
+        assertThat(r.getStatusCode().value()).isNotEqualTo(500);
+        assertThat(r.getBody()).doesNotContain("\"status\":\"OK\"").doesNotContain("TOTP_SETUP_REQUIRED");
+        assertThat(jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, OWNER))
+                .as("shifrmatn o'zgarmagan").isEqualTo(foreign);
+        jdbc.update("update admins set totp_secret = ?, failed_attempts = 0, locked_until = null where lower(email) = lower(?)", good, OWNER);
+    }
+
+
     static final String OWNER = "owner@sellerflow.test";
     static final String OWNER_PASS = "correct-horse-battery-staple";
 
@@ -85,7 +124,7 @@ class AdminApiIT extends IntegrationTest {
             return c.path("token").asText();
         }
         assertThat(r.path("status").asText()).isEqualTo("TOTP_REQUIRED");
-        String secret = jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, email);
+        String secret = totpConverter.convertToEntityAttribute(jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, email));
         JsonNode ok = json(call(HttpMethod.POST, "/auth/login", null,
                 "{\"email\":\"" + email + "\",\"password\":\"" + password + "\",\"code\":\"" + code(secret) + "\"}"));
         assertThat(ok.path("status").asText()).isEqualTo("OK");
@@ -149,7 +188,7 @@ class AdminApiIT extends IntegrationTest {
     void totpCode_cannotBeReplayed() throws Exception {
         owner(); // 2FA ulangan bo'lsin
         jdbc.update("update admins set totp_last_step = null, failed_attempts = 0, locked_until = null where lower(email) = lower(?)", OWNER);
-        String secret = jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, OWNER);
+        String secret = totpConverter.convertToEntityAttribute(jdbc.queryForObject("select totp_secret from admins where lower(email) = lower(?)", String.class, OWNER));
         long step = Instant.now().getEpochSecond() / 30;
         String body = "{\"email\":\"" + OWNER + "\",\"password\":\"" + OWNER_PASS + "\",\"code\":\"%s\"}";
 

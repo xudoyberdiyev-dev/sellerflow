@@ -74,6 +74,7 @@ public class AdminAuthService {
         @Column(nullable = false)
         private Status status = Status.ACTIVE;
         @Column(name = "totp_secret")
+        @jakarta.persistence.Convert(converter = TotpSecretConverter.class)
         private String totpSecret;
         /** M-1: oxirgi muvaffaqiyatli ishlatilgan TOTP qadami (shu yoki eskiroq qadam qayta qabul qilinmaydi). */
         @Column(name = "totp_last_step")

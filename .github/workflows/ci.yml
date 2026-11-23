@@ -66,9 +66,13 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
           PGDATABASE: sellerflow_test
+        # Production bilan bir xil image (postgres:16) ichida: klient/server versiyasi mos (runner'dagi pg_dump 17
+        # 16-serverga tiklab bo'lmaydigan dump yaratardi) va backup shifrlash uchun gpg aynan shu image'da borligi tekshiriladi.
         run: |
-          bash scripts/tests/backup-loop.test.sh
-          bash scripts/tests/restore.test.sh
+          docker run --rm --network host -v "$PWD:/w" -w /w \
+            -e PGHOST=127.0.0.1 -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE \
+            postgres:16 bash -c 'gpg --version | head -1 && bash scripts/tests/backup-loop.test.sh && bash scripts/tests/restore.test.sh'
+
       - name: Backend tests
         env:
           SELLERFLOW_TEST_DB_URL: jdbc:postgresql://localhost:5432/sellerflow_test
@@ -81,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: shellcheck
-        run: shellcheck -S warning scripts/*.sh scripts/tests/*.sh
+        run: shellcheck -S warning scripts/*.sh scripts/tests/*.sh deploy/*.sh
 
   docker:
     runs-on: ubuntu-latest
@@ -94,7 +98,12 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ci-placeholder
           DB_PASSWORD: ci-placeholder
-        run: docker compose --env-file /dev/null config -q
+        run: |
+          docker compose --env-file /dev/null config -q
+          ADMIN_DOMAIN=admin.example.test ACME_EMAIL=ops@example.test \
+            docker compose --env-file /dev/null -f docker-compose.yml -f docker-compose.proxy.yml config -q
+          mkdir -p secrets && touch secrets/TELEGRAM_BOT_TOKEN secrets/SELLERFLOW_SECRETS_KEY
+          docker compose --env-file /dev/null -f docker-compose.yml -f docker-compose.secrets.yml config -q
 
   # N-8: Java va npm bog'liqliklaridagi ma'lum zaifliklar (OSV bazasi) — topilsa build qizil
   vulnerability-scan:

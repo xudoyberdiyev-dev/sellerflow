@@ -39,7 +39,10 @@ services:
       DB_URL: jdbc:postgresql://db:5432/sellerflow
       DB_USER: ${DB_USER:-sellerflow}
       DB_PASSWORD: ${DB_PASSWORD}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN .env faylida berilishi shart}
+      # Token .env da yoki Docker secret faylida (docker-compose.secrets.yml) — bo'lmasa ilova ishga tushmaydi:
+      # logda "TELEGRAM_BOT_TOKEN .env faylida berilishi shart"
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_REQUIRED: "true"
       SELLERFLOW_SECRETS_KEY: ${SELLERFLOW_SECRETS_KEY:-}
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}

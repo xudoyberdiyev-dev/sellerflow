@@ -37,7 +37,7 @@ public final class Totp {
      * oxirgi ishlatilgan qadam bilan solishtiradi (M-1).
      */
     public static java.util.OptionalLong matchStep(String secret, String code, long epochSeconds) {
-        if (secret == null || code == null) return java.util.OptionalLong.empty();
+        if (secret == null || code == null || secret.startsWith("!")) return java.util.OptionalLong.empty();
         String c = code.replace(" ", "");
         if (!c.matches("\\d{6}")) return java.util.OptionalLong.empty();
         long step = epochSeconds / 30;

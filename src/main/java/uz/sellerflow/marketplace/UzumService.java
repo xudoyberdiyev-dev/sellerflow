@@ -77,6 +77,25 @@ public class UzumService {
 
     public boolean enabled() { return box.enabled(); }
 
+    private uz.sellerflow.telegram.TelegramGateway alerts;
+    private String alertChatId = "";
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setAlerts(uz.sellerflow.telegram.TelegramGateway g, @Value("${sellerflow.backup.alert-chat-id:}") String chat) {
+        this.alerts = g;
+        this.alertChatId = chat == null ? "" : chat.strip();
+    }
+
+    /** Operatorga (ALERT_TELEGRAM_CHAT_ID) qisqa xabar; sotuvchi ma'lumoti va kalit yozilmaydi. */
+    void alert(String text) {
+        if (alerts == null || alertChatId.isEmpty()) return;
+        try {
+            alerts.sendMessage(Long.parseLong(alertChatId), text, null);
+        } catch (RuntimeException e) {
+            log.warn("Uzum alert not delivered: {}", e.getClass().getSimpleName());
+        }
+    }
+
     private static String aad(long businessId) { return "business:" + businessId + ":" + MP; }
 
     /** Kalitni tekshiradi (do'konlar ro'yxati) va shifrlab saqlaydi. Kalit noto'g'ri bo'lsa — hech narsa saqlanmaydi. */
@@ -238,15 +257,33 @@ public class UzumService {
                 where c.marketplace = ? and c.status <> 'INVALID' and u.status = 'ACTIVE'
                   and (c.last_sync_at is null or c.last_sync_at < now() - interval '20 hours') order by c.business_id""",
                 Long.class, MP);
+        int ok = 0, failed = 0;
+        boolean waf = false;
+        java.util.Map<String, Integer> reasons = new java.util.TreeMap<>();
         for (long id : ids) {
             try {
                 sync(id);
+                ok++;
             } catch (UzumException e) {
+                failed++;
+                reasons.merge(e.failure().name(), 1, Integer::sum);
                 log.warn("Uzum nightly sync business={} failed: {}", id, e.failure());
-                if (e.failure() == Failure.WAF_BLOCKED) break; // server IP bloklangan — qolganlarini ham urinmaymiz
+                if (e.failure() == Failure.WAF_BLOCKED) { // server IP bloklangan — qolganlarini ham urinmaymiz
+                    waf = true;
+                    break;
+                }
             } catch (RuntimeException e) {
+                failed++;
+                reasons.merge("INTERNAL", 1, Integer::sum);
                 log.warn("Uzum nightly sync business={} failed: {}", id, e.getClass().getSimpleName());
             }
+        }
+        log.info("Uzum nightly sync: ok={} failed={} reasons={}", ok, failed, reasons);
+        // Faqat tizimli muammo: WAF yoki ko'pchilik xato (bitta sotuvchining noto'g'ri kaliti — alert emas)
+        if (waf || (failed > 0 && failed >= Math.max(1, (ok + failed) / 2) && !reasons.keySet().equals(java.util.Set.of("INVALID_TOKEN")))) {
+            alert("⚠️ <b>SellerFlow: Uzum sinxroni</b>\n\n" + (waf ? "Uzum WAF server IP'ni blokladi (403 HTML).\n" : "")
+                    + "Muvaffaqiyatli: " + ok + " · xato: " + failed + "\nSabablar: " + reasons
+                    + "\n\nTekshiring: <code>docker compose logs app | grep Uzum</code>");
         }
     }
 

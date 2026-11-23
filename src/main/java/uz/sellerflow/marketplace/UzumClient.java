@@ -175,14 +175,18 @@ public class UzumClient {
 
     /** Bitta kalit bo'yicha so'rovlar orasida kamida gapMs (sekundlik limitga urilmaslik uchun). */
     private void pace(String token) {
+        // Slot har kalit uchun alohida band qilinadi; kutish qulfdan TASHQARIDA (boshqa sotuvchilar bloklanmaydi)
         int k = token.hashCode();
-        synchronized (this) {
+        long wait;
+        synchronized (lastCall) {
             long now = System.currentTimeMillis();
             Long last = lastCall.get(k);
-            long wait = last == null ? 0 : last + gapMs - now;
-            if (wait > 0) sleeper.accept(wait);
-            lastCall.put(k, System.currentTimeMillis());
+            long slot = last == null ? now : Math.max(now, last + gapMs);
+            lastCall.put(k, slot);
+            wait = slot - now;
+            if (lastCall.size() > 10_000) lastCall.clear();
         }
+        if (wait > 0) sleeper.accept(wait);
     }
 
     private static void sleep(long ms) {
