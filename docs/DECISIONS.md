@@ -126,3 +126,14 @@ Manba: `SellerFlow_MASTER_TOLIQ_17_SAVOL_JAVOB_2026-11-05.md` (MASTER v1.1).
 | FIN-CASH | Pul oqimi: `PROCESSING` qatorlari — «yo'ldagi pul» (kutilayotgan to'lov, bekor bo'lishi mumkin). Bekor qilingan qatorlar soni ko'rsatiladi. |
 | FIN-PRODUCTS | Mahsulot kesimida hissa (to'lov − tannarx, Uzum xarajatlari va soliqdan oldin): eng foydali 5 ta va zarar keltirgan 5 ta. |
 | FIN-RETENTION | Sotuv va xarajat qatorlari — tijoriy ma'lumot: to'liq o'chirishda (purge) o'chiriladi; biznes o'chirilsa CASCADE. |
+
+## 2026-11-23 — Production readiness qarorlari
+
+| ID | Qaror |
+|---|---|
+| PR-TOTP | Admin TOTP sirlari AES-256-GCM bilan (`SELLERFLOW_SECRETS_KEY`, V14). Kalit o'qimasa — login rad etiladi, 2FA qayta sozlanmaydi, shifrmatn saqlanadi; tiklash — to'g'ri kalit yoki `ADMIN_RECOVERY_*`. |
+| PR-SECRETS | Sirlar `.env` yoki Docker secrets (`*_FILE`, `/run/secrets/<NOM>`) orqali; compose'da `TELEGRAM_REQUIRED=true` — token topilmasa ilova ishga tushmaydi. |
+| PR-CVE | Bog'liqliklar patch versiyalarga ko'tarildi. spring-webmvc 6.2.19 dagi CVE-2026-47884 / 47890 — ilovada XsltView, view rendering va SSE ishlatilmagani sababli muddatli istisno (2027-02-28); asosiy yechim — Spring Boot 4 (H-1). |
+| PR-PROXY | Admin uchun HTTPS — ixtiyoriy Caddy override; faqat `/admin/*` o'tkaziladi, `/actuator` tashqariga yopiq. Standart yo'l — SSH tunnel. |
+| PR-CI | Backup/restore skript testlari CI'da `postgres:16` ichida (production bilan bir xil image, gpg tekshiruvi). |
+| PR-SERVER | Beta uchun 4 GB RAM / 2 vCPU / 40 GB SSD tavsiya; 2 GB — faqat swap bilan. Hosting O'zbekistonda (Uzum WAF). |

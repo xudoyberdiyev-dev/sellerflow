@@ -1,0 +1,12 @@
+# Production readiness (2026-11-23): ataylab, muddatli istisnolar. Har biri docs/PRODUCTION_SECURITY.md §3 da asoslangan.
+# Muddat tugasa CI yana qizil bo'ladi — Spring Boot 4 (Spring Framework 7.0.9+) ga o'tish shu muddatgacha (PRODUCTION_READINESS_PLAN.md, H-1).
+
+[[IgnoredVulns]]
+id = "GHSA-pc63-qcmh-9cmg" # CVE-2026-47884 — XsltView SSRF/RCE
+ignoreUntil = 2027-02-28T00:00:00Z
+reason = "XsltView va view rendering (shablon dvigatellari) ilovada umuman ishlatilmaydi; 6.2.x uchun ochiq tuzatma yo'q (faqat 7.0.9). Spring Boot 4 ga o'tish — H-1."
+
+[[IgnoredVulns]]
+id = "GHSA-j9f9-w8pj-32f8" # CVE-2026-47890 — SSE + view fragments
+ignoreUntil = 2027-02-28T00:00:00Z
+reason = "Server-Sent Events va view fragmentlar ilovada ishlatilmaydi; Spring o'zi Low (2.6) deb baholagan. Spring Boot 4 ga o'tish — H-1."

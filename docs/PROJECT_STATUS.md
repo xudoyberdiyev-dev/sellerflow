@@ -1,179 +1,101 @@
 # SellerFlow — loyihaning to'liq holati
 
-**Sana:** 2026-11-23 · **Repo:** `xudoyberdiyev-dev/sellerflow`, `main` (`58d4eea`) · **Holat:** V3 Closed Beta (yopiq beta)
+**Sana:** 2026-11-23 (production readiness auditidan keyin) · **Repo:** `xudoyberdiyev-dev/sellerflow`, `main` · **Holat:** V3 — yopiq betaga tayyorlanmoqda
 
-> Qisqacha: V1, V1+, V2 va V3 kodda to'liq bajarilgan, 195 ta avtomatik test o'tadi.
-> Lekin hali **haqiqiy serverda, haqiqiy Telegram bot va haqiqiy Uzum kaliti bilan sinalmagan.**
-> V4, V5 va V6 boshlanmagan.
+> **Qisqacha:**
+> - V1, V1+, V2, V3 kodda tayyor: 203 avtomatik test o'tadi, CI'da `test` va `docker` job'lari yashil.
+> - Production readiness auditi o'tkazildi: kritik kamchiliklar tuzatildi (TOTP shifrlash, 23 zaiflik, CI, HTTPS, sirlar).
+> - **Lekin V3 hali production-ready EMAS.** Real server, real Telegram bot va real Uzum kaliti bilan tekshiruv qilinmagan (NOT VERIFIED).
+> - Batafsil: `docs/PRODUCTION_READINESS_AUDIT.md`.
 
 ---
 
 ## 1. Loyiha nima haqida
-
-SellerFlow — marketplace sotuvchilari (birinchi navbatda Uzum Market) uchun Telegram bot va web admin panel.
-Maqsad: sotuvchi har bir mahsulotdan va har bir davrdan **haqiqatda qancha foyda qolishini** ko'rsin. Komissiya,
-logistika, qaytarish, reklama, chegirma, saqlash va jarimalardan keyin qancha qolishi, narxni qanday qo'yish
-kerakligi va qaysi mahsulot zarar keltirayotgani ko'rinadi.
-
-**Foydalanuvchilar:**
-- **Sotuvchi** — Telegram bot orqali ishlaydi.
-- **Superadmin / Support** — web panel (`/admin/`) orqali ishlaydi.
-
----
+SellerFlow — marketplace sotuvchilari (birinchi navbatda Uzum Market) uchun Telegram bot va web admin panel. Sotuvchi har bir mahsulotdan va har bir davrdan haqiqatda qancha foyda qolishini ko'radi: komissiya, logistika, qaytarish, reklama, chegirma, saqlash va jarimalardan keyin. Shuningdek narxni qanday qo'yishni va qaysi mahsulot zarar keltirayotganini biladi.
 
 ## 2. Texnologiyalar
-
 | Qism | Texnologiya |
 |---|---|
-| Backend + bot | Java 21, Spring Boot 3.5, PostgreSQL 16, Flyway (V1–V13 migratsiyalar), Maven |
-| Telegram | Long polling, har foydalanuvchi uchun navbat, dead-letter, advisory lock (bitta nusxa) |
-| Admin panel | React + TypeScript + Vite, o'z dizayn tizimi (`admin-ui/`), Spring orqali `/admin/` da |
-| Ishga tushirish | Docker Compose (app + db + backup), `.env` |
-| CI | GitHub Actions: UI build, PostgreSQL 16 bilan testlar, osv-scanner, Dependabot |
-| Hajm | Java ~12 400 qator, testlar — 28 fayl (195 test), admin UI ~4 100 qator |
-
-**Sozlamalar fayli:** faqat `src/main/resources/application.properties`. `application.yml` loyiha egasi qarori bilan olib tashlangan.
-
----
+| Backend + bot | Java 21, Spring Boot 3.5.16, PostgreSQL 16, Flyway (V1–V14), Maven |
+| Admin panel | React + TypeScript + Vite (`admin-ui/`), `/admin/` |
+| Ishga tushirish | Docker Compose (app, db, backup) + ixtiyoriy: `docker-compose.proxy.yml` (HTTPS), `docker-compose.secrets.yml` |
+| CI | GitHub Actions: testlar, backup/restore (`postgres:16` ichida), image build, gitleaks, shellcheck, osv-scanner |
+| Sozlamalar | faqat `src/main/resources/application.properties` |
 
 ## 3. Versiyalar holati
-
-| Versiya | Holat | Commit |
+| Versiya | Kod | Real muhitda |
 |---|---|---|
-| V1 — asosiy bot va admin panel | ✅ Kod tayyor | 1–8-bosqich auditlari |
-| V1+ — qo'shimcha modullar TZ | ✅ Kod tayyor | `9aff7e9`, `39300f3` |
-| V2 — Uzum integratsiyasi va import | ✅ Kod tayyor | `ce0615e` |
-| V3 — Uzum moliya va davr hisoboti | ✅ Kod tayyor | `b1313d6` |
-| V4 | ❌ Boshlanmagan | — |
-| V5 | ❌ Boshlanmagan | — |
-| V6 | ❌ Aniqlanmagan | — |
+| V1 — bot va admin panel | ✅ | ❌ NOT VERIFIED |
+| V1+ — qo'shimcha modullar | ✅ | ❌ NOT VERIFIED |
+| V2 — Uzum integratsiyasi va import | ✅ | ❌ NOT VERIFIED (real kalit yo'q) |
+| V3 — Uzum moliya, davr hisoboti | ✅ | ❌ NOT VERIFIED (real kalit yo'q) |
+| Production readiness (2026-11-23) | ✅ audit + tuzatishlar | — |
+| V4 / V5 / V6 | ❌ boshlanmagan | — |
 
-"Kod tayyor" degani: yozilgan, testlangan va `main` da turibdi. "Ishlatishga tayyor" degani esa server sinovidan keyin aniq bo'ladi.
+## 4. Bajarilgan ishlar (qisqa)
+- **V1:**
+  - foyda va narx hisobi (engine 1.1.0, `BigDecimal`), mahsulotlar, tarix, sozlamalar, akkauntni o'chirish;
+  - admin panel: 2FA, rollar, step-up, rozilik asosida kirish, audit;
+  - backup/restore, monitoring.
+- **V1+:** chegirma, qaytarish, kanal stavkalari, narx variantlari, minimal marja, CSV eksport.
+- **V2:** Uzum ulanishi (shifrlangan kalit), mahsulot sinxroni, Excel/CSV import, tannarxni tez kiritish, foyda yo'qotishlari, «Agar…» simulyatori.
+- **V3:** Uzum sotuvlari va xarajatlari, davr hisoboti (sof foyda), yo'ldagi pul, eng foydali va zararli mahsulotlar.
+- **Production readiness (2026-11-23):**
+  - CI tuzatildi;
+  - 23 ta ma'lum zaiflik yopildi (jackson, tomcat, postgresql, log4j-api, commons-io/lang3, minimatch);
+  - admin TOTP sirlari shifrlandi (V14), kalit almashsa xavfsiz rad;
+  - sirlarni fayldan o'qish (Docker secrets);
+  - HTTPS proxy (Caddy), server tayyorlash skripti (ufw, swap, fail2ban);
+  - Uzum alert va tanaffus tuzatmasi;
+  - tenant izolyatsiyasi va moliya chekka holat testlari;
+  - toza bazada migratsiya, ilova va real HTTP 2FA sinovi;
+  - shifrlangan backup → restore drill.
 
----
+## 5. Hali qilinmagan yoki tekshirilmagan
 
-## 4. Bajarilgan ishlar (batafsil)
+### 5.1 Real muhit (NOT VERIFIED)
+- Telegram bot real tokeni bilan.
+- Uzum API real kaliti bilan: maydonlar semantikasi, WAF, hisobot summalarini kabinet bilan solishtirish.
+- Serverda backup, restore va alert.
+- Admin UI mobil va desktop'da qo'lda ko'rib chiqish.
 
-### V1 — asosiy bot
-- Ro'yxatdan o'tish: biznes nomi, ism, asosiy kanal, xizmat shartlariga rozilik (versiyalangan, shartlar o'zgarsa qayta rozilik).
-- **💰 Foyda hisobi** (1 dona): tannarx, narx, komissiya, logistika, qadoqlash, reklama, soliq, xizmat haqi, boshqa xarajat.
-  Har bir xarajat "summa / foiz / yo'q / bilmayman" bo'lishi mumkin. Natija "to'liq" yoki "taxminiy" deb belgilanadi.
-- **🎯 Narx hisobi**: maqsadli foyda, maqsadli marja yoki zararsizlik narxi; yaxlitlash qadami 1 / 100 / 1 000 so'm; narx engine orqali qayta tekshiriladi.
-- **📦 Mahsulotlarim**: qo'shish, tahrirlash, arxiv, qidiruv, SKU (biznes ichida noyob).
-- **🗂 Tarix**: saqlangan hisoblar (snapshot va formula versiyasi bilan), qayta ochish, arxiv.
-- **⚙️ Sozlamalar**: biznes nomi, ism, asosiy kanal, akkauntni o'chirish (ikki bosqichli, 30 kunlik kutish davri).
-- Eski tugmalardan himoya (revision), qoralama 24 soat saqlanadi, rate limit, guruh chatda ishlamaydi.
-
-### V1 — admin panel
-- Kirish: email + parol + majburiy TOTP 2FA. Muhim amallarda joriy parol qayta so'raladi (step-up).
-- Rollar: SUPERADMIN va SUPPORT.
-- Bo'limlar: dashboard, sotuvchilar (bloklash, tiklash, to'liq o'chirish), sotuvchi ma'lumotiga **faqat sotuvchi roziligi bilan** vaqtinchalik kirish, audit jurnali, adminlar, support kontakti, tizim holati.
-- Sotuvchilar ro'yxatini CSV qilib yuklab olish (faqat SUPERADMIN).
-
-### V1 — xavfsizlik va ekspluatatsiya (8 bosqichli auditdan keyin)
-- Tenant izolyatsiyasi (`business_id`), pul uchun faqat `BigDecimal`, optimistic lock.
-- Kunlik shifrlangan backup, `restore.sh` (vaqtinchalik bazaga tiklab, keyin almashtiradi; `--rollback` bilan), `restore-drill.sh`.
-- Backup monitoringi va Telegram'ga alert, health va Prometheus metrikalari, request firewall (64 KiB), login rate limit.
-- Ma'lumotni saqlash muddatlari: o'chirish job'i, to'liq o'chirish (purge), ro'yxatdan o'tmaganlar 30 kunda tozalanadi.
-
-### V1+ (engine 1.1.0)
-- **Qaytarish xarajati** va **chegirma**. Chegirma tushumni kamaytiradi: foiz xarajatlar va marja chegirmadan keyingi narxdan hisoblanadi.
-- **📌 Kanal stavkalari**: natijadan saqlanadi, keyingi hisobda avtomatik qo'llanadi.
-- **📊 Narx variantlari**: zararsizlik va 10/20/30/40% marja uchun narxlar.
-- **📉 Minimal marja** va undan past natijada ogohlantirish.
-- **📤 CSV eksport**: mahsulotlar va hisoblar (10 daqiqada bir marta).
-
-### V2
-- **🟣 Uzum ulanishi** (Seller OpenAPI, faqat o'qish). Kalit xabari darhol o'chiriladi, kalit AES-256-GCM bilan shifrlanadi (`SELLERFLOW_SECRETS_KEY`). Uzish va yangi kalit kiritish mumkin.
-- **Mahsulot sinxroni**: har bir SKU — nom, artikul, shtrix-kod, narx, komissiya, qoldiq, sotilgan va qaytgan soni. Har kecha avtomatik, qo'lda 10 daqiqada bir marta.
-- **📄 Excel/CSV import** (ustunlar o'zbek/rus/ingliz sarlavhalaridan avtomatik aniqlanadi).
-- **🟡 Tannarxni tez kiritish** — tannarxi yo'q mahsulotlar ketma-ket chiqadi.
-- Uzum mahsulotidan hisob boshlansa, komissiya avtomatik qo'yiladi.
-- **🩸 Foyda yo'qotishlari** — zarar va past marjali mahsulotlar.
-- **🔮 Agar… simulyatori** — narx, tannarx, komissiya, chegirma yoki reklama o'zgarsa foyda qanday bo'lishi.
-
-### V3
-- **Uzum moliya sinxroni**: sotuv qatorlari va Uzum xarajatlari (avval 90 kun, keyin oxirgi 35 kun). Xarajatlar kod bo'yicha tasniflanadi.
-- **📈 Davr hisoboti** (7 yoki 30 kun, joriy yoki o'tgan oy). Undagi qatorlar:
-  - tushum;
-  - komissiya va logistika;
-  - Uzum to'lovi;
-  - tannarx;
-  - saqlash, jarima va reklama;
-  - soliq;
-  - **sof foyda va marja**.
-- **💸 Yo'ldagi pul** (kutilayotgan to'lov), bekor qilinganlar soni.
-- Eng foydali va zarar keltirgan mahsulotlar.
-
----
-
-## 5. Hali qilinmagan yoki qisman qilingan ishlar
-
-### 5.1. Keyingi versiyalar (TZ bo'yicha)
-
-| Modul | TZ'dagi versiya | Holat |
+### 5.2 Ochiq kamchiliklar (`docs/PRODUCTION_READINESS_PLAN.md`)
+| ID | Daraja | Ish |
 |---|---|---|
-| Wildberries / Ozon ulanishi | V3+ | ❌ (faqat Uzum qilingan) |
-| 3.6 Raqobatchi narxlari | V4 | ❌ (rasmiy manba kerak) |
-| 3.10 Health Score | V4 | ❌ |
-| 3.11 Growth Simulator | V4 | ❌ |
-| 3.12 AI maslahatchi | V4 | ❌ (AI xizmati hisobi kerak) |
-| 3.4 Dead Stock (sotilmay turgan tovar) | V5 | ❌ |
-| 3.7 Yetkazib beruvchilar | V5 | ❌ |
-| 3.9 Xarid rejasi | V5 | ❌ |
-| 3.5 Pul oqimi (to'liq) | V2 | 🟡 Faqat yo'ldagi pul va kutilayotgan to'lov; bashorat yo'q |
-| Pullik tariflar va to'lov (Click/Payme) | V1 (TZ) | ❌ Avvalgi qaror: yopiq beta, faqat Free |
-| Sotuvchi uchun web kabinet | — | ❌ Sotuvchi faqat botda ishlaydi |
+| C-1…C-5 | CRITICAL | parollarni almashtirish, server deploy, real Telegram va Uzum sinovi, serverda restore va alert |
+| H-1 | HIGH | Spring Boot 4 ga o'tish — spring-webmvc'dagi 2 ta CVE (bizga tegishli emas, istisno 2027-02-28 gacha) |
+| H-2 | HIGH | real Uzum javoblari asosida moliya maydonlarini aniqlashtirish |
+| H-3 | HIGH | backup'ni server tashqarisiga (rclone) |
+| H-4 | HIGH | yuridik hujjatlar (yurist) |
+| H-5 | HIGH | server: 4 GB RAM / 2 vCPU tavsiya |
+| M-1…M-6, L-1…L-4 | MEDIUM / LOW | rejada |
 
-### 5.2. Texnik qarzlar (keyinga qoldirilgan)
-
-| Masala | Izoh |
+### 5.3 Keyingi versiyalar (TZ)
+| Modul | Versiya |
 |---|---|
-| TOTP 2FA sirlari bazada ochiq | Backup shifrlangan; DB darajasida shifrlash uchun kalit boshqaruvi qarori kerak |
-| Versiyalangan Docker image va registry yo'q | Rollback hozircha qo'lda (`git checkout` + `restore.sh --rollback`) |
-| Base image'lar digest bilan pinlanmagan | Dependabot haftalik yangilaydi |
-| Sirlar `docker inspect` da ko'rinadi | Docker secrets'ga o'tish kerak |
-| Native UPDATE'lar `version` ni oshirmaydi | Hozircha xavf past |
-| Spring Boot 4.x ga o'tish | 2–5 kunlik alohida ish |
-| Admin UI mayda kamchiliklari | OtpInput siljishi, fokus, sessiya tugash ogohlantirishi — funksional xavf yo'q |
-| Uzum API maydonlari | Rasmiy swagger va ochiq qo'llanma asosida; haqiqiy kalit bilan solishtirish kerak |
+| Wildberries / Ozon, raqobatchi narxlari, Health Score, Growth Simulator, AI maslahatchi | V4 |
+| Dead stock, yetkazib beruvchilar, xarid rejasi | V5 |
+| To'liq pul oqimi bashorati | qisman (yo'ldagi pul bor) |
+| Pullik tariflar va to'lov (Click/Payme) | ❌ (yopiq beta — bepul) |
 
----
+## 6. Loyiha egasidan kerak
+1. **Server** (VPS, tavsiya 4 GB RAM, O'zbekistondagi hosting) va SSH kirish — `PRODUCTION_DEPLOYMENT.md`.
+2. **Production bot tokeni** (yangi, @BotFather) — faqat serverdagi `.env` ga yoziladi, chatga emas.
+3. **O'z Uzum do'koningiz API kaliti** — faqat botga yuboriladi (sinov uchun).
+4. **Alert chat ID** va parol menejeri: `SELLERFLOW_SECRETS_KEY`, `BACKUP_ENCRYPTION_PASSPHRASE` uchun.
+5. **Eski parollarni almashtirish** — `PRODUCTION_SECURITY.md` §4.
+6. **Bulut hisobi** — backup'ni server tashqarisida saqlash uchun (B2/S3/Drive).
+7. **Ixtiyoriy domen** — admin panel uchun HTTPS.
+8. **Yurist** — `BETA_TEST_PLAN.md` §11 dagi talablar ro'yxati.
+9. **3–5 beta sotuvchi** — `BETA_TEST_PLAN.md` §3.
 
-## 6. Loyiha egasi bajaradigan ishlar
-
-1. **Server**: VPS (kamida 2 GB RAM). Uzum WAF xorijiy IP'ni bloklashi mumkin, kerak bo'lsa O'zbekistondagi hosting.
-2. **`.env` ni to'ldirish**: `TELEGRAM_BOT_TOKEN`, `DB_PASSWORD` (yangi), `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` (yangi, 12+ belgi), `BACKUP_ENCRYPTION_PASSPHRASE`, `ALERT_TELEGRAM_CHAT_ID`, `SELLERFLOW_SECRETS_KEY` (`openssl rand -base64 32`, parol menejerida ham saqlang).
-3. **Eski parollarni almashtirish** (ular ochiq repo tarixida ko'ringan). Repo'ni private qilishni o'ylab ko'ring.
-4. **Backup nusxasini** server tashqarisiga muntazam ko'chirib turish.
-5. **Jonli sinov**: botda barcha bo'limlar; Uzum kaliti bilan mahsulotlar, sotuvlar va davr hisobotini Uzum kabinetidagi hisobot bilan solishtirish.
-6. **Yurist**: xizmat shartlari (`terms_uz.txt` — qoralama), maxfiylik siyosati, Uzum kaliti va moliya ma'lumotlarini qayta ishlash bandi, saqlash muddatlari, `DELETION_PURGE_DATA` qarori.
-7. **Sinov sotuvchilari**: 3–5 ta sotuvchi.
-8. **Keyinroq**: to'lov uchun Click/Payme shartnomasi va yuridik shaxs; AI xizmati hisobi; Wildberries/Ozon kalitlari.
-9. **Javob kerak bo'lgan savollar**: pullik tarif limitlari nimani sanaydi; Spring Boot 4.x ga o'tish vaqti.
-
----
-
-## 7. Serverga qo'yish (qisqa)
-
-```bash
-git clone https://github.com/xudoyberdiyev-dev/sellerflow.git && cd sellerflow
-cp .env.example .env && nano .env      # 6-bo'limdagi qiymatlar
-docker compose up -d --build           # birinchi marta 5–10 daqiqa
-docker compose logs --tail 100 app     # "Telegram long polling started", "Started SellerFlowApplication"
-```
-- Bot: Telegram'da `/start`.
-- Admin panel: `ssh -L 8080:localhost:8080 user@server` → http://localhost:8080/admin/ (birinchi kirishda 2FA QR).
-- Bitta token bilan faqat bitta nusxa ishlashi kerak (aks holda logda `HTTP 409`).
-
----
-
-## 8. Hujjatlar
-
+## 7. Hujjatlar
 | Fayl | Mazmuni |
 |---|---|
-| `README.md` | Umumiy tavsif, ishga tushirish |
-| `docs/DECISIONS.md` | Barcha qarorlar (V1 … V3) |
-| `docs/OPERATIONS.md` | Ekspluatatsiya: backup, restore, monitoring, Uzum (§6a) |
-| `docs/AUDIT_FIX_REPORT.md`, `docs/AUDIT_PROGRESS.md` | Auditlar va ularning tuzatilishi |
-| `docs/PROJECT_STATUS.md` | Shu hujjat |
+| `docs/PRODUCTION_READINESS_AUDIT.md` | To'liq audit: PASS / PARTIAL / FAIL / NOT VERIFIED |
+| `docs/PRODUCTION_READINESS_PLAN.md` | Kamchiliklar, ustuvorlik, reja, server talabi |
+| `docs/PRODUCTION_DEPLOYMENT.md` | Serverga joylash, backup, restore, monitoring, yangilash, rollback |
+| `docs/PRODUCTION_SECURITY.md` | Xavfsizlik choralari, texnik qarzlar, CVE istisnolari, parol rotatsiyasi, incident response |
+| `docs/BETA_TEST_PLAN.md` | 3–5 sotuvchi bilan beta, solishtirish, mezonlar, yuridik talablar |
+| `docs/DECISIONS.md`, `docs/OPERATIONS.md` | Qarorlar va ekspluatatsiya |
+| `README.md` | Umumiy tavsif |
