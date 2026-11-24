@@ -14,6 +14,23 @@
 - **Ixtiyoriy:** admin panel uchun domen (masalan, `admin.example.uz`).
 - Telegram: @BotFather'dan **production** bot tokeni va alert'lar uchun chat ID (o'zingiz yoki operatorlar guruhi).
 
+## 1a. Tezkor yo'l: Google Cloud + bootstrap (sirlar serverning o'zida yaratiladi)
+1. Google Cloud'da loyiha va billing (yangi akkauntga 300 dollar kredit). VM: **e2-medium** (2 vCPU, 4 GB), Ubuntu 24.04, disk 40 GB.
+   Kiruvchi firewall: faqat SSH (standart).
+2. VM metadata'siga:
+   - `startup-script` = `deploy/bootstrap.sh` mazmuni (yoki `curl -fsSL https://raw.githubusercontent.com/xudoyberdiyev-dev/sellerflow/main/deploy/bootstrap.sh | bash`);
+   - `admin-email` = admin email;
+   - `alert-chat-id` = alert chat ID.
+3. Bootstrap o'zi bajaradi: Docker o'rnatish, repo'ni olish, `.env` dagi barcha sirlarni tasodifiy yaratish. Holat serial konsolda `SELLERFLOW:` qatorlari sifatida ko'rinadi, sirlar u yerga yozilmaydi.
+4. Konsoldagi **SSH** tugmasi (brauzerda):
+   ```bash
+   sudo cat /root/sellerflow-initial-secrets.txt       # parol menejeriga ko'chiring, keyin:
+   sudo shred -u /root/sellerflow-initial-secrets.txt
+   sudo bash /opt/sellerflow/deploy/set-telegram-token.sh   # token ekranda ko'rinmaydi, Telegram'da tekshiriladi
+   sudo bash /opt/sellerflow/deploy/server-check.sh --alert # natijani (sirlarsiz) Claude'ga yuborish mumkin
+   ```
+Keyingi qadamlar: 5-bo'lim (admin panel), 6-bo'lim (server tashqarisiga backup).
+
 ## 2. Serverni tayyorlash (bir marta)
 ```bash
 ssh root@SERVER
